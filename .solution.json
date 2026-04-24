@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "projects": {
+    "TabFlow.Platform": {
+      "path": "src/apps/platform/TabFlow.Platform.csproj"
+    },
+    "TabFlow.PlatformWorker": {
+      "path": "src/apps/platform-worker/TabFlow.PlatformWorker.csproj"
+    },
+    "TabFlow.Tenant": {
+      "path": "src/apps/tenant/TabFlow.Tenant.csproj"
+    },
+    "TabFlow.Shared": {
+      "path": "src/packages/shared-dotnet/TabFlow.Shared.csproj"
+    }
+  }
+}

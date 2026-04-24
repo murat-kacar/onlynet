@@ -1,0 +1,158 @@
+# =============================================================================
+# WHITELIST STRATEGY: Block everything, then allow specific text files
+# =============================================================================
+
+# STEP 1: Block EVERYTHING by default
+*
+
+# STEP 2: Allow Git to track directories (required for recursion)
+!*/
+
+# STEP 3: Block ALL hidden directories (starting with .)
+.*/
+
+# STEP 4: Whitelist specific hidden directories/files we need
+!.github/
+!.gitignore
+!.gitattributes
+
+# Documentation
+!*.md
+
+# .NET / C# Source
+!*.cs
+!*.csproj
+!*.sln
+!*.props
+!*.targets
+!*.cshtml
+!*.razor
+
+# Configuration (templates only - secrets blocked in STEP 5)
+!*.json
+!*.xml
+!*.yml
+!*.yaml
+
+# Web assets
+!*.css
+!*.js
+!*.html
+!*.svg
+
+# Scripts & misc
+!*.sh
+!*.ps1
+!*.cmd
+!*.bat
+!*.txt
+!.gitkeep
+
+# =============================================================================
+# STEP 4: Block binary and generated files (even if they match above patterns)
+# =============================================================================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# NuGet
+*.nupkg
+# Note: 'packages/' without path matches src/packages/ too
+# We explicitly allow src/packages/ but block root-level packages/
+/packages/
+**/packages/
+!src/packages/
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# Publish
+publish/
+app.publish/
+*.publish.xml
+
+# =============================================================================
+# STEP 5: Block secrets and environment-specific files (text but sensitive)
+# =============================================================================
+
+# ASP.NET Core - environment configs (keep only base appsettings.json)
+**/appsettings.Development.json
+**/appsettings.Staging.json
+**/appsettings.Production.json
+**/appsettings.*.json
+!**/appsettings.json
+**/secrets.json
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.cache
+*.dbmdl
+*.jfm
+*.DotSettings.user
+
+# IDE
+.vs/
+.vscode/settings.json
+.vscode/tasks.json
+*.code-workspace
+.idea/
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# STEP 6: Block runtime data directories (entire trees)
+# =============================================================================
+
+# Runtime artifacts
+data/artifacts/
+data/logs/
+data/secrets/
+
+# Deployment config (production secrets)
+.config/
+
+# Temporary
+temp/
+tmp/
+*.tmp
+*.temp
+*.log
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Node/NPM
+node_modules/
+package-lock.json
+yarn.lock
+
+# LibMan client libraries (restore on build)
+**/wwwroot/lib/
+
+# EF migrations log
+*.efmigrations.log
