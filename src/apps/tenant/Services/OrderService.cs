@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Domain.Entities.Tenant;
@@ -14,11 +16,41 @@ public class OrderService : IOrderService
         _context = context;
     }
 
-    public async Task<SubmitOrderResult> SubmitAsync(SubmitOrderRequest request, CancellationToken ct = default)
+    public async Task<SubmitOrderResult> SubmitAsync(
+        SubmitOrderRequest request,
+        string deviceCookieValue,
+        CancellationToken ct = default)
     {
-        // AC-030: every customer order requires a still-open session for
-        // the originating device. The session-to-cookie binding is the
-        // missing half tracked under TD-0015 step 4 follow-ups.
+        // AC-030 (device-binding half, TD-0017): the caller MUST
+        // forward the `tabflow_session_device` cookie value the
+        // browser holds; an empty value means the call did not
+        // originate from a real customer browser and fails closed.
+        if (string.IsNullOrEmpty(deviceCookieValue))
+        {
+            throw new InvalidOperationException("Device cookie missing.");
+        }
+
+        var ticket = await _context.CustomerAccessTickets
+            .FirstOrDefaultAsync(t => t.Id == request.TicketId, ct);
+        if (ticket == null || !ticket.IsValid)
+        {
+            throw new InvalidOperationException($"Invalid ticket {request.TicketId}");
+        }
+        if (ticket.SessionId != request.SessionId)
+        {
+            throw new InvalidOperationException("Ticket does not belong to the requested session.");
+        }
+        // Constant-time compare so a timing oracle on the device
+        // cookie cannot leak prefix bits.
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(ticket.DeviceCookieValue),
+                Encoding.UTF8.GetBytes(deviceCookieValue)))
+        {
+            throw new InvalidOperationException("Device cookie mismatch.");
+        }
+
+        // AC-030 (still-open half): every customer order requires a
+        // still-open session.
         var session = await _context.CustomerSessions.FindAsync(new object[] { request.SessionId }, ct);
         if (session == null || !session.IsOpen)
         {

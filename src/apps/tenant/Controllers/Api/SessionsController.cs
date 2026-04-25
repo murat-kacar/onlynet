@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TabFlow.Shared.Application.Services;
+using TabFlow.Tenant.Services;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
@@ -28,10 +29,33 @@ public class SessionsController : ControllerBase
 
     [HttpPost("open")]
     [AllowAnonymous]
-    public async Task<ActionResult<OpenSessionResult>> OpenSession([FromBody] OpenSessionRequest request, CancellationToken ct)
+    public async Task<ActionResult<OpenSessionResponse>> OpenSession([FromBody] OpenSessionRequest request, CancellationToken ct)
     {
         var result = await _sessionService.OpenSessionAsync(request.QrTokenValue, ct);
-        return Ok(result);
+
+        // TD-0017 (AC-030 device-binding): set the opaque device cookie
+        // the browser must echo on every subsequent customer-tier
+        // request. Secure is keyed off Request.IsHttps so dev (HTTP)
+        // can still issue the cookie; production (HTTPS) sets Secure.
+        // SameSite=Strict so the cookie never leaves the customer's
+        // table flow.
+        Response.Cookies.Append(
+            CustomerSessionCookie.Name,
+            result.DeviceCookieValue,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Strict,
+                Path = "/",
+                MaxAge = CustomerSessionCookie.MaxAge,
+            });
+
+        // The response body intentionally omits DeviceCookieValue: it
+        // travels via the Set-Cookie header only. A client that needs
+        // the binding does not need to read it (the cookie is sent
+        // automatically with every same-origin request).
+        return Ok(new OpenSessionResponse(result.SessionId, result.TicketId, result.TableLabel));
     }
 
     [HttpGet("{ticketId:guid}")]
@@ -56,3 +80,12 @@ public class SessionsController : ControllerBase
 }
 
 public record OpenSessionRequest(string QrTokenValue);
+
+/// <summary>
+/// Customer-facing response shape for <c>POST /api/sessions/open</c>.
+/// Mirrors <see cref="TabFlow.Shared.Application.Services.OpenSessionResult"/>
+/// minus the <c>DeviceCookieValue</c>, which is set as an HttpOnly
+/// cookie by the controller and intentionally omitted from the
+/// response body so it never reaches the JS document context.
+/// </summary>
+public record OpenSessionResponse(Guid SessionId, Guid TicketId, string TableLabel);

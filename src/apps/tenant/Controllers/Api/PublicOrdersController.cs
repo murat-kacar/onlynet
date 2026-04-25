@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TabFlow.Shared.Application.Services;
+using TabFlow.Tenant.Services;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
@@ -37,15 +38,24 @@ public class PublicOrdersController : ControllerBase
     /// <summary>
     /// Customer order submission. The request payload identifies the
     /// originating customer session and carries the QR
-    /// checkout-proof token; the service layer validates both before
-    /// persisting the order.
+    /// checkout-proof token; the controller forwards the
+    /// <c>tabflow_session_device</c> cookie to the service layer,
+    /// which enforces AC-030's device-binding gate (TD-0017) before
+    /// persisting the order. A missing cookie means the request did
+    /// not originate from a real customer browser and yields 403.
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<SubmitOrderResult>> SubmitOrder(
         [FromBody] SubmitOrderRequest request,
         CancellationToken ct)
     {
-        var result = await _orderService.SubmitAsync(request, ct);
+        var deviceCookie = Request.Cookies[CustomerSessionCookie.Name];
+        if (string.IsNullOrEmpty(deviceCookie))
+        {
+            return Forbid();
+        }
+
+        var result = await _orderService.SubmitAsync(request, deviceCookie, ct);
         return Ok(result);
     }
 }

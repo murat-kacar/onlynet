@@ -123,18 +123,31 @@ ledger; orphan `TD-` references are a documentation bug.
   model in `customer-session-model.md` is documented in source but
   not enforced.
 - Payoff plan:
-  1. Issue a server-set, `HttpOnly`, table-scoped cookie when
-     `Sessions.OpenSession` succeeds. The cookie value MUST be
-     opaque (independent random GUID, not the session id).
-  2. Persist the cookie value alongside the customer session row.
-  3. In `OrderService.SubmitAsync`, accept an `HttpContext` parameter
-     (or read the cookie via an injected accessor) and reject
-     submissions where the cookie does not match the session row.
-  4. Add an integration test that submits with the wrong cookie and
-     asserts `403`.
+  1. (Done in PR #11) Issue a server-set, `HttpOnly` cookie named
+     `tabflow_session_device` when `Sessions.OpenSession` succeeds.
+     The cookie value is an opaque server-issued GUID (`Guid.NewGuid().ToString("N")`),
+     independent of the ticket id; cookie scope: `SameSite=Strict`,
+     `Path=/`, `MaxAge=8h`, `Secure` keyed off `Request.IsHttps`.
+  2. (Done in PR #11) Persist the cookie value alongside the
+     `CustomerAccessTicket` row (new `DeviceCookieValue` column with
+     a backing migration `AddCustomerAccessTicketDeviceCookie`). The
+     binding is per-ticket rather than per-session because multiple
+     customer devices can join the same table session and each
+     device gets its own ticket.
+  3. (Done in PR #11) In `OrderService.SubmitAsync`, look up the
+     `CustomerAccessTicket` by `request.TicketId`, reject invalid /
+     expired tickets, reject tickets that do not belong to
+     `request.SessionId`, and constant-time-compare the persisted
+     `DeviceCookieValue` against the cookie the controller forwarded
+     (`CryptographicOperations.FixedTimeEquals`). The
+     `PublicOrdersController` reads the cookie from the request and
+     returns `403` if it is missing.
+  4. (Open) Add an integration test that submits with the wrong
+     cookie and asserts `403`. Depends on TD-0010 fixtures.
 - Linked: AC-030, AC-036,
   [`/doc/docs/explanation/concepts/customer-session-model.md`](/doc/docs/explanation/concepts/customer-session-model.md),
-  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs)
+  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs),
+  [`/src/apps/tenant/Services/CustomerSessionCookie.cs`](/src/apps/tenant/Services/CustomerSessionCookie.cs)
 
 ### [TRIAGE] TD-0016 — AD-0004 mixed render modes never exercised
 

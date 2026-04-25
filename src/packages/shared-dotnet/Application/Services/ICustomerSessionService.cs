@@ -7,7 +7,11 @@ public interface ICustomerSessionService
     Task CloseSessionAsync(Guid sessionId, CancellationToken ct = default);
 }
 
-public sealed record OpenSessionResult(Guid SessionId, Guid TicketId, string TableLabel);
+public sealed record OpenSessionResult(
+    Guid SessionId,
+    Guid TicketId,
+    string TableLabel,
+    string DeviceCookieValue);
 
 public sealed record CustomerSessionState(
     Guid SessionId,

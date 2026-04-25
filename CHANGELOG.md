@@ -95,6 +95,22 @@ AD-0011.
 
 ### Security
 
+- **Customer session device-binding enforced (TD-0017, AC-030 second
+  half).** A successful `POST /api/sessions/open` now sets an
+  HttpOnly cookie named `tabflow_session_device` carrying an opaque
+  server-issued GUID. The cookie value is also persisted on the new
+  `CustomerAccessTicket.DeviceCookieValue` column (migration
+  `AddCustomerAccessTicketDeviceCookie`). `PublicOrdersController.SubmitOrder`
+  reads the cookie and forwards it to `OrderService.SubmitAsync`,
+  which looks up the ticket, verifies the ticket is still valid and
+  belongs to the requested session, and constant-time-compares the
+  persisted cookie value against the one the browser presented
+  (`CryptographicOperations.FixedTimeEquals`). A missing cookie
+  yields `403`; a mismatched cookie aborts the submit. The binding is
+  per-ticket so that multiple customer devices on the same table
+  session each carry their own device secret. Closes TD-0017 steps
+  1–3 in source; step 4 (integration test) remains open and depends
+  on TD-0010 fixtures.
 - **Customer order submission gates tightened.** `OrderService.SubmitAsync`
   now enforces three previously-missing halves of AC-030..AC-036 in the
   same `SaveChangesAsync` transaction as the order insert:

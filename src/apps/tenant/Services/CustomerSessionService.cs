@@ -32,14 +32,19 @@ public class CustomerSessionService : ICustomerSessionService
             throw new InvalidOperationException($"No active session found for table {qrToken.TableId}");
         }
 
-        var ticket = session.IssueTicket();
-        _context.CustomerSessions.Update(session);
+        // TD-0017: generate an opaque device-binding cookie value
+        // independent of the ticket id, so that a leaked URL carrying
+        // the ticket id alone cannot resurrect the session. The
+        // "N" format (32 hex chars, no dashes) keeps the cookie
+        // header compact.
+        var deviceCookieValue = Guid.NewGuid().ToString("N");
+        var ticket = session.IssueTicket(deviceCookieValue);
         await _context.SaveChangesAsync(ct);
 
         var table = await _context.Stations.FindAsync(new object[] { session.TableId }, ct);
         var tableLabel = table?.Name ?? $"Table {session.TableId}";
 
-        return new OpenSessionResult(session.Id, ticket.Id, tableLabel);
+        return new OpenSessionResult(session.Id, ticket.Id, tableLabel, deviceCookieValue);
     }
 
     public async Task<CustomerSessionState?> GetSessionStateAsync(Guid ticketId, CancellationToken ct = default)

@@ -27,9 +27,9 @@ public sealed class CustomerSession
         };
     }
 
-    public CustomerAccessTicket IssueTicket()
+    public CustomerAccessTicket IssueTicket(string deviceCookieValue)
     {
-        var ticket = CustomerAccessTicket.Create(Id);
+        var ticket = CustomerAccessTicket.Create(Id, deviceCookieValue);
         _accessTickets.Add(ticket);
         return ticket;
     }
