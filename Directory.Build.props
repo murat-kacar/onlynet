@@ -68,7 +68,7 @@
               that convention. Production code carries no underscored
               identifiers; this NoWarn is therefore safe globally.
     -->
-    <NoWarn>$(NoWarn);CS1591;CA1716;CA1848;CA1873;CA1305;CA1304;CA1311;CA1822;CA1816;CA1707</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;CA1716;CA1305;CA1304;CA1311;CA1822;CA1816;CA1707</NoWarn>
 
     <!-- Deterministic build for reproducibility. -->
     <Deterministic>true</Deterministic>

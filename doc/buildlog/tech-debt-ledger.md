@@ -293,8 +293,19 @@ ledger; orphan `TD-` references are a documentation bug.
   2. (Done in audit change set) Lower `AnalysisMode` to `Recommended`
      and disable `EnforceCodeStyleInBuild` until the existing baseline
      is swept.
-  3. Sweep `LoggerMessage` adoption (CA1848 / CA1873) across hot
-     logging paths in tenant + platform hosts; remove from NoWarn.
+  3. (Done in PR #15) Swept `LoggerMessage` adoption across all hot
+     logging paths in the tenant host (`EventSubscriptionService`,
+     `TableWebSocketHandler`) and the platform worker
+     (`ProvisioningWorker`). Two new files
+     `src/apps/tenant/TenantLogMessages.cs` and
+     `src/apps/platform-worker/PlatformWorkerLogMessages.cs` carry
+     `[LoggerMessage]` source-generated extension methods (EventId
+     allocations: PlatformWorker 1–5, Tenant 101–109 + 201–208). All
+     19 `_logger.LogX(...)` call sites in
+     `/src/apps/{tenant,platform-worker}/**/*.cs` were rewritten to
+     the generated extensions; `CA1848` and `CA1873` removed from
+     `NoWarn` in `/Directory.Build.props`. Build remains green at
+     0 / 0.
   4. Sweep culture-aware string conversions (CA1305 / CA1304 /
      CA1311) at externally-visible call sites; remove from NoWarn.
   5. Audit `static`-able members (CA1822) and finalise (CA1816);

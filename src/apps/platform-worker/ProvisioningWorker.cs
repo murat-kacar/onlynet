@@ -30,7 +30,7 @@ public class ProvisioningWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing provisioning jobs");
+                _logger.ErrorProcessingProvisioningJobs(ex);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
@@ -55,7 +55,7 @@ public class ProvisioningWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error claiming/processing job {JobId}", job.Id);
+                _logger.ErrorClaimingJob(job.Id, ex);
             }
         }
     }
@@ -70,7 +70,7 @@ public class ProvisioningWorker : BackgroundService
         context.ProvisioningJobs.Update(job);
         await context.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Claimed job {JobId} for tenant {TenantId}", job.Id, job.TenantId);
+        _logger.ClaimedJob(job.Id, job.TenantId);
 
         try
         {
@@ -80,13 +80,13 @@ public class ProvisioningWorker : BackgroundService
         catch (Exception ex)
         {
             job.MarkFailed(ex.Message);
-            _logger.LogError(ex, "Failed to provision tenant {TenantId}", job.TenantId);
+            _logger.FailedToProvisionTenant(job.TenantId, ex);
         }
 
         context.ProvisioningJobs.Update(job);
         await context.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Completed job {JobId}", job.Id);
+        _logger.CompletedJob(job.Id);
     }
 
     private async Task ProvisionTenantAsync(Guid tenantId, CancellationToken ct)

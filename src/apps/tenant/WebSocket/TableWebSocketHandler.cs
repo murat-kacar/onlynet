@@ -30,7 +30,7 @@ public class TableWebSocketHandler
         }
 
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        _logger.LogInformation("ESP32 connected to table {TableNumber}", tableNumber);
+        _logger.Esp32Connected(tableNumber);
 
         var table = await _context.Stations.FindAsync(new object[] { tableNumber }, CancellationToken.None);
         var tableLabel = table?.Name ?? $"Table {tableNumber}";
@@ -51,7 +51,7 @@ public class TableWebSocketHandler
                 var message = System.Text.Encoding.UTF8.GetString(
                     buffer, 0, receiveResult.Count);
 
-                _logger.LogDebug("Received from table {TableNumber}: {Message}", tableNumber, message);
+                _logger.WebSocketReceived(tableNumber, message);
 
                 // Process message and send response
                 await ProcessMessageAsync(message, tableNumber, CancellationToken.None);
@@ -68,11 +68,11 @@ public class TableWebSocketHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling WebSocket for table {TableNumber}", tableNumber);
+            _logger.WebSocketHandlingFailed(tableNumber, ex);
         }
         finally
         {
-            _logger.LogInformation("ESP32 disconnected from table {TableNumber}", tableNumber);
+            _logger.Esp32Disconnected(tableNumber);
 
             var disconnectTable = await _context.Stations.FindAsync(new object[] { tableNumber }, CancellationToken.None);
             var disconnectLabel = disconnectTable?.Name ?? $"Table {tableNumber}";
@@ -98,20 +98,20 @@ public class TableWebSocketHandler
                     await HandleOrderUpdateAsync(messageData, tableNumber, ct);
                     break;
                 default:
-                    _logger.LogWarning("Unknown message type: {MessageType} from table {TableNumber}", messageType, tableNumber);
+                    _logger.UnknownMessageType(messageType, tableNumber);
                     break;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing message from table {TableNumber}: {Message}", tableNumber, message);
+            _logger.MessageProcessingFailed(tableNumber, message, ex);
         }
     }
 
     private async Task HandleTableStatusAsync(System.Text.Json.JsonDocument messageData, int tableNumber, CancellationToken ct)
     {
         var status = messageData.RootElement.GetProperty("status").GetString();
-        _logger.LogInformation("Table {TableNumber} status: {Status}", tableNumber, status);
+        _logger.TableStatus(tableNumber, status);
 
         // TODO: Publish table status event via EventBus
         // Example:
@@ -126,7 +126,7 @@ public class TableWebSocketHandler
         var orderId = messageData.RootElement.GetProperty("orderId").GetGuid();
         var status = messageData.RootElement.GetProperty("status").GetString() ?? "unknown";
         var orderItemId = messageData.RootElement.TryGetProperty("orderItemId", out var oi) ? oi.GetGuid() : Guid.Empty;
-        _logger.LogInformation("Order {OrderId} status: {Status} from table {TableNumber}", orderId, status, tableNumber);
+        _logger.OrderStatus(orderId, status, tableNumber);
 
         var table = await _context.Stations.FindAsync(new object[] { tableNumber }, ct);
         var tableId = table?.Id ?? Guid.NewGuid();

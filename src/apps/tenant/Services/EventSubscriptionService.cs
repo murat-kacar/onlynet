@@ -23,7 +23,7 @@ public class EventSubscriptionService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Event subscription service started");
+        _logger.EventSubscriptionStarted();
 
         try
         {
@@ -34,11 +34,11 @@ public class EventSubscriptionService : BackgroundService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Event subscription service stopped");
+            _logger.EventSubscriptionStopped();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Event subscription service error");
+            _logger.EventSubscriptionFailed(ex);
         }
     }
 
@@ -61,19 +61,19 @@ public class EventSubscriptionService : BackgroundService
                     await HandleDeviceDisconnectedAsync(deviceDisconnected, ct);
                     break;
                 default:
-                    _logger.LogDebug("Unhandled event type: {EventType}", @event.GetType().Name);
+                    _logger.UnhandledEventType(@event.GetType().Name);
                     break;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling event {EventType}", @event.GetType().Name);
+            _logger.EventHandlingFailed(@event.GetType().Name, ex);
         }
     }
 
     private async Task HandleOrderSubmittedAsync(OrderSubmittedEvent @event, CancellationToken ct)
     {
-        _logger.LogInformation("Order submitted: {OrderId} for table {TableId}", @event.OrderId, @event.TableId);
+        _logger.OrderSubmitted(@event.OrderId, @event.TableId);
         
         // Send notification to table group
         await _hubContext.Clients.Group($"table_{@event.TableId}").SendAsync("OrderSubmitted", new
@@ -88,7 +88,7 @@ public class EventSubscriptionService : BackgroundService
 
     private async Task HandleOrderStatusChangedAsync(OrderStatusChangedEvent @event, CancellationToken ct)
     {
-        _logger.LogInformation("Order item {OrderItemId} status changed to {Status}", @event.OrderItemId, @event.NewStatus);
+        _logger.OrderItemStatusChanged(@event.OrderItemId, @event.NewStatus);
         
         // Send notification to station group
         await _hubContext.Clients.Group($"station_{@event.StationId}").SendAsync("OrderStatusChanged", new
@@ -103,7 +103,7 @@ public class EventSubscriptionService : BackgroundService
 
     private async Task HandleDeviceConnectedAsync(DeviceConnectedEvent @event, CancellationToken ct)
     {
-        _logger.LogInformation("Device connected: Table {TableId} ({TableLabel})", @event.TableId, @event.TableLabel);
+        _logger.DeviceConnected(@event.TableId, @event.TableLabel);
         
         // Send notification to all clients
         await _hubContext.Clients.All.SendAsync("DeviceConnected", new
@@ -117,7 +117,7 @@ public class EventSubscriptionService : BackgroundService
 
     private async Task HandleDeviceDisconnectedAsync(DeviceDisconnectedEvent @event, CancellationToken ct)
     {
-        _logger.LogInformation("Device disconnected: Table {TableId} ({TableLabel})", @event.TableId, @event.TableLabel);
+        _logger.DeviceDisconnected(@event.TableId, @event.TableLabel);
         
         // Send notification to all clients
         await _hubContext.Clients.All.SendAsync("DeviceDisconnected", new

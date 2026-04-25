@@ -213,6 +213,26 @@ AD-0011.
 
 ### Tools
 
+- **`LoggerMessage` adoption across hot logging paths (TD-0014 step 3).**
+  All 19 `ILogger.LogX(...)` call sites in `/src/apps/{tenant,platform-worker}/**/*.cs`
+  were rewritten as `[LoggerMessage]` source-generated extension
+  methods. Two new files carry the definitions:
+  - `src/apps/platform-worker/PlatformWorkerLogMessages.cs` —
+    EventIds 1–5 (provisioning worker)
+  - `src/apps/tenant/TenantLogMessages.cs` — EventIds 101–109
+    (`EventSubscriptionService`) and 201–208
+    (`TableWebSocketHandler`)
+  Each method is an extension on `ILogger` so call sites read as
+  `_logger.OrderSubmitted(orderId, tableId)` instead of
+  `_logger.LogInformation("Order submitted: {OrderId} for table
+  {TableId}", orderId, tableId)`. EventIds are stable across builds
+  so log search by ID stays meaningful.
+  - `Directory.Build.props`: `CA1848` and `CA1873` removed from
+    `NoWarn`. The TD-0014 ratchet plan now stands at five remaining
+    NoWarn entries (`CS1591`, `CA1716`, `CA1305`, `CA1304`, `CA1311`,
+    `CA1822`, `CA1816`, `CA1707`).
+  - Build status: 0 errors, 0 warnings; Shared.Tests Unit tier still
+    8/8 passing.
 - **First-party Roslyn analyser `TF0001` enforces AD-0015 (TD-0009).**
   New project at `/tools/analyzers/TabFlow.Analyzers/` (netstandard2.0,
   consumes `Microsoft.CodeAnalysis.CSharp` 4.13.0) ships
