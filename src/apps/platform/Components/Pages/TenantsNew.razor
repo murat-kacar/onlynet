@@ -1,0 +1,88 @@
+@page "/tenants/new"
+@attribute [Authorize(Policy = "Platform:Write")]
+
+<PageTitle>Create Tenant</PageTitle>
+
+<h1>Create Tenant</h1>
+
+<EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label>Code</label>
+        <InputText @bind-value="Model.Code" class="form-control" />
+        <ValidationMessage For="() => Model.Code" />
+    </div>
+
+    <div class="form-group">
+        <label>Display Name</label>
+        <InputText @bind-value="Model.DisplayName" class="form-control" />
+        <ValidationMessage For="() => Model.DisplayName" />
+    </div>
+
+    <div class="form-group">
+        <label>Primary Domain</label>
+        <InputText @bind-value="Model.PrimaryDomain" class="form-control" />
+        <ValidationMessage For="() => Model.PrimaryDomain" />
+    </div>
+
+    <div class="form-group">
+        <label>Language Code</label>
+        <InputText @bind-value="Model.LanguageCode" class="form-control" />
+        <ValidationMessage For="() => Model.LanguageCode" />
+    </div>
+
+    <div class="form-group">
+        <label>Currency Code</label>
+        <InputText @bind-value="Model.CurrencyCode" class="form-control" />
+        <ValidationMessage For="() => Model.CurrencyCode" />
+    </div>
+
+    <div class="form-group">
+        <label>Time Zone</label>
+        <InputText @bind-value="Model.TimeZone" class="form-control" />
+        <ValidationMessage For="() => Model.TimeZone" />
+    </div>
+
+    <div class="form-group">
+        <label>Intended Owner Email</label>
+        <InputText @bind-value="Model.IntendedOwnerEmail" class="form-control" />
+        <ValidationMessage For="() => Model.IntendedOwnerEmail" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a href="/tenants" class="btn btn-secondary">Cancel</a>
+</EditForm>
+
+@code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = null!;
+
+    private CreateTenantModel Model = new();
+
+    private async Task HandleSubmit()
+    {
+        // TODO: Create tenant and provisioning job
+        NavigationManager.NavigateTo("/tenants");
+    }
+
+    private class CreateTenantModel
+    {
+        [Required]
+        public string Code { get; set; } = string.Empty;
+        [Required]
+        public string DisplayName { get; set; } = string.Empty;
+        [Required]
+        public string PrimaryDomain { get; set; } = string.Empty;
+        [Required]
+        public string LanguageCode { get; set; } = string.Empty;
+        [Required]
+        public string CurrencyCode { get; set; } = string.Empty;
+        [Required]
+        public string TimeZone { get; set; } = string.Empty;
+        [Required]
+        [EmailAddress]
+        public string IntendedOwnerEmail { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,29 @@
+@page "/"
+@attribute [Authorize(Policy = "Platform:Read")]
+
+<PageTitle>Platform Dashboard</PageTitle>
+
+<h1>Platform Dashboard</h1>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <h3>Tenants</h3>
+        <p class="stat">@TenantCount</p>
+    </div>
+    <div class="card">
+        <h3>Active Jobs</h3>
+        <p class="stat">@ActiveJobCount</p>
+    </div>
+</div>
+
+@code {
+    private int TenantCount = 0;
+    private int ActiveJobCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Load from database
+        TenantCount = 0;
+        ActiveJobCount = 0;
+    }
+}

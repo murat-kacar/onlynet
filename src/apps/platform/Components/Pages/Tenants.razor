@@ -1,0 +1,69 @@
+@page "/tenants"
+@attribute [Authorize(Policy = "Platform:Read")]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Tenants</PageTitle>
+
+<h1>Tenants</h1>
+
+<div class="toolbar">
+    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+</div>
+
+@if (TenantList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Display Name</th>
+                <th>Status</th>
+                <th>Domain</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tenant in TenantList)
+            {
+                <tr>
+                    <td>@tenant.Code</td>
+                    <td>@tenant.DisplayName</td>
+                    <td>@tenant.Status</td>
+                    <td>@tenant.PrimaryDomain</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => NavigateToDetail(tenant.Id)">View</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TenantDto>? TenantList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        TenantList = await Http.GetFromJsonAsync<List<TenantDto>>("/api/tenants");
+    }
+
+    private void NavigateToDetail(Guid id)
+    {
+        NavigationManager.NavigateTo($"/tenants/{id}");
+    }
+
+    private record TenantDto(
+        Guid Id,
+        string Code,
+        string DisplayName,
+        string Status,
+        string PrimaryDomain,
+        string LanguageCode,
+        string CurrencyCode,
+        string TimeZone);
+}

@@ -1,0 +1,78 @@
+@page "/order/{orderId:guid}"
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Order #@OrderId</PageTitle>
+
+<h1>Order #@OrderId</h1>
+
+@if (OrderDetail == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="order-summary">
+        <p>Table: @OrderDetail.TableLabel</p>
+        <p>Total: @OrderDetail.TotalAmount.ToString("C")</p>
+        <p>Status: @OrderDetail.Status</p>
+    </div>
+
+    <h2>Items</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in OrderDetail.Items)
+            {
+                <tr>
+                    <td>@item.ItemName</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@item.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-secondary" @onclick="NavigateToMenu">Back to Menu</button>
+}
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    private OrderDetailDto? OrderDetail = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load order details from API
+        OrderDetail = await Http.GetFromJsonAsync<OrderDetailDto>($"/api/orders/{OrderId}");
+    }
+
+    private void NavigateToMenu()
+    {
+        NavigationManager.NavigateTo("/menu");
+    }
+
+    private record OrderDetailDto(
+        Guid OrderId,
+        string TableLabel,
+        decimal TotalAmount,
+        string Status,
+        IReadOnlyList<OrderItemDto> Items);
+
+    private record OrderItemDto(
+        Guid Id,
+        string ItemName,
+        int Quantity,
+        decimal UnitPrice,
+        string Status);
+}

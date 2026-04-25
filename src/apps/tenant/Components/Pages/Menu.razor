@@ -1,0 +1,84 @@
+@page "/menu"
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Menu</PageTitle>
+
+<h1>Menu</h1>
+
+@if (!HasSession)
+{
+    <p>No active session. Please <a href="/scan-qr">scan a QR code</a> to start.</p>
+}
+else
+{
+    <p>Session: @TableLabel</p>
+    <a href="/cart" class="btn btn-primary">View Cart</a>
+}
+
+@if (MenuItems == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="category-tabs">
+        @foreach (var category in Categories)
+        {
+            <button class="tab">@category.Name</button>
+        }
+    </div>
+
+    <div class="menu-grid">
+        @foreach (var item in MenuItems)
+        {
+            <div class="menu-item">
+                <h3>@item.Name</h3>
+                <p>@item.Price.ToString("C")</p>
+                <button class="btn btn-primary" @onclick="() => AddToCart(item.Id)">Add to Cart</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<CategoryItem> Categories = [];
+    private List<MenuItemDto>? MenuItems = [];
+    private Guid? CurrentSessionId = null;
+    private string TableLabel = "";
+    private bool HasSession = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sessionId = await JS.InvokeAsync<string?>("localStorage.getItem", "sessionId");
+        var tableLabel = await JS.InvokeAsync<string?>("localStorage.getItem", "tableLabel");
+
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            CurrentSessionId = Guid.Parse(sessionId);
+            TableLabel = tableLabel ?? "";
+            HasSession = true;
+
+            // Load from API
+            MenuItems = await Http.GetFromJsonAsync<List<MenuItemDto>>("/api/menu");
+        }
+    }
+
+    private async Task AddToCart(Guid itemId)
+    {
+        if (CurrentSessionId == null)
+        {
+            NavigationManager.NavigateTo("/scan-qr");
+            return;
+        }
+
+        var request = new AddCartItemRequest(CurrentSessionId.Value, itemId, 1);
+        await Http.PostAsJsonAsync("/api/cart", request);
+    }
+
+    private record CategoryItem(Guid Id, string Name);
+    private record MenuItemDto(Guid Id, string Name, decimal Price);
+    private record AddCartItemRequest(Guid SessionId, Guid MenuItemId, int Quantity, string? Note = null);
+}

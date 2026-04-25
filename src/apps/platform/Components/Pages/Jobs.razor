@@ -1,0 +1,58 @@
+@page "/jobs"
+@attribute [Authorize(Policy = "Platform:Read")]
+@inject HttpClient Http
+
+<PageTitle>Provisioning Jobs</PageTitle>
+
+<h1>Provisioning Jobs</h1>
+
+@if (JobList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tenant ID</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Claimed By</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in JobList)
+            {
+                <tr>
+                    <td>@job.Id</td>
+                    <td>@job.TenantId</td>
+                    <td>@job.Type</td>
+                    <td>@job.Status</td>
+                    <td>@job.ClaimedBy</td>
+                    <td>@job.CreatedAt</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<JobDto>? JobList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        JobList = await Http.GetFromJsonAsync<List<JobDto>>("/api/jobs");
+    }
+
+    private record JobDto(
+        Guid Id,
+        Guid TenantId,
+        string Type,
+        string Status,
+        string? ClaimedBy,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset UpdatedAt);
+}

@@ -1,0 +1,55 @@
+@page "/kitchen"
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject HttpClient Http
+
+<PageTitle>Kitchen Display</PageTitle>
+
+<h1>Kitchen Display</h1>
+
+@if (Orders == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="kitchen-orders">
+        @foreach (var order in Orders)
+        {
+            <div class="order-card">
+                <h3>Order #@order.Id</h3>
+                <p>Table: @order.TableLabel</p>
+                <p>Total: @order.TotalAmount.ToString("C")</p>
+                <h4>Items</h4>
+                <ul>
+                    @foreach (var item in order.Items)
+                    {
+                        <li class="item @item.Status">
+                            @item.ItemName x @item.Quantity
+                            <button class="btn btn-sm btn-primary" @onclick="@(() => UpdateItemStatus(item.Id, "Preparing"))">Start</button>
+                            <button class="btn btn-sm btn-success" @onclick="@(() => UpdateItemStatus(item.Id, "Ready"))">Ready</button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<KitchenOrderDto>? Orders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Orders = await Http.GetFromJsonAsync<List<KitchenOrderDto>>("/api/kitchen/orders");
+    }
+
+    private async Task UpdateItemStatus(Guid itemId, string status)
+    {
+        await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
+        await OnInitializedAsync();
+    }
+
+    private record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, List<KitchenItemDto> Items);
+    private record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status);
+    private record UpdateItemStatusRequest(string Status);
+}

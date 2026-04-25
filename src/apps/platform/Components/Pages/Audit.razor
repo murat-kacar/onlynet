@@ -1,0 +1,49 @@
+@page "/audit"
+@attribute [Authorize(Policy = "Platform:Read")]
+
+<PageTitle>Platform Audit Log</PageTitle>
+
+<h1>Platform Audit Log</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Actor Email</th>
+            <th>Action</th>
+            <th>Resource Type</th>
+            <th>Resource ID</th>
+            <th>IP</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in AuditEntries)
+        {
+            <tr>
+                <td>@entry.CreatedAt</td>
+                <td>@entry.ActorEmail</td>
+                <td>@entry.Action</td>
+                <td>@entry.ResourceType</td>
+                <td>@entry.ResourceId</td>
+                <td>@entry.Ip</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<AuditEntryListItem> AuditEntries = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Load from database
+    }
+
+    private record AuditEntryListItem(
+        DateTimeOffset CreatedAt,
+        string ActorEmail,
+        string Action,
+        string ResourceType,
+        string ResourceId,
+        string? Ip);
+}

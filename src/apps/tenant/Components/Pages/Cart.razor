@@ -1,0 +1,128 @@
+@page "/cart"
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Cart</PageTitle>
+
+<h1>Cart</h1>
+
+@if (!HasSession)
+{
+    <p>No active session. Please <a href="/scan-qr">scan a QR code</a> to start.</p>
+}
+else
+{
+    <p>Session: @TableLabel</p>
+}
+
+@if (CartItems == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in CartItems)
+            {
+                <tr>
+                    <td>@item.MenuItemName</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@(item.UnitPrice * item.Quantity).ToString("C")</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveItem(item.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="cart-summary">
+        <p>Total: @Total.ToString("C")</p>
+        <button class="btn btn-primary" @onclick="SubmitOrder">Place Order</button>
+    </div>
+}
+
+@code {
+    private List<CartItemDto>? CartItems = [];
+    private decimal Total = 0;
+    private Guid? CurrentSessionId = null;
+    private string TableLabel = "";
+    private bool HasSession = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sessionId = await JS.InvokeAsync<string?>("localStorage.getItem", "sessionId");
+        var tableLabel = await JS.InvokeAsync<string?>("localStorage.getItem", "tableLabel");
+
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            CurrentSessionId = Guid.Parse(sessionId);
+            TableLabel = tableLabel ?? "";
+            HasSession = true;
+
+            CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/cart/session/{CurrentSessionId}");
+            Total = CartItems?.Sum(ci => ci.UnitPrice * ci.Quantity) ?? 0;
+        }
+    }
+
+    private async Task RemoveItem(Guid id)
+    {
+        await Http.DeleteAsync($"/api/cart/{id}");
+        await OnInitializedAsync();
+    }
+
+    private async Task SubmitOrder()
+    {
+        if (CurrentSessionId == null)
+        {
+            NavigationManager.NavigateTo("/scan-qr");
+            return;
+        }
+
+        var ticketId = await JS.InvokeAsync<string?>("localStorage.getItem", "ticketId");
+        if (string.IsNullOrEmpty(ticketId))
+        {
+            NavigationManager.NavigateTo("/scan-qr");
+            return;
+        }
+
+        var request = new SubmitOrderRequest(
+            CurrentSessionId.Value,
+            Guid.Parse(ticketId),
+            Guid.Empty, // TODO: Get TableId from session
+            "checkout-proof-token", // TODO: Get from QR token
+            Guid.NewGuid().ToString(),
+            null);
+
+        var result = await Http.PostAsJsonAsync("/api/orders/submit", request);
+        if (result.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "ticketId");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "sessionId");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "tableLabel");
+            NavigationManager.NavigateTo($"/order/{Guid.NewGuid()}"); // TODO: Get actual order ID from response
+        }
+    }
+
+    private record CartItemDto(Guid Id, Guid MenuItemId, string MenuItemName, int Quantity, decimal UnitPrice, string? Note);
+    private record SubmitOrderRequest(
+        Guid SessionId,
+        Guid TicketId,
+        Guid TableId,
+        string CheckoutProofToken,
+        string IdempotencyKey,
+        string? Note);
+}

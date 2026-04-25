@@ -1,0 +1,106 @@
+@page "/scan-qr"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Scan QR Code</PageTitle>
+
+<h1>Scan QR Code</h1>
+
+<div class="qr-scan-container">
+    @if (IsScanning)
+    {
+        <div class="scanner">
+            <p>Scanning...</p>
+            <button class="btn btn-secondary" @onclick="CancelScan">Cancel</button>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(QrToken))
+    {
+        <div class="qr-result">
+            <p>QR Token scanned: @QrToken</p>
+            <button class="btn btn-primary" @onclick="OpenSession">Open Session</button>
+            <button class="btn btn-secondary" @onclick="ResetScan">Scan Again</button>
+        </div>
+    }
+    else
+    {
+        <div class="qr-input">
+            <p>Enter QR token manually:</p>
+            <input type="text" @bind="QrToken" placeholder="QR Token" />
+            <button class="btn btn-primary" @onclick="OpenSession">Open Session</button>
+        </div>
+    }
+</div>
+
+@if (ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@code {
+    private string QrToken = string.Empty;
+    private bool IsScanning = false;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Try to load existing session from local storage
+        var existingTicketId = await JS.InvokeAsync<string?>("localStorage.getItem", "ticketId");
+        if (!string.IsNullOrEmpty(existingTicketId))
+        {
+            NavigationManager.NavigateTo("/menu");
+        }
+    }
+
+    private async Task StartScan()
+    {
+        IsScanning = true;
+        // TODO: Implement actual QR scanning with camera
+        await Task.Delay(1000);
+        IsScanning = false;
+    }
+
+    private void CancelScan()
+    {
+        IsScanning = false;
+    }
+
+    private void ResetScan()
+    {
+        QrToken = string.Empty;
+        ErrorMessage = null;
+    }
+
+    private async Task OpenSession()
+    {
+        if (string.IsNullOrEmpty(QrToken))
+        {
+            ErrorMessage = "QR token is required";
+            return;
+        }
+
+        try
+        {
+            var result = await Http.PostAsJsonAsync("/api/sessions/open", new { QrTokenValue = QrToken });
+            result.EnsureSuccessStatusCode();
+
+            var sessionResult = await result.Content.ReadFromJsonAsync<OpenSessionResult>();
+            if (sessionResult != null)
+            {
+                // Store ticket ID in local storage
+                await JS.InvokeVoidAsync("localStorage.setItem", "ticketId", sessionResult.TicketId.ToString());
+                await JS.InvokeVoidAsync("localStorage.setItem", "sessionId", sessionResult.SessionId.ToString());
+                await JS.InvokeVoidAsync("localStorage.setItem", "tableLabel", sessionResult.TableLabel);
+
+                NavigationManager.NavigateTo("/menu");
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to open session: {ex.Message}";
+        }
+    }
+
+    private record OpenSessionResult(Guid SessionId, Guid TicketId, string TableLabel);
+}

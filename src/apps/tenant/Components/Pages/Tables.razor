@@ -1,0 +1,36 @@
+@page "/tables"
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject HttpClient Http
+
+<PageTitle>Tables</PageTitle>
+
+<h1>Tables</h1>
+
+@if (TableList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="tables-grid">
+        @foreach (var table in TableList)
+        {
+            <div class="table-card @(table.IsActive ? "active" : "inactive")">
+                <h3>@table.Name</h3>
+                <p>Code: @table.Code</p>
+                <p>@(table.IsActive ? "Active" : "Inactive")</p>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<TableDto>? TableList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        TableList = await Http.GetFromJsonAsync<List<TableDto>>("/api/tables");
+    }
+
+    private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder);
+}

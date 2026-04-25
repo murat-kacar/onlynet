@@ -1,0 +1,60 @@
+@page "/tenants/{id:guid}"
+@attribute [Authorize(Policy = "Platform:Read")]
+
+<PageTitle>Tenant Details</PageTitle>
+
+<h1>Tenant Details</h1>
+
+@if (Tenant != null)
+{
+    <div class="detail-card">
+        <h3>@Tenant.DisplayName</h3>
+        <dl>
+            <dt>Code</dt>
+            <dd>@Tenant.Code</dd>
+            <dt>Status</dt>
+            <dd>@Tenant.Status</dd>
+            <dt>Primary Domain</dt>
+            <dd>@Tenant.PrimaryDomain</dd>
+            <dt>Language</dt>
+            <dd>@Tenant.LanguageCode</dd>
+            <dt>Currency</dt>
+            <dd>@Tenant.CurrencyCode</dd>
+            <dt>Time Zone</dt>
+            <dd>@Tenant.TimeZone</dd>
+            <dt>Intended Owner Email</dt>
+            <dd>@Tenant.IntendedOwnerEmail</dd>
+        </dl>
+    </div>
+
+    <div class="actions">
+        <a href="/tenants" class="btn btn-secondary">Back to Tenants</a>
+    </div>
+}
+else
+{
+    <p>Tenant not found.</p>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private TenantDetail? Tenant = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Load from database
+    }
+
+    private record TenantDetail(
+        Guid Id,
+        string Code,
+        string DisplayName,
+        string Status,
+        string PrimaryDomain,
+        string LanguageCode,
+        string CurrencyCode,
+        string TimeZone,
+        string IntendedOwnerEmail);
+}
