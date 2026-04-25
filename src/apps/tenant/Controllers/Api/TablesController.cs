@@ -5,8 +5,12 @@ using TabFlow.Shared.Infrastructure.Data;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
+// Staff-tier table-layout surface. Customer-facing table data
+// (e.g. "is my table currently occupied") goes through the customer
+// session model, not this controller.
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Tenant:Read")]
 public class TablesController : ControllerBase
 {
     private readonly TenantDbContext _context;

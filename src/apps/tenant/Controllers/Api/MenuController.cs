@@ -5,8 +5,13 @@ using TabFlow.Shared.Infrastructure.Data;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
+// Customer-facing surface: every action returns publicly readable
+// menu data with no per-customer state. Anonymous reads are
+// intentional and documented under TD-0015. If a per-tenant menu
+// becomes private, add [Authorize] action-by-action.
 [ApiController]
 [Route("api/[controller]")]
+[AllowAnonymous]
 public class MenuController : ControllerBase
 {
     private readonly TenantDbContext _context;

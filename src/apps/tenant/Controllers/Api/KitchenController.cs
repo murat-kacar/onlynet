@@ -47,6 +47,7 @@ public class KitchenController : ControllerBase
     }
 
     [HttpPut("items/{itemId:guid}/status")]
+    [Authorize(Policy = "Tenant:Write")]
     public async Task<ActionResult> UpdateItemStatus(Guid itemId, [FromBody] UpdateItemStatusRequest request, CancellationToken ct)
     {
         var item = await _context.OrderItems.FindAsync(new object[] { itemId }, ct);

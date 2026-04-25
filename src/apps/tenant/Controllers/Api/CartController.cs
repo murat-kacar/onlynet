@@ -4,8 +4,15 @@ using TabFlow.Shared.Application.Services;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
+// Customer-facing surface: cart manipulation is part of the customer
+// session flow. Authorisation is keyed off the customer session id
+// rather than ASP.NET Core Identity. The service-layer enforcement of
+// "the caller's cookie maps to this session" is tracked as a follow-up
+// to TD-0015 step 1; this attribute documents the *transport* level
+// decision.
 [ApiController]
 [Route("api/[controller]")]
+[AllowAnonymous]
 public class CartController : ControllerBase
 {
     private readonly ICartService _cartService;

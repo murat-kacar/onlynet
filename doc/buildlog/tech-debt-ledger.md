@@ -141,19 +141,37 @@ ledger; orphan `TD-` references are a documentation bug.
   every active table and every open ticket to the public internet.
   This is the highest-priority security gap currently in the ledger.
 - Payoff plan:
-  1. Decide per controller whether the surface is customer-facing
-     (Menu likely yes; everything else no) or staff-only.
-  2. For staff-only controllers add `[Authorize(Policy = "Tenant:Read")]`
-     or `[Authorize(Policy = "Tenant:Write")]` at the controller
-     level; selectively `[AllowAnonymous]` action-by-action where a
-     customer surface is intentionally exposed.
-  3. Split `OrdersController` into a staff-tier controller at
-     `/api/orders` and a public-tier controller at `/api/public/orders`
-     that enforces AC-030's session check and AC-031's QR
-     checkout-proof token (this also closes the routing half of
-     audit finding H-5).
-  4. Add an integration test per controller that asserts an anonymous
-     request to a known staff endpoint yields HTTP `401` or `403`.
+  1. (Done in PR #6 audit-driven change set) Decide per controller
+     whether the surface is customer-facing (Menu, Cart, and the
+     `open` / `get` actions on Sessions) or staff-only.
+  2. (Done in PR #6) Customer-facing controllers carry `[AllowAnonymous]`
+     at the controller level; staff-only controllers (`Kitchen`,
+     `Orders`, `Tables`) carry `[Authorize(Policy = "Tenant:Read")]`
+     at the controller level with action-level `[Authorize(Policy = "Tenant:Write")]`
+     overrides on mutating endpoints (e.g. `Kitchen.UpdateItemStatus`,
+     `Sessions.CloseSession`). `SessionsController` keeps a
+     restrictive default (`Tenant:Read`) and explicitly opts the
+     customer-tier actions out via `[AllowAnonymous]` to avoid the
+     ASP0026 gotcha (a controller-level `[AllowAnonymous]` would
+     silently override every action-level `[Authorize]`).
+  3. (Done in PR #6) Customer-tier order submission split out into a
+     dedicated `PublicOrdersController` mounted at `/api/public/orders`,
+     closing the routing half of audit finding H-5.
+  4. (Open) AC-030 (still-open customer session) and AC-031 (fresh QR
+     checkout-proof token) are still enforced inside
+     `IOrderService.SubmitAsync` — verify that path actually validates
+     both gates today, and add the missing gate(s) if it does not.
+     This is the second half of step 3; track as a follow-up TD if it
+     turns into significant work.
+  5. (Open) Cookie-auth challenge on API endpoints currently redirects
+     to `/login` (302) instead of returning `401` for AJAX / `Accept:
+     application/json` callers. Add an `OnRedirectToLogin` event
+     handler in `Program.cs` that returns 401 for API path prefixes.
+     Folded here so the test step below has a clean signal to assert.
+  6. (Open) Add an integration test per controller that asserts an
+     anonymous request to a known staff endpoint yields HTTP `401` or
+     `403`. Depends on TD-0010 (test taxonomy + fixture infrastructure
+     for `Tenant.Tests`).
 - Linked: AC-008, AC-030, AC-031, AC-043, AC-051,
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#rr-c2-tenant-api-controllers-expose-every-endpoint-anonymously)
 

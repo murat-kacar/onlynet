@@ -442,9 +442,9 @@ truth for the original 9 findings. The re-review additions go here.
 | RR-A1 (audit inventory incomplete) | Closed in this section | The inventory above (§11.1) supersedes Section 3. | 2026-04-25 |
 | RR-A2 (audit Section 6 wrong topics) | Closed in this section | Corrected table at §11.5 supersedes Section 6 conceptually; corrigendum note added in-place. | 2026-04-25 |
 | RR-A3 (no build, no test) | Closed in same change set as audit | The first `dotnet build` and `dotnet test` runs are recorded in the CHANGELOG `[Unreleased]` block dated 2026-04-25. | 2026-04-25 |
-| RR-C2 (tenant controllers anonymous) | Open | TD-0015 / next PR. | — |
+| RR-C2 (tenant controllers anonymous) | Closed in source (partial) | PR #6 same change set: customer-facing controllers (`Menu`, `Cart`) carry `[AllowAnonymous]` at the controller level; staff-only controllers (`Kitchen`, `Orders`, `Tables`) carry `[Authorize(Policy = "Tenant:Read")]` with action-level `[Authorize(Policy = "Tenant:Write")]` overrides on mutations. `SessionsController` defaults restrictive with explicit `[AllowAnonymous]` on customer actions to avoid the ASP0026 gotcha. New `PublicOrdersController` mounted at `/api/public/orders` closes the routing half of H-5. Token-validation half of AC-030 / AC-031 plus the cookie-auth redirect-to-login gotcha plus integration tests remain open under the rewritten TD-0015 payoff plan. | 2026-04-25 |
 | RR-C3 (tenant `InitialCreate` empty) | Open | TD-0003 (rewritten payoff plan). | — |
 | RR-H1 (AD-0004 not exercised) | Open | TD-0016. | — |
-| RR-H2 (`/api/public/orders` mis-routed) | Open | TD-0015 step 3 (folded). | — |
+| RR-H2 (`/api/public/orders` mis-routed) | Closed in source (partial) | PR #6 same change set: new `PublicOrdersController` at `/api/public/orders` carries the customer-tier `POST` action; the staff-tier read endpoints stay at `/api/orders`. The token-validation gates (AC-030 / AC-031) remain open under TD-0015 step 4. | 2026-04-25 |
 | RR-M1 (Turkish seed strings) | Open | TD-0003 step 3 (folded). | — |
 | RR-M2 (capability matrix Health row stale) | Closed in source | Same change set as this re-review; matrix row edited to `Implemented`. | 2026-04-25 |

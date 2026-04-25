@@ -93,6 +93,29 @@ AD-0011.
   Class, Data Controller, Data Processor, Test Tier, and English-First
   entries.
 
+### Security
+
+- **Tenant API controllers now fail closed.** All six tenant API
+  controllers were anonymous before this change. After this change:
+  - `KitchenController`, `OrdersController`, `TablesController` carry
+    `[Authorize(Policy = "Tenant:Read")]` at the controller level;
+    `Kitchen.UpdateItemStatus` and the previous `Orders.SubmitOrder`
+    raise to `Tenant:Write` where appropriate.
+  - `MenuController` and `CartController` carry an explicit
+    `[AllowAnonymous]` at the controller level (customer-facing).
+  - `SessionsController` keeps a restrictive default
+    (`Tenant:Read`); the customer actions `Open` and `GetSessionState`
+    opt out with `[AllowAnonymous]`; `CloseSession` raises to
+    `Tenant:Write` per AC-043. The default-restrictive ordering avoids
+    the ASP0026 trap.
+  - New `PublicOrdersController` at `/api/public/orders` carries the
+    customer-tier `POST` action that AC-030 and AC-031 require to be
+    routed at that path. The token-validation half of those ACs is
+    enforced inside `IOrderService.SubmitAsync` and tracked under
+    TD-0015 step 4.
+  Closes audit re-review finding RR-C2 in source (partial); closes
+  the routing half of RR-H2.
+
 ### Documentation
 
 - `/doc/buildlog/code-audit-2026-04-25.md` extended with **Section 11

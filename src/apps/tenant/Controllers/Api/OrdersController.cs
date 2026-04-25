@@ -6,24 +6,21 @@ using TabFlow.Shared.Infrastructure.Data;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
+// Staff-tier read surface for orders. The customer-tier write path
+// (`POST /api/public/orders`) lives in `PublicOrdersController` so
+// that the AC-030 / AC-031 gates (open session + fresh QR
+// checkout-proof) are enforced at the route boundary. Staff reads
+// of order detail and per-session order lists require Tenant:Read.
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Tenant:Read")]
 public class OrdersController : ControllerBase
 {
-    private readonly IOrderService _orderService;
     private readonly TenantDbContext _context;
 
-    public OrdersController(IOrderService orderService, TenantDbContext context)
+    public OrdersController(TenantDbContext context)
     {
-        _orderService = orderService;
         _context = context;
-    }
-
-    [HttpPost("submit")]
-    public async Task<ActionResult<SubmitOrderResult>> SubmitOrder([FromBody] SubmitOrderRequest request, CancellationToken ct)
-    {
-        var result = await _orderService.SubmitAsync(request, ct);
-        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
