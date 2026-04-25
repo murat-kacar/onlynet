@@ -95,6 +95,28 @@ AD-0011.
 
 ### Security
 
+- **Customer order submission gates tightened.** `OrderService.SubmitAsync`
+  now enforces three previously-missing halves of AC-030..AC-036 in the
+  same `SaveChangesAsync` transaction as the order insert:
+  - The checkout-proof token query rejects already-consumed tokens
+    (`IsConsumed == false`), tokens from other tables (`TableId ==
+    request.TableId`), and uses the entity's `IsExpired` property so
+    the comparison is always `DateTimeOffset` against
+    `DateTimeOffset.UtcNow` (the previous code mixed `DateTime`).
+  - On success the token is consumed via `checkoutToken.Consume()`
+    before `SaveChangesAsync`, which closes AC-032 (a checkout proof
+    cannot be reused).
+  - The originating session is closed and the token is consumed in
+    the same `SaveChangesAsync` so a duplicate submit cannot race
+    through between validation read and order write.
+  Two follow-up TDs opened for the remaining halves:
+  TD-0017 (device-binding cookie for AC-030) and TD-0018
+  (idempotency key persistence on the `Order` entity).
+- **Cookie-auth challenge returns 401/403 for API paths.** Both hosts
+  now short-circuit `OnRedirectToLogin` and `OnRedirectToAccessDenied`
+  for any request whose path starts with `/api/`, returning the
+  status code an AJAX caller expects. HTML routes continue to redirect
+  to `LoginPath` / `AccessDeniedPath`. Closes TD-0015 step 5.
 - **Tenant API controllers now fail closed.** All six tenant API
   controllers were anonymous before this change. After this change:
   - `KitchenController`, `OrdersController`, `TablesController` carry

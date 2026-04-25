@@ -73,6 +73,69 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0018 — Order idempotency key accepted on the wire but never persisted
+
+- Opened: 2026-04-25
+- Owner: TBD
+- Origin: TD-0015 step 4 follow-up. `SubmitOrderRequest` carries an
+  `IdempotencyKey` field that callers are expected to populate, and
+  the customer-tier flow (PR #6 `PublicOrdersController` →
+  `OrderService.SubmitAsync`) reads the field but never persists it,
+  never queries against it, and never returns the prior result on a
+  duplicate. The `Order` entity has no column for it.
+- Symptom: a customer who taps "submit" twice on a flaky network can
+  produce two distinct orders for the same cart against the same
+  checkout-proof window. The token-consumption fix in TD-0015 step 4
+  hides the worst case (the second submit fails on token reuse) but
+  the idempotency contract is still unmet on its own terms.
+- Risk if unpaid: occasional duplicate orders during connectivity
+  blips; staff rely on manual reconciliation; complaints surface as
+  "the customer was charged twice".
+- Payoff plan:
+  1. Add `IdempotencyKey` to the `Order` entity with a unique index
+     scoped to `(SessionId, IdempotencyKey)`.
+  2. In `OrderService.SubmitAsync`, look up the existing order by
+     `(SessionId, IdempotencyKey)` before any other gate; if found,
+     return its `SubmitOrderResult` instead of inserting again.
+  3. Add an integration test that issues two `SubmitAsync` calls with
+     the same `IdempotencyKey` and asserts a single `Order` row plus
+     a single `OrderResult`.
+- Linked: AC-031, AC-032,
+  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs)
+
+### [TRIAGE] TD-0017 — Customer session device-binding not enforced (AC-030 second half)
+
+- Opened: 2026-04-25
+- Owner: TBD
+- Origin: TD-0015 step 4 follow-up. AC-030 requires that
+  `POST /api/public/orders` carries a still-open customer session
+  *for the submitting device*. The token-consumption fix in TD-0015
+  step 4 covers the still-open half; the device half is not
+  enforced. The current `OrderService.SubmitAsync` validates that the
+  session id from the request payload exists and is open, but does
+  not check that the calling browser cookie corresponds to that
+  session id.
+- Symptom: a hostile network observer who captures the session id and
+  checkout-proof token off the wire (or via JS console access on a
+  shared device) can submit an order against another customer's
+  session before the token expires.
+- Risk if unpaid: AC-030 is half-implemented; the customer-session
+  model in `customer-session-model.md` is documented in source but
+  not enforced.
+- Payoff plan:
+  1. Issue a server-set, `HttpOnly`, table-scoped cookie when
+     `Sessions.OpenSession` succeeds. The cookie value MUST be
+     opaque (independent random GUID, not the session id).
+  2. Persist the cookie value alongside the customer session row.
+  3. In `OrderService.SubmitAsync`, accept an `HttpContext` parameter
+     (or read the cookie via an injected accessor) and reject
+     submissions where the cookie does not match the session row.
+  4. Add an integration test that submits with the wrong cookie and
+     asserts `403`.
+- Linked: AC-030, AC-036,
+  [`/doc/docs/explanation/concepts/customer-session-model.md`](/doc/docs/explanation/concepts/customer-session-model.md),
+  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs)
+
 ### [TRIAGE] TD-0016 — AD-0004 mixed render modes never exercised
 
 - Opened: 2026-04-25
@@ -141,9 +204,9 @@ ledger; orphan `TD-` references are a documentation bug.
   every active table and every open ticket to the public internet.
   This is the highest-priority security gap currently in the ledger.
 - Payoff plan:
-  1. (Done in PR #6 audit-driven change set) Decide per controller
-     whether the surface is customer-facing (Menu, Cart, and the
-     `open` / `get` actions on Sessions) or staff-only.
+  1. (Done in PR #6) Decide per controller whether the surface is
+     customer-facing (Menu, Cart, and the `open` / `get` actions on
+     Sessions) or staff-only.
   2. (Done in PR #6) Customer-facing controllers carry `[AllowAnonymous]`
      at the controller level; staff-only controllers (`Kitchen`,
      `Orders`, `Tables`) carry `[Authorize(Policy = "Tenant:Read")]`
@@ -157,17 +220,21 @@ ledger; orphan `TD-` references are a documentation bug.
   3. (Done in PR #6) Customer-tier order submission split out into a
      dedicated `PublicOrdersController` mounted at `/api/public/orders`,
      closing the routing half of audit finding H-5.
-  4. (Open) AC-030 (still-open customer session) and AC-031 (fresh QR
-     checkout-proof token) are still enforced inside
-     `IOrderService.SubmitAsync` — verify that path actually validates
-     both gates today, and add the missing gate(s) if it does not.
-     This is the second half of step 3; track as a follow-up TD if it
-     turns into significant work.
-  5. (Open) Cookie-auth challenge on API endpoints currently redirects
-     to `/login` (302) instead of returning `401` for AJAX / `Accept:
-     application/json` callers. Add an `OnRedirectToLogin` event
-     handler in `Program.cs` that returns 401 for API path prefixes.
-     Folded here so the test step below has a clean signal to assert.
+  4. (Done in PR #7) Verified that `OrderService.SubmitAsync` enforces
+     AC-030 (`session.IsOpen`) and AC-031 (`IsCheckoutProof` plus
+     expiration). Tightened the path with three additional checks:
+     (a) `IsConsumed == false` to reject token reuse (AC-032),
+     (b) `TableId == request.TableId` to reject tokens from other
+     tables (AC-031 freshness/same-table half), and (c) explicit
+     `checkoutToken.Consume()` call in the same `SaveChangesAsync`
+     transaction as the order insert. Two follow-up TDs opened for
+     the remaining halves: TD-0017 (device-binding cookie for AC-030)
+     and TD-0018 (idempotency key persistence on the `Order` entity).
+  5. (Done in PR #7) Cookie-auth challenge on API endpoints now
+     returns `401` / `403` instead of 302-redirecting to `/login`.
+     `Program.cs` in both hosts wires `OnRedirectToLogin` and
+     `OnRedirectToAccessDenied` events that short-circuit when the
+     request path starts with `/api/`; HTML routes still redirect.
   6. (Open) Add an integration test per controller that asserts an
      anonymous request to a known staff endpoint yields HTTP `401` or
      `403`. Depends on TD-0010 (test taxonomy + fixture infrastructure
