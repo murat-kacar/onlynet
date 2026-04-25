@@ -600,14 +600,23 @@ ledger; orphan `TD-` references are a documentation bug.
 - Payoff plan:
   1. (Done as part of the audit change set) Remove the lowercase
      `migrations/` tree.
-  2. Drop the existing `tabflow_platform` database on the next
-     bootstrap window.
-  3. Run `dotnet ef migrations add InitialCreate --context
-     PlatformDbContext --output-dir Migrations/Platform` to seed a
-     clean migration tree under the canonical Pascal directory.
-  4. Run `dotnet ef database update --context PlatformDbContext`
-     against the empty database to apply the new tree.
-  5. Verify `__ef_migrations_history` matches the model snapshot.
+  2. (Operator action, pending) Drop the existing `tabflow_platform`
+     database on the next bootstrap window.
+  3. (Done in PR #8) Ran `dotnet ef migrations add InitialCreate
+     --project src/infra/postgres/TabFlow.Migrations.csproj
+     --context PlatformDbContext --output-dir Migrations/Platform`.
+     The scaffolded migration is 361 lines with 38
+     `CreateTable` / `migrationBuilder` calls covering the full
+     `PlatformDbContext` model (Identity tables plus `tenants`,
+     `provisioning_jobs`, `tenant_database_connections`, etc.). The
+     model snapshot at `Migrations/Platform/PlatformDbContextModelSnapshot.cs`
+     is regenerated from scratch so the next `add` command produces a
+     correct delta.
+  4. (Operator action, pending) Run `dotnet ef database update
+     --context PlatformDbContext` against the empty database to apply
+     the new tree.
+  5. (Operator action, pending) Verify
+     `__ef_migrations_history` matches the model snapshot.
 - Linked: AD-0008, AD-0009, AC-082,
   [`/doc/docs/how-to/setup-migrations.md`](/doc/docs/how-to/setup-migrations.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-3-two-parallel-migration-trees-migrations-and-migrations)

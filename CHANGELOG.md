@@ -166,6 +166,24 @@ AD-0011.
   check endpoints row promoted from `Target` to `Implemented` and
   evidence list expanded.
 
+### Schema
+
+- **Platform `InitialCreate` migration regenerated.** Ran
+  `dotnet ef migrations add InitialCreate --project
+  src/infra/postgres/TabFlow.Migrations.csproj --context
+  PlatformDbContext --output-dir Migrations/Platform`. The previous
+  Platform migration tree was deleted in the same audit change set
+  that opened TD-0001; PlatformDbContext was therefore migrationless
+  on disk. The new scaffolded migration is 361 lines with 38
+  `CreateTable` / `migrationBuilder` calls covering the full Identity
+  + tenant-registry model. The accompanying
+  `PlatformDbContextModelSnapshot.cs` is regenerated so the next
+  `dotnet ef migrations add` produces a correct delta. Closes
+  TD-0001 step 3 in source. Steps 2, 4, 5 are operator actions
+  (drop the existing `tabflow_platform` database, run `database
+  update`, verify `__ef_migrations_history` matches the snapshot)
+  and remain pending.
+
 ### Added
 
 - `/health`, `/health/live`, and `/health/ready` endpoints on both
