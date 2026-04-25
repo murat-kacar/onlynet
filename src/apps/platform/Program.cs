@@ -6,10 +6,21 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using TabFlow.Platform.Cli;
 using TabFlow.Platform.Middleware;
 using TabFlow.Platform.Services;
 using TabFlow.Shared.Infrastructure.Data;
 using TabFlow.Shared.Infrastructure.Diagnostics;
+
+// CLI subcommands are dispatched before the web host starts so that
+// they do not have to load the Serilog file sink, the OpenTelemetry
+// pipeline, or the cookie-auth configuration. Each subcommand owns
+// its own minimal Generic Host with only the DI registrations it
+// needs (see /doc/docs/how-to/bootstrap-platform.md).
+if (args.Length > 0 && args[0] == "bootstrap-admin")
+{
+    return await BootstrapAdminCommand.RunAsync(args.Skip(1).ToArray());
+}
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
@@ -152,10 +163,12 @@ app.MapFallbackToPage("/_Host");
 
 Log.Information("TabFlow Platform started successfully");
 app.Run();
+return 0;
 }
 catch (Exception ex)
 {
     Log.Fatal(ex, "TabFlow Platform terminated unexpectedly");
+    return 1;
 }
 finally
 {

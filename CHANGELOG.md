@@ -166,6 +166,24 @@ AD-0011.
   check endpoints row promoted from `Target` to `Implemented` and
   evidence list expanded.
 
+### CLI
+
+- **`bootstrap-admin` command on the platform host (AD-0010).** The
+  platform `Program.cs` now dispatches to `TabFlow.Platform.Cli.BootstrapAdminCommand`
+  before the web host starts when `args[0] == "bootstrap-admin"`. The
+  command refuses to run on a populated `AspNetUsers` table, generates
+  a CSPRNG-backed 24-character password, calls
+  `UserManager.CreateAsync` so the hash uses Identity's current hasher,
+  ensures the `owner` role exists and assigns it, writes an
+  `auth.bootstrap` row to `platform_audit_log`, and prints the
+  generated password to stdout exactly once. Closes TD-0002 step 1 in
+  source. The operator-action half (running the command on a fresh
+  deployment per `/doc/docs/how-to/bootstrap-platform.md`) and the
+  force-redirect-through-`/change-password` follow-up remain pending.
+  Smoke check: `dotnet run --project src/apps/platform/TabFlow.Platform.csproj --no-build -- bootstrap-admin`
+  prints `usage: bootstrap-admin --email <address>` and returns
+  without starting the web host.
+
 ### Schema
 
 - **Platform `InitialCreate` migration regenerated.** Ran

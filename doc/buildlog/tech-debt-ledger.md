@@ -573,10 +573,35 @@ ledger; orphan `TD-` references are a documentation bug.
 - Risk if unpaid: a fresh deployment cannot be administered. Operators
   may regress by hand-inserting into `AspNetUsers`, which would
   re-create the AC-005 violation outside the migration tree.
-- Payoff plan: implement `bootstrap-admin` CLI on the platform host as
-  specified in AD-0010 and `/doc/docs/how-to/bootstrap-platform.md`.
+- Payoff plan:
+  1. (Done in PR #9) Implement `bootstrap-admin` CLI on the platform
+     host. The platform `Program.cs` dispatches to
+     `TabFlow.Platform.Cli.BootstrapAdminCommand.RunAsync` before the
+     web host starts when `args[0] == "bootstrap-admin"`. The command:
+     - parses `--email <address>`; prints usage and returns exit 1 if
+       missing;
+     - builds a minimal Generic Host with `PlatformDbContext`,
+       Identity for `IdentityUser<Guid>` / `IdentityRole<Guid>`, and
+       `IPlatformAuditService`;
+     - refuses to run if any user already exists in `AspNetUsers`
+       (returns exit 2);
+     - generates a 24-character CSPRNG password from a 73-char
+       alphabet (~148 bits of entropy);
+     - calls `UserManager.CreateAsync` so the password hash uses the
+       framework's current `IPasswordHasher` defaults;
+     - ensures the `owner` role exists and assigns it;
+     - writes an `auth.bootstrap` row to `platform_audit_log`;
+     - prints the password to stdout exactly once and returns 0.
+  2. (Operator action, pending) Run the command once on a fresh
+     deployment per the procedure in
+     [`/doc/docs/how-to/bootstrap-platform.md`](/doc/docs/how-to/bootstrap-platform.md).
+  3. (Open) Force-redirect through `/change-password` on the first
+     authenticated request after bootstrap. The Identity store
+     supports the flag; the redirect middleware is not yet wired.
+     Track as a follow-up under `bootstrap-platform.md` step 6.
 - Linked: AD-0010, AC-005, AC-006,
   [`/doc/docs/how-to/bootstrap-platform.md`](/doc/docs/how-to/bootstrap-platform.md),
+  [`/src/apps/platform/Cli/BootstrapAdminCommand.cs`](/src/apps/platform/Cli/BootstrapAdminCommand.cs),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-1-migration-seeds-the-first-platform-admin-into-aspnetusers)
 
 ### [TRIAGE] TD-0001 — Hand-applied platform schema instead of EF Core migration
