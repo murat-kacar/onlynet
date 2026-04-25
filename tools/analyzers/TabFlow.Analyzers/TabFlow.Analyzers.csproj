@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Roslyn analysers MUST target netstandard2.0 because the analyser
+    runs inside the host compiler process, which loads its analyser
+    assemblies into a netstandard2.0-compatible context regardless of
+    the target framework of the project being analysed.
+
+    See: https://learn.microsoft.com/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!--
+      Analyser host expects net6.0+ Roslyn semantics; relax XML doc
+      and pin analyser version locally.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!--
+      RS2008: enable analyzer release tracking. The convention
+      requires AnalyzerReleases.Shipped.md / .Unshipped.md files
+      that ship version-by-version diagnostic IDs. Single-rule
+      project today; release tracking will be enabled the day a
+      second rule is added (TD-0009 follow-up).
+    -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp"
+                      PrivateAssets="all" />
+  </ItemGroup>
+</Project>

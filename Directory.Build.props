@@ -103,12 +103,25 @@
     <NoWarn>$(NoWarn);CA1001</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Label="GlobalAnalyzers">
+  <ItemGroup Label="GlobalAnalyzers" Condition="'$(MSBuildProjectName)' != 'TabFlow.Analyzers'">
     <!--
       Shared analyzers across every project. Project-specific analyzers
       are added to the project file directly. The version is pinned in
       /Directory.Packages.props per Central Package Management.
+
+      The condition above prevents the analyser project from referencing
+      itself; without it MSBuild produces a self-cycle.
     -->
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+
+    <!--
+      First-party English-first identifier analyser (TF0001) per
+      AD-0015 / TD-0009. Wired as an Analyzer ItemType so the
+      compiled assembly is loaded by the host compiler at build time
+      but not linked into the consumer's runtime closure.
+    -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)tools/analyzers/TabFlow.Analyzers/TabFlow.Analyzers.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
   </ItemGroup>
 </Project>

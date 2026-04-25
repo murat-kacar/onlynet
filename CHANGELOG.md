@@ -211,6 +211,28 @@ AD-0011.
   prints `usage: bootstrap-admin --email <address>` and returns
   without starting the web host.
 
+### Tools
+
+- **First-party Roslyn analyser `TF0001` enforces AD-0015 (TD-0009).**
+  New project at `/tools/analyzers/TabFlow.Analyzers/` (netstandard2.0,
+  consumes `Microsoft.CodeAnalysis.CSharp` 4.13.0) ships
+  `EnglishFirstIdentifierAnalyzer`: any identifier whose name
+  contains a code unit greater than `0x7F` raises a build-time
+  warning, which `TreatWarningsAsErrors` promotes to a hard error.
+  Compiler-generated names (those starting with `<` or `$`) are
+  skipped so backing fields and lambda closures do not false-fire.
+  `Directory.Build.props` wires the analyser into every consumer
+  project via an `OutputItemType="Analyzer"` ProjectReference,
+  guarded by a `'$(MSBuildProjectName)' != 'TabFlow.Analyzers'`
+  condition that prevents the analyser project from referencing
+  itself. Smoke-checked: a temporary file with a Turkish identifier
+  produced two `error TF0001` lines (one for the property, one for
+  its compiler-generated getter) and the build returned to 0/0
+  after the file was removed. Closes TD-0009 steps 1–3 in source;
+  step 4 (Microsoft.CodeAnalysis.Testing xUnit suite) and step 5
+  (`AnalyzerReleases.{Shipped,Unshipped}.md` per RS2008) remain
+  open.
+
 ### Tests
 
 - **Test taxonomy enforced via xUnit `[Trait("Category", T)]`

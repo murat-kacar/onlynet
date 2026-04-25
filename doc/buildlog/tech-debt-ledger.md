@@ -477,10 +477,42 @@ ledger; orphan `TD-` references are a documentation bug.
   by CI.
 - Risk if unpaid: AD-0015 lives only in review discipline, not in
   tooling; first violation is harder to revert than to prevent.
-- Payoff plan: author a Roslyn analyzer or adopt one that flags
-  non-ASCII identifiers; wire it into `Directory.Build.props`.
+- Payoff plan:
+  1. (Done in PR #14) Authored first-party Roslyn analyser
+     `TabFlow.Analyzers.EnglishFirstIdentifierAnalyzer` (rule
+     `TF0001`). The analyser registers a symbol action across
+     `NamedType`, `Method`, `Property`, `Field`, `Event`, and
+     `Parameter` symbol kinds; flags any identifier whose name
+     contains a code unit `> 0x7F`; skips compiler-generated names
+     (those starting with `<` or `$`). Default severity is `Warning`
+     which `TreatWarningsAsErrors=true` (Directory.Build.props)
+     promotes to a build break.
+  2. (Done in PR #14) New project at
+     `/tools/analyzers/TabFlow.Analyzers/` targeting `netstandard2.0`
+     (Roslyn analyser convention). `Directory.Build.props` references
+     it as an `OutputItemType="Analyzer"` ProjectReference under a
+     `'$(MSBuildProjectName)' != 'TabFlow.Analyzers'` condition so
+     the analyser project does not reference itself.
+  3. (Done in PR #14) Smoke check confirmed: a temporary file with
+     `class deneme { public string açıklama => "x"; }` in
+     `Shared.Tests` produced two `error TF0001` lines (one for the
+     property, one for its compiler-generated `get_açıklama`); the
+     temporary file was then removed and `dotnet build` returned to
+     0 / 0.
+  4. (Open) Add a `Microsoft.CodeAnalysis.Testing` xUnit suite under
+     `tests/Analyzers.Tests/` covering positive (Turkish identifier),
+     negative (English identifier), and edge cases (compiler-generated
+     names, generic type parameters). Until that suite ships, the
+     guarantee that TF0001 does not regress lives in the smoke check
+     above.
+  5. (Open) Author and ship `AnalyzerReleases.Shipped.md` /
+     `AnalyzerReleases.Unshipped.md` per RS2008 the day a second
+     diagnostic ID is added; `RS2008` is currently suppressed in
+     `TabFlow.Analyzers.csproj` since the project ships a single
+     rule.
 - Linked: AD-0015, AC-117, AC-118, AC-119,
-  [`/.editorconfig`](/.editorconfig)
+  [`/.editorconfig`](/.editorconfig),
+  [`/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs`](/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs)
 
 ### [TRIAGE] TD-0008 — Retention sweep jobs not implemented
 

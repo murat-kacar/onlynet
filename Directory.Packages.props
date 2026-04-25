@@ -37,6 +37,13 @@
   <!-- Analyzers (referenced from /Directory.Build.props) -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <!--
+      Roslyn analyser SDK consumed by /tools/analyzers/TabFlow.Analyzers.
+      Pinned to a 4.x release matching the .NET 10 SDK's Roslyn
+      compiler version; bumping this requires re-validating that
+      generated TF* diagnostics still surface in the IDE.
+    -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
   </ItemGroup>
   <!-- Testing -->
   <ItemGroup>
