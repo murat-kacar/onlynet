@@ -92,16 +92,25 @@ ledger; orphan `TD-` references are a documentation bug.
   blips; staff rely on manual reconciliation; complaints surface as
   "the customer was charged twice".
 - Payoff plan:
-  1. Add `IdempotencyKey` to the `Order` entity with a unique index
-     scoped to `(SessionId, IdempotencyKey)`.
-  2. In `OrderService.SubmitAsync`, look up the existing order by
-     `(SessionId, IdempotencyKey)` before any other gate; if found,
-     return its `SubmitOrderResult` instead of inserting again.
-  3. Add an integration test that issues two `SubmitAsync` calls with
-     the same `IdempotencyKey` and asserts a single `Order` row plus
-     a single `OrderResult`.
+  1. (Done in PR #12) Added `IdempotencyKey` (`string`, required) to
+     the `Order` entity with `[Index(nameof(SessionId),
+     nameof(IdempotencyKey), IsUnique = true)]`. The unique scope is
+     the customer session so a different session can reuse the same
+     key without collision. A backing migration
+     `AddOrderIdempotencyKey` adds the column and the unique index.
+  2. (Done in PR #12) `OrderService.SubmitAsync` now looks up
+     `(SessionId, IdempotencyKey)` after the device-cookie gate but
+     before the checkout-proof gate; if a matching order exists it
+     returns the original `SubmitOrderResult` instead of inserting a
+     second one. The unique index is the durable guard; the lookup
+     is the cheap fast-path.
+  3. (Open) Add an integration test that issues two `SubmitAsync`
+     calls with the same `IdempotencyKey` and asserts a single
+     `Order` row plus a single `OrderResult`. Depends on TD-0010
+     fixtures.
 - Linked: AC-031, AC-032,
-  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs)
+  [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs),
+  [`/src/packages/shared-dotnet/Domain/Entities/Tenant/Order.cs`](/src/packages/shared-dotnet/Domain/Entities/Tenant/Order.cs)
 
 ### [TRIAGE] TD-0017 — Customer session device-binding not enforced (AC-030 second half)
 

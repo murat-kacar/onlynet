@@ -96,6 +96,7 @@ public class OrderService : IOrderService
             request.TableId,
             request.SessionId,
             request.TicketId,
+            request.IdempotencyKey,
             orderItems,
             request.Note);
         _context.Orders.Add(order);

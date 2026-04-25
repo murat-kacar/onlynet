@@ -95,6 +95,17 @@ AD-0011.
 
 ### Security
 
+- **Order idempotency key persisted with a unique index (TD-0018).**
+  `Order` now carries an `IdempotencyKey` column with
+  `[Index(nameof(SessionId), nameof(IdempotencyKey), IsUnique = true)]`;
+  a backing migration `AddOrderIdempotencyKey` adds the column and the
+  unique index. `OrderService.SubmitAsync` performs an early lookup on
+  `(SessionId, IdempotencyKey)`; if a previous order matches, the
+  service returns the original `SubmitOrderResult` instead of inserting
+  a second one. Duplicate `POST /api/public/orders` calls (e.g. a
+  customer tapping Submit twice on a flaky network) now collapse to a
+  single order row. Closes TD-0018 steps 1–2 in source; step 3
+  (integration test) remains open and depends on TD-0010 fixtures.
 - **Customer session device-binding enforced (TD-0017, AC-030 second
   half).** A successful `POST /api/sessions/open` now sets an
   HttpOnly cookie named `tabflow_session_device` carrying an opaque
