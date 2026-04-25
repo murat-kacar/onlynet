@@ -542,18 +542,28 @@ ledger; orphan `TD-` references are a documentation bug.
   is real. AC-082 ("Every tenant database migration MUST be applied
   via committed EF Core migrations") is violated end-to-end.
 - Payoff plan:
-  1. Drop the empty `InitialCreate` and the orphan `SeedInitialData`
-     migration files.
-  2. Re-run `dotnet ef migrations add InitialCreate --context
-     TenantDbContext --output-dir Migrations/Tenant` so EF Core
-     scaffolds a real `Up` body from the model.
-  3. If demo seed data is still wanted, add a separate `SeedDemoData`
-     migration **after** `InitialCreate` and translate the seed values
-     to English (see RR-M1 — the existing seed contains the Turkish
-     strings "Yemekler", "İçecekler", "Tatlılar", "Köfte",
-     "Lahmacun", and "Dana eti, marul, domates", which is at minimum
-     a borderline AD-0015 signal).
-  4. Have the worker apply the migration set during `tenant.create`.
+  1. (Done in PR #10) Dropped the empty `InitialCreate` and the
+     orphan `SeedInitialData` migration files plus the stale
+     `Migrations/Tenant/TenantDbContextModelSnapshot.cs`. The
+     Turkish-string seed (RR-M1) was removed in the same step; the
+     model is the single source of truth for the next scaffolded
+     migration.
+  2. (Done in PR #10) Ran `dotnet ef migrations add InitialCreate
+     --project src/infra/postgres/TabFlow.Migrations.csproj
+     --context TenantDbContext --output-dir Migrations/Tenant`. The
+     scaffolded migration is 586 lines with 64 `CreateTable` /
+     `migrationBuilder` calls covering Identity, customer-session,
+     QR-token, table, station, menu, cart, order, bill, audit-log,
+     and event-bus tables. The accompanying snapshot is regenerated.
+  3. (Open, deferred) If demo seed data is reintroduced later, add a
+     separate `SeedDemoData` migration **after** `InitialCreate` and
+     keep all internal contract values English-only (AD-0015,
+     AC-118). Until that decision is made deliberately the tenant
+     database starts empty.
+  4. (Operator action, pending) Have the worker apply the migration
+     set during `tenant.create`. The provisioning worker should call
+     `MigrateAsync()` against a fresh tenant database; the previous
+     ad-hoc tooling has been removed.
 - Linked: AD-0008, AD-0009, AD-0015, AC-082,
   [`/doc/docs/how-to/setup-migrations.md`](/doc/docs/how-to/setup-migrations.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#rr-c3-tenant-initialcreate-up-body-is-empty)

@@ -186,6 +186,27 @@ AD-0011.
 
 ### Schema
 
+- **Tenant `InitialCreate` migration regenerated, Turkish seed
+  removed.** The previous Tenant migration tree contained two files:
+  `20260425144800_InitialCreate.cs` had an empty `Up` body
+  (zero `CreateTable` calls — RR-C3) and `20260425144829_SeedInitialData.cs`
+  ran raw `INSERT INTO "categories"` etc. against tables that the
+  empty `InitialCreate` never produced (RR-M1 also flagged that the
+  seed values were Turkish: "Yemekler", "İçecekler", "Tatlılar",
+  "Köfte", "Lahmacun", "Dana eti, marul, domates"). All four files
+  plus the stale snapshot were dropped, then `dotnet ef migrations add
+  InitialCreate --project src/infra/postgres/TabFlow.Migrations.csproj
+  --context TenantDbContext --output-dir Migrations/Tenant`. The new
+  scaffolded migration is 586 lines with 64 `CreateTable` /
+  `migrationBuilder` calls covering Identity + customer-session +
+  QR-token + table + station + menu + cart + order + bill + audit-log
+  tables. The tenant database now starts empty by design; reintroducing
+  demo seed data is a deliberate future decision and any reintroduced
+  values MUST be English (AD-0015, AC-118). Closes TD-0003 steps 1
+  and 2 in source; step 3 (English demo seed) is deferred; step 4
+  (worker `MigrateAsync` on `tenant.create`) is an operator-side wiring
+  task. Also closes audit re-review finding RR-C3 in source and the
+  RR-M1 Turkish-string flag.
 - **Platform `InitialCreate` migration regenerated.** Ran
   `dotnet ef migrations add InitialCreate --project
   src/infra/postgres/TabFlow.Migrations.csproj --context

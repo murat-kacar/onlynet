@@ -2,6 +2,15 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>TabFlow.Migrations</AssemblyName>
+    <!--
+      Generated migration code (`dotnet ef migrations add`) emits
+      inline string[] arguments to MigrationBuilder helpers that the
+      analyser flags as CA1861. The migration runs once per database;
+      the "called repeatedly" premise of the rule does not apply.
+      Suppressing here scopes the relaxation to generated code only;
+      production code in /src/apps continues to honour CA1861.
+    -->
+    <NoWarn>$(NoWarn);CA1861</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">

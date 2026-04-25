@@ -9,10 +9,10 @@ using TabFlow.Shared.Infrastructure.Data;
 
 #nullable disable
 
-namespace TabFlow.Migrations.Migrations
+namespace TabFlow.Migrations.Migrations.Tenant
 {
     [DbContext(typeof(TenantDbContext))]
-    [Migration("20260425144800_InitialCreate")]
+    [Migration("20260425213609_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
