@@ -1,0 +1,126 @@
+# Pull-request CI workflow.
+# Per AD-0013 (GitHub Actions as CI platform).
+# Required status checks: build, test, format, markdown-lint, dead-link, dep-audit.
+
+name: pr
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Build (Release, warnings as errors)
+        run: dotnet build --configuration Release --no-restore /warnaserror
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: [build]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run tests
+        env:
+          ConnectionStrings__Platform: "Host=localhost;Port=5432;Database=tabflow_platform_test;Username=postgres;Password=postgres"
+        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/test-results.trx'
+
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes
+
+  markdown-lint:
+    name: markdown-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            doc/**/*.md
+            *.md
+
+  dead-link:
+    name: dead-link
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lychee link check
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: >-
+            --no-progress
+            --exclude-loopback
+            --exclude-all-private
+            'doc/**/*.md'
+            '*.md'
+          fail: true
+
+  dep-audit:
+    name: dep-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: NuGet vulnerability audit
+        run: dotnet list package --vulnerable --include-transitive 2>&1 | tee audit.log
+      - name: Fail on vulnerabilities
+        run: |
+          if grep -E "Critical|High" audit.log; then
+            echo "::error::Vulnerable dependencies detected"
+            exit 1
+          fi

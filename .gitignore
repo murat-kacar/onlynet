@@ -15,6 +15,11 @@
 !.github/
 !.gitignore
 !.gitattributes
+!.editorconfig
+
+# Whitelist root-level extensionless project files
+!/LICENSE
+!/NOTICE
 
 # Documentation
 !*.md

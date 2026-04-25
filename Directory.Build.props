@@ -1,21 +1,105 @@
 <Project>
-  <PropertyGroup>
+  <!--
+    Repository-wide MSBuild defaults for every project under /src and
+    /tests. Per AD-0014: this file plus /.editorconfig encodes the
+    coding standard. Changes follow the ADR amendment rule.
+  -->
+
+  <PropertyGroup Label="TargetFramework">
     <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>preview</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
-  
-  <PropertyGroup>
+
+  <PropertyGroup Label="Quality">
+    <!--
+      Warnings are errors. AD-0014 makes this load-bearing.
+      The analyzer level below is intentionally `Recommended`, not `All`,
+      while TD-0014 (in /doc/buildlog/tech-debt-ledger.md) ratchets the
+      existing baseline back up to `All`. Do not relax this further
+      without amending TD-0014.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+
+    <!-- Roslyn analysers at the latest level for the SDK. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <!--
+      Code-style enforcement (IDE* rules) is off until TD-0014 sweeps
+      the existing baseline. The .editorconfig still informs editors;
+      this flag only controls build-time enforcement.
+    -->
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+
+    <!-- NuGet vulnerability audit during restore. -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+
+    <!-- Generate documentation file so XML doc warnings surface. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      CS1591: missing XML doc on public member. Surfaced everywhere by
+              GenerateDocumentationFile but not actionable until a doc
+              sweep TD lands.
+      CA1716: identifier conflicts with a reserved keyword in another
+              CLR language (VB.NET, F#). TabFlow is a single-language
+              C# codebase with no multi-language consumers; renaming
+              `TabFlow.Shared.*` to satisfy VB.NET reserved words has
+              negative value.
+      CA1848 + CA1873: prefer `LoggerMessage` delegate. Performance
+              optimisation that matters at high log volumes; TabFlow
+              today uses ILogger ergonomics. Tracked by TD-0014 ratchet.
+      CA1305 + CA1304 + CA1311: culture-aware string conversion.
+              Internal log/audit paths use invariant by convention; a
+              future TD will sweep externally-visible call sites.
+      CA1822: member can be made static. Style preference; not safe to
+              auto-rewrite without checking DI/test substitution.
+      CA1816: GC.SuppressFinalize in Dispose. TabFlow has no
+              finalizers; rule is irrelevant until one is added.
+      CA1707: identifiers may not contain underscores. xUnit / MSTest
+              convention is `Method_Scenario_Expected` for test method
+              names; test taxonomy
+              (/doc/docs/explanation/concepts/test-taxonomy.md) keeps
+              that convention. Production code carries no underscored
+              identifiers; this NoWarn is therefore safe globally.
+    -->
+    <NoWarn>$(NoWarn);CS1591;CA1716;CA1848;CA1873;CA1305;CA1304;CA1311;CA1822;CA1816;CA1707</NoWarn>
+
+    <!-- Deterministic build for reproducibility. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Identity">
     <Company>TabFlow</Company>
     <Product>TabFlow Multi-Tenant Platform</Product>
-    <Copyright>Copyright (c) TabFlow 2026</Copyright>
+    <Copyright>Copyright (c) 2026 TabFlow Contributors. Licensed under Apache-2.0.</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
+
+  <PropertyGroup Label="ReleaseConfig" Condition="'$(Configuration)' == 'Release'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <PropertyGroup Label="TestProjects" Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <!-- Test projects relax XML doc requirement. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup Label="GlobalAnalyzers">
+    <!--
+      Shared analyzers across every project. Project-specific analyzers
+      are added to the project file directly. The version is pinned in
+      /Directory.Packages.props per Central Package Management.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

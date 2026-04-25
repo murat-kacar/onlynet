@@ -1,0 +1,77 @@
+# Main-branch CI workflow.
+# Per AD-0013. Runs the full PR set plus capability-matrix consistency
+# and a release-gate dry run.
+
+name: main
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+jobs:
+  pr-suite:
+    name: pr-suite
+    uses: ./.github/workflows/pr.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
+  consistency:
+    name: consistency
+    runs-on: ubuntu-latest
+    needs: [pr-suite]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify ID tables resolve
+        # Surface IDs (P-/T-/D-), ADR IDs (AD-NNNN), AC IDs (AC-NNN),
+        # SLI names, and TD IDs must each have a corresponding
+        # definition. Orphan references fail the build.
+        run: |
+          set -euo pipefail
+          missing=0
+          for td in $(grep -rhoE 'TD-[0-9]{4}' --include='*.md' --include='*.cs' . 2>/dev/null | sort -u); do
+            if ! grep -q "$td" doc/buildlog/tech-debt-ledger.md; then
+              echo "::error::Orphan reference $td (not in ledger)"
+              missing=$((missing+1))
+            fi
+          done
+          for ad in $(grep -rhoE 'AD-[0-9]{4}' --include='*.md' . 2>/dev/null | sort -u); do
+            if ! grep -q "## $ad" doc/docs/reference/architecture/decisions.md; then
+              echo "::error::Orphan ADR reference $ad"
+              missing=$((missing+1))
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::$missing orphan reference(s) found"
+            exit 1
+          fi
+
+  release-gate-dry-run:
+    name: release-gate-dry-run
+    runs-on: ubuntu-latest
+    needs: [pr-suite, consistency]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify CHANGELOG has [Unreleased] block
+        run: |
+          if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+            echo "::error::CHANGELOG.md is missing the [Unreleased] heading"
+            exit 1
+          fi
+      - name: Verify no Proposed ADR with content body claiming Accepted
+        run: |
+          # Light-touch sanity: every ADR must have a Status section.
+          adr_count=$(grep -c '^## AD-' doc/docs/reference/architecture/decisions.md)
+          status_count=$(awk '/^## AD-/{adr=1; next} adr && /^### Status/{print; adr=0}' doc/docs/reference/architecture/decisions.md | wc -l)
+          if [ "$adr_count" -ne "$status_count" ]; then
+            echo "::error::ADR count ($adr_count) does not match Status section count ($status_count)"
+            exit 1
+          fi

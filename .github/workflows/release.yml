@@ -1,0 +1,107 @@
+# Release workflow.
+# Per AD-0013. Triggered by a tag matching v*.*.* (SemVer per AD-0011).
+# Runs the full release gate, then publishes artefacts and a GitHub
+# Release using the matching CHANGELOG section.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+jobs:
+  gate:
+    name: gate
+    uses: ./.github/workflows/main.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    needs: [gate]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify CHANGELOG has the matching version section
+        run: |
+          tag="${{ steps.version.outputs.tag }}"
+          version="${{ steps.version.outputs.version }}"
+          if ! grep -qE "^## \[${version}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section for [$version]"
+            echo "::error::Add a section before tagging: ## [$version] - $(date +%F)"
+            exit 1
+          fi
+
+      - name: Publish platform host
+        run: dotnet publish src/apps/platform/TabFlow.Platform.Host.csproj
+          --configuration Release
+          --output ./artifacts/platform
+          /p:Version=${{ steps.version.outputs.version }}
+
+      - name: Publish tenant host
+        run: dotnet publish src/apps/tenant/TabFlow.Tenant.Host.csproj
+          --configuration Release
+          --output ./artifacts/tenant
+          /p:Version=${{ steps.version.outputs.version }}
+
+      - name: Publish platform worker
+        run: dotnet publish src/apps/platform-worker/TabFlow.Platform.Worker.csproj
+          --configuration Release
+          --output ./artifacts/platform-worker
+          /p:Version=${{ steps.version.outputs.version }}
+
+      - name: Package artefacts
+        run: |
+          set -euo pipefail
+          mkdir -p ./artifacts/dist
+          tar -czf ./artifacts/dist/tabflow-platform-${{ steps.version.outputs.version }}.tar.gz -C ./artifacts/platform .
+          tar -czf ./artifacts/dist/tabflow-tenant-${{ steps.version.outputs.version }}.tar.gz -C ./artifacts/tenant .
+          tar -czf ./artifacts/dist/tabflow-platform-worker-${{ steps.version.outputs.version }}.tar.gz -C ./artifacts/platform-worker .
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" { capture=1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          {
+            echo 'notes<<EOF'
+            cat release-notes.md
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}
+          files: |
+            artifacts/dist/*.tar.gz
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}

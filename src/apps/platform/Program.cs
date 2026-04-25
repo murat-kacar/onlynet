@@ -1,14 +1,29 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Serilog;
 using TabFlow.Platform.Middleware;
 using TabFlow.Platform.Services;
 using TabFlow.Shared.Infrastructure.Data;
+using TabFlow.Shared.Infrastructure.Diagnostics;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.Console()
+    .WriteTo.File("/var/log/tabflow/platform-.log", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+try
+{
+    Log.Information("Starting TabFlow Platform");
+
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<PlatformDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PlatformDb")));
@@ -41,6 +56,16 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation());
 
+// Health checks per /doc/docs/reference/architecture/health-checks.md.
+// /health/live carries no probes (liveness only). /health/ready runs
+// the probe set tagged "ready". Additional probes (migration head,
+// worker heartbeat) are tracked under TD-0013's payoff plan.
+string[] readyTag = ["ready"];
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<PlatformDbContext>(
+        name: "platform-db:ping",
+        tags: readyTag);
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
@@ -72,8 +97,39 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// AC-101 requires `/health`, `/health/live`, and `/health/ready`.
+// `/health` is registered as an alias for liveness (same handler, no
+// probes) so that callers using the bare path also receive a useful
+// answer; the architectural spec at
+// /doc/docs/reference/architecture/health-checks.md only mandates the
+// two namespaced endpoints. Keep the three in sync.
+var livenessOptions = new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = HealthJsonWriter.Write,
+};
+var readinessOptions = new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = HealthJsonWriter.Write,
+};
+
+app.MapHealthChecks("/health", livenessOptions).AllowAnonymous();
+app.MapHealthChecks("/health/live", livenessOptions).AllowAnonymous();
+app.MapHealthChecks("/health/ready", readinessOptions).AllowAnonymous();
+
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
+Log.Information("TabFlow Platform started successfully");
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "TabFlow Platform terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

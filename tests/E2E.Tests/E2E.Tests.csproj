@@ -10,6 +10,8 @@
     <PackageReference Include="bunit" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Playwright" />
+    <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\apps\tenant\TabFlow.Tenant.csproj" />

@@ -3,6 +3,16 @@
     <OutputType>Library</OutputType>
     <AssemblyName>TabFlow.Shared</AssemblyName>
   </PropertyGroup>
+  <!--
+    Framework reference for ASP.NET Core types (HttpContext, health
+    check abstractions) consumed by Infrastructure/Diagnostics/
+    HealthJsonWriter. Both hosts already pull Microsoft.AspNetCore.App
+    via their Web SDK; declaring the reference here keeps the shared
+    project transparent without forcing a Web SDK on it.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
