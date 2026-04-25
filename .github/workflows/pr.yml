@@ -54,16 +54,25 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Run tests
+      # Unit tier per /doc/docs/explanation/concepts/test-taxonomy.md.
+      # No file system, no network, no database. Runs first so a
+      # broken unit test cancels the slower integration step.
+      - name: Run unit tests
+        run: dotnet test --configuration Release --no-build --filter "Category=Unit" --logger "trx;LogFileName=test-results-unit.trx"
+      # Integration tier. Targets the matrix's PostgreSQL service.
+      # E2E tier (Playwright + headless Chromium) is intentionally
+      # excluded; it runs as a separate workflow once the browser
+      # bootstrap step lands (TD-0010 follow-up).
+      - name: Run integration tests
         env:
           ConnectionStrings__Platform: "Host=localhost;Port=5432;Database=tabflow_platform_test;Username=postgres;Password=postgres"
-        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test --configuration Release --no-build --filter "Category=Integration" --logger "trx;LogFileName=test-results-integration.trx"
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: '**/test-results.trx'
+          path: '**/test-results-*.trx'
 
   format:
     name: format

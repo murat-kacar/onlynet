@@ -92,6 +92,15 @@
     <!-- Test projects relax XML doc requirement. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
+    <!--
+      CA1001: type owns disposable fields but is not IDisposable.
+              xUnit's IAsyncLifetime is the canonical disposal hook
+              for test classes that own a WebApplicationFactory or
+              similar; the analyser does not yet recognise it as
+              equivalent to IDisposable. Suppression scoped to test
+              projects only.
+    -->
+    <NoWarn>$(NoWarn);CA1001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="GlobalAnalyzers">

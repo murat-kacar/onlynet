@@ -7,6 +7,11 @@ using Xunit;
 
 namespace Tenant.Tests.Controllers;
 
+// Integration tier per /doc/docs/explanation/concepts/test-taxonomy.md.
+// Uses WebApplicationFactory<Program> so the full ASP.NET Core
+// pipeline runs and EF Core opens a real connection. Excluded from
+// the Unit fast-path in CI.
+[Trait("Category", "Integration")]
 public class OrdersControllerTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;

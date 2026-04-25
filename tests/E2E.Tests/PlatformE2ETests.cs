@@ -1,18 +1,25 @@
+extern alias PlatformHost;
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Playwright;
 using Xunit;
 
 namespace TabFlow.E2E.Tests;
 
+// E2E tier per /doc/docs/explanation/concepts/test-taxonomy.md.
+// Spins up the platform host through WebApplicationFactory and a
+// real headless Chromium via Playwright. Excluded from both Unit
+// and Integration fast-paths in CI.
+[Trait("Category", "E2E")]
 public class PlatformE2ETests : IAsyncLifetime
 {
-    private WebApplicationFactory<Program>? _factory;
+    private WebApplicationFactory<PlatformHost::Program>? _factory;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
 
     public async Task InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>();
+        _factory = new WebApplicationFactory<PlatformHost::Program>();
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {

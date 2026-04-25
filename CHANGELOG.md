@@ -211,6 +211,39 @@ AD-0011.
   prints `usage: bootstrap-admin --email <address>` and returns
   without starting the web host.
 
+### Tests
+
+- **Test taxonomy enforced via xUnit `[Trait("Category", T)]`
+  (TD-0010).** Every test class now carries a class-level trait that
+  routes it into one of the four tiers documented at
+  `/doc/docs/explanation/concepts/test-taxonomy.md#xunit-trait-convention`:
+  `Unit`, `Integration`, `E2E`, `Smoke`. Existing tests classified:
+  `HealthJsonWriterTests` → Unit (8 tests, all passing);
+  `CartServiceTests`, `CustomerSessionServiceTests`,
+  `OrdersControllerTests` → Integration (PostgreSQL-bound today);
+  `PlatformE2ETests`, `TenantE2ETests` → E2E.
+- **`tests/E2E.Tests/` is now part of `TabFlow.sln`.** It was
+  silently absent from every CI build until this commit; the
+  re-review's RR-A1 / TD-0010 follow-up flagged it. `Microsoft.Playwright`
+  1.49.0 added to `Directory.Packages.props`; legacy `Playwright`
+  package reference removed. Both hosts now expose `public partial
+  class Program {}` so the E2E project can resolve the dual-host
+  collision via `extern alias PlatformHost` / `extern alias TenantHost`
+  and reference `PlatformHost::Program` / `TenantHost::Program`
+  explicitly (CS0433 fix).
+- **PR workflow runs Unit and Integration tiers separately.**
+  `.github/workflows/pr.yml` splits `dotnet test` into a Unit
+  fast-path (no PostgreSQL) and an Integration step (with PostgreSQL
+  service container); a broken unit test cancels the whole job
+  before the slower step pays for the DB fixture. The E2E tier is
+  intentionally excluded from the PR workflow until a browser
+  bootstrap step lands.
+- **CA1001 NoWarn scoped to test projects** so xUnit's
+  `IAsyncLifetime` disposal pattern stops tripping the analyser
+  ("type owns disposable fields but is not IDisposable" — false
+  positive for any test class that owns a `WebApplicationFactory`
+  through `IAsyncLifetime`).
+
 ### Schema
 
 - **Tenant `InitialCreate` migration regenerated, Turkish seed

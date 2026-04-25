@@ -7,6 +7,10 @@ using Xunit;
 
 namespace Tenant.Tests.Services;
 
+// Integration tier per /doc/docs/explanation/concepts/test-taxonomy.md.
+// Uses TenantDbContext.Database.EnsureCreatedAsync(); excluded from
+// the Unit fast-path in CI.
+[Trait("Category", "Integration")]
 public class CustomerSessionServiceTests
 {
     [Fact]

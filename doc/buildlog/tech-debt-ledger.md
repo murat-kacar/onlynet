@@ -427,12 +427,43 @@ ledger; orphan `TD-` references are a documentation bug.
   is a contract on paper only.
 - Risk if unpaid: a unit test reaching into PostgreSQL becomes the
   norm; the CI signal "unit tests are green" stops meaning anything.
-- Payoff plan: introduce solution folders or project suffixes for the
-  four tiers, move existing tests into the correct tier, add a
-  static-analysis rule that fails any `Unit`-tiered test importing
-  `Npgsql`, `HttpClient`, `System.IO.File`, or `DateTime.Now`.
+- Payoff plan:
+  1. (Done in PR #13) Adopted xUnit's `[Trait("Category", T)]`
+     convention as the tier discriminator (`Unit`, `Integration`,
+     `E2E`, `Smoke`). Class-level traits applied to existing suites:
+     `Shared.Tests/HealthJsonWriterTests` → `Unit`,
+     `Tenant.Tests/{CartService,CustomerSessionService,OrdersController}Tests`
+     → `Integration`,
+     `E2E.Tests/{Platform,Tenant}E2ETests` → `E2E`. Convention
+     documented at
+     [`/doc/docs/explanation/concepts/test-taxonomy.md#xunit-trait-convention`](/doc/docs/explanation/concepts/test-taxonomy.md#xunit-trait-convention).
+  2. (Done in PR #13) Added `tests/E2E.Tests/E2E.Tests.csproj` to
+     `TabFlow.sln` (it was silently absent from every CI build until
+     now). `Microsoft.Playwright` 1.49.0 added to
+     `Directory.Packages.props`; the legacy `Playwright` package
+     reference removed. Both hosts now expose `public partial class
+     Program` so the E2E project can disambiguate via
+     `extern alias PlatformHost;` / `extern alias TenantHost;` and
+     reference `PlatformHost::Program` / `TenantHost::Program`
+     explicitly (CS0433 fix).
+  3. (Done in PR #13) PR workflow (`.github/workflows/pr.yml`)
+     splits `dotnet test` into a Unit fast-path (no DB) and an
+     Integration step (PostgreSQL service container). E2E tier is
+     intentionally excluded from the PR workflow until a browser
+     bootstrap step lands.
+  4. (Open) Add a static-analysis rule (Roslyn analyzer or build
+     target) that fails any `Unit`-tiered test importing `Npgsql`,
+     `HttpClient`, `System.IO.File`, or `DateTime.Now`. Right now
+     the convention is enforced by review only.
+  5. (Open) Move the existing `Tenant.Tests/Services/*` tests off a
+     real PostgreSQL fixture and onto a per-test transactional
+     fixture so the Integration step is hermetic.
+  6. (Open) Wire the browser-bootstrap step
+     (`microsoft.playwright.cli install`) into a separate
+     `e2e.yml` workflow and unblock the E2E tier in CI.
 - Linked: AC-131, AC-132, AC-133, AC-134,
-  [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md)
+  [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md),
+  [`/.github/workflows/pr.yml`](/.github/workflows/pr.yml)
 
 ### [TRIAGE] TD-0009 — English-first lint rule not yet enforced
 

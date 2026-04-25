@@ -12,7 +12,13 @@ namespace Shared.Tests.Infrastructure.Diagnostics;
 /// <c>health+json</c> shape is a downstream contract consumed by load
 /// balancers and the release gate; breaking it silently would route
 /// traffic to a broken process.
+///
+/// Unit tier per /doc/docs/explanation/concepts/test-taxonomy.md:
+/// the suite touches no file system, network, or database; the
+/// only dependency is an in-memory <see cref="DefaultHttpContext"/>
+/// with a <see cref="MemoryStream"/> response body.
 /// </summary>
+[Trait("Category", "Unit")]
 public sealed class HealthJsonWriterTests
 {
     [Fact]

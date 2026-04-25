@@ -200,6 +200,49 @@ PR. Its purpose is to catch tests that pass but do not actually verify
 the behaviour they claim to verify. Mutation-test findings open
 tech-debt ledger entries when they reveal a class with weak coverage.
 
+## xUnit Trait Convention
+
+Every test class **MUST** carry a class-level `[Trait("Category", T)]`
+attribute where `T` is one of `"Unit"`, `"Integration"`, `"E2E"`, or
+`"Smoke"`. The trait is the discriminator the CI workflows use to
+route tests into the correct stage:
+
+```csharp
+[Trait("Category", "Unit")]
+public sealed class HealthJsonWriterTests { ... }
+
+[Trait("Category", "Integration")]
+public class CartServiceTests { ... }
+
+[Trait("Category", "E2E")]
+public class TenantE2ETests : IAsyncLifetime { ... }
+```
+
+Action-level overrides are permitted but discouraged. Mixing tiers in
+a single class is a code smell: split the class instead.
+
+## CI Routing By Trait
+
+The PR workflow (`.github/workflows/pr.yml`) runs two `dotnet test`
+invocations, ordered fastest-feedback-first:
+
+```yaml
+- name: Run unit tests
+  run: dotnet test --filter "Category=Unit" ...
+- name: Run integration tests
+  env:
+    ConnectionStrings__Platform: ...
+  run: dotnet test --filter "Category=Integration" ...
+```
+
+The integration step depends on the matrix's PostgreSQL service
+container. Unit step does not; a broken unit test cancels the whole
+job before the integration step pays for the database fixture.
+
+The E2E tier (Playwright + headless Chromium) is intentionally
+excluded from the PR workflow today; it runs as a separate workflow
+once the browser bootstrap step is wired (TD-0010 follow-up).
+
 ## Related
 
 - [`../../constitution.md`](../../constitution.md) Section IV.1 —
