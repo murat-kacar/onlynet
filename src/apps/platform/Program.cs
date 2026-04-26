@@ -36,6 +36,15 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
+    // TD-0026: register Systemd lifetime so the host signals readiness
+    // to systemd via sd_notify("READY=1") only after ASP.NET Core
+    // completes startup. The reference unit set in
+    // /doc/docs/how-to/supervise-processes.md uses Type=notify and
+    // depends on this. UseSystemd() is a no-op when INVOCATION_ID is
+    // unset (i.e. outside systemd), so it is safe in dotnet run and
+    // in tests.
+    builder.Host.UseSystemd();
+
 builder.Services.AddDbContext<PlatformDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PlatformDb")));
 

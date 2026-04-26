@@ -102,22 +102,36 @@ ledger; orphan `TD-` references are a documentation bug.
   bad start only when `/health/ready` fails — which is what the
   `Type=notify` choice was meant to prevent.
 - Payoff plan:
-  1. (Open) Add the `Microsoft.Extensions.Hosting.Systemd` package
-     reference to the three host projects (or to
-     `Directory.Build.props` so it applies repository-wide).
-  2. (Open) Call `builder.Host.UseSystemd()` (or, for `WebApplication`,
-     `builder.Services.AddSystemd()` per the .NET 10 API) immediately
-     after `WebApplication.CreateBuilder(args)` in each `Program.cs`.
-     The call is a no-op when `INVOCATION_ID` is unset, so it is
-     safe in `dotnet run` and in tests.
-  3. (Open) Add an integration smoke test under
-     `tests/Platform.Tests/HostStartupTests.cs` (and the tenant
-     equivalent) that verifies `Microsoft.Extensions.Hosting.Systemd`
-     is in the composition root. The test runs in the Unit tier
-     (no `INVOCATION_ID`, no actual sd_notify call).
-  4. (Open) Update the supervise-processes how-to to point at this
-     entry as `Closed` once the call ships, and to remove the "is a
-     no-op when not run under systemd" sentence as a live caveat.
+  1. (Done in PR #23) Pinned
+     `Microsoft.Extensions.Hosting.Systemd` 10.0.7 in
+     `Directory.Packages.props` and added the package reference to
+     all three host csprojs (`TabFlow.Platform`, `TabFlow.Tenant`,
+     `TabFlow.PlatformWorker`).
+  2. (Done in PR #23) Wired the systemd lifetime into every
+     `Program.cs`:
+       - `src/apps/platform/Program.cs`: `builder.Host.UseSystemd()`
+         after `UseSerilog()`.
+       - `src/apps/tenant/Program.cs`: `builder.Host.UseSystemd()`
+         after `UseSerilog()`.
+       - `src/apps/platform-worker/Program.cs`:
+         `builder.Services.AddSystemd()` (the
+         `HostApplicationBuilder` equivalent).
+     Both extensions are no-ops when `INVOCATION_ID` is unset, so
+     `dotnet run`, the existing unit tests, and the future
+     integration tier are unaffected.
+  3. (Open) Add a composition-root regression test that resolves
+     `IHostLifetime` from each Program's `IServiceProvider` and
+     asserts the runtime type is `SystemdLifetime`. The test
+     depends on the Integration-tier transactional fixture from
+     TD-0010 step 5 (so the host can be built without a live
+     PostgreSQL connection). Until then, the contract is enforced
+     by code review.
+  4. (Done in PR #23) Updated
+     [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md#typenotify-requirement)
+     to record the closure: the "Implementation status (TD-0026)"
+     callout now lists the three hosts that call the systemd
+     lifetime hook and points at TD-0010 step 5 for the regression
+     test that closes step 3.
 - Linked: AD-0003,
   [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#7-phase-d--how-to-tree-findings)

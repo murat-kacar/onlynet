@@ -184,6 +184,41 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Operations
+
+- **TD-0026 systemd lifetime hook wired into all three hosts
+  (PR #23).** Closes the `Type=notify` supervision contract gap that
+  the 2026-04-26 alignment pass discovered (Phase D-2). All three
+  host projects now register `Microsoft.Extensions.Hosting.Systemd`
+  and signal readiness to systemd via `sd_notify("READY=1")` only
+  after ASP.NET Core / `HostApplicationBuilder` completes startup:
+  - `Directory.Packages.props`: pinned
+    `Microsoft.Extensions.Hosting.Systemd` at 10.0.7 (matches the
+    rest of the `Microsoft.Extensions.*` family).
+  - `src/apps/platform/TabFlow.Platform.csproj`,
+    `src/apps/tenant/TabFlow.Tenant.csproj`,
+    `src/apps/platform-worker/TabFlow.PlatformWorker.csproj`: added
+    a `<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" />`
+    line.
+  - `src/apps/platform/Program.cs` and
+    `src/apps/tenant/Program.cs`: call
+    `builder.Host.UseSystemd()` immediately after
+    `builder.Host.UseSerilog()`.
+  - `src/apps/platform-worker/Program.cs`: calls
+    `builder.Services.AddSystemd()` immediately after the builder
+    is created. The platform worker uses `HostApplicationBuilder`,
+    not `WebApplicationBuilder`, so the API shape is the
+    `IServiceCollection` extension rather than the `IHostBuilder`
+    one.
+  Both extensions are no-ops when `INVOCATION_ID` is unset (i.e.
+  outside systemd), so `dotnet run`, the existing unit tests, and
+  any future Integration tier are unaffected.
+  Capability matrix row "Process supervision via systemd" moves
+  from `Target` to `In progress`. Operator enablement
+  (`systemctl enable --now ...`) is out of scope; the
+  composition-root regression test (TD-0026 step 3) lands with the
+  TD-0010 step 5 transactional fixture.
+
 ### Documentation
 
 - **Alignment pass closed: Phases D, E, F (PR #22).** Final three
