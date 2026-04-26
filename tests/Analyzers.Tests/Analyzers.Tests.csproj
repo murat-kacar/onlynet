@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!--
+      NU1701: the Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit
+      package transitively pulls a 1.0.1 placeholder of
+      `Microsoft.CodeAnalysis.Workspaces.Common` that NuGet records
+      as net4.x-targeted. The 1.0.1 floor is satisfied by the 4.13
+      package the analyser project consumes, but NuGet still emits
+      the warning. The harness works correctly in net10.0; suppress
+      the warning here so the build stays green and so future
+      bumps can move the suppression as a single line. Suppression
+      scoped to this csproj only.
+    -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" />
+    <!--
+      Pin the Roslyn compiler API at 4.13 (matches what the analyser
+      project consumes). Without this pin, the testing harness drags
+      in its own 1.0.0 placeholder of Microsoft.CodeAnalysis and the
+      compiler reports CS1705 ("uses higher version than referenced
+      assembly") when loading TabFlow.Analyzers.dll into a test
+      compilation.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--
+      Reference the analyser as a normal assembly (not as Analyzer)
+      so the test project loads `EnglishFirstIdentifierAnalyzer` as
+      a regular type. The harness wires it into a synthetic
+      compilation; the host compiler's analyser pipeline is bypassed.
+    -->
+    <ProjectReference Include="..\..\tools\analyzers\TabFlow.Analyzers\TabFlow.Analyzers.csproj" />
+  </ItemGroup>
+</Project>

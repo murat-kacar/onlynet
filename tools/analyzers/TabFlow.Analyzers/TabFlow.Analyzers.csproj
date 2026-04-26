@@ -21,16 +21,21 @@
     -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <!--
-      RS2008: enable analyzer release tracking. The convention
-      requires AnalyzerReleases.Shipped.md / .Unshipped.md files
-      that ship version-by-version diagnostic IDs. Single-rule
-      project today; release tracking will be enabled the day a
-      second rule is added (TD-0009 follow-up).
+      RS2008 release tracking activated by TD-0009 step 4 (PR #24).
+      The two AdditionalFiles below feed the release-tracking
+      analyser; see
+      https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md
+      for the file format. Pre-1.0, every shipping diagnostic lives
+      under "Unshipped"; the next release PR moves entries from
+      Unshipped to Shipped under a version heading.
     -->
-    <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp"
                       PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 </Project>

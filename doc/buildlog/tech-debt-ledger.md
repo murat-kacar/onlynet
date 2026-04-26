@@ -1004,17 +1004,32 @@ ledger; orphan `TD-` references are a documentation bug.
      property, one for its compiler-generated `get_açıklama`); the
      temporary file was then removed and `dotnet build` returned to
      0 / 0.
-  4. (Open) Add a `Microsoft.CodeAnalysis.Testing` xUnit suite under
-     `tests/Analyzers.Tests/` covering positive (Turkish identifier),
-     negative (English identifier), and edge cases (compiler-generated
-     names, generic type parameters). Until that suite ships, the
-     guarantee that TF0001 does not regress lives in the smoke check
-     above.
-  5. (Open) Author and ship `AnalyzerReleases.Shipped.md` /
-     `AnalyzerReleases.Unshipped.md` per RS2008 the day a second
-     diagnostic ID is added; `RS2008` is currently suppressed in
-     `TabFlow.Analyzers.csproj` since the project ships a single
-     rule.
+  4. (Done in PR #24) Authored a `Microsoft.CodeAnalysis.Testing`
+     xUnit suite at
+     `tests/Analyzers.Tests/EnglishFirstIdentifierAnalyzerTests.cs`
+     with 7 cases: ASCII baseline (no diagnostic), positive cases
+     for `NamedType`, `Method`, `Property`, `Field`, and `Parameter`
+     (each emits a single TF0001), and a compiler-generated names
+     baseline (auto-property accessors). The suite runs in the
+     **Unit** tier and is picked up by the existing PR workflow
+     `Run unit tests` step (filter `Category=Unit`). The harness
+     surfaced one analyser bug fixed in the same PR: property and
+     event accessor methods (`get_X`, `set_X`, `add_X`, `remove_X`,
+     `raise_X`) now skip the rule so a single non-ASCII property
+     emits one diagnostic at the property declaration rather than
+     three (property + get + set).
+  5. (Done in PR #24) Authored
+     `tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Shipped.md`
+     (empty placeholder; populated at the first tagged release per
+     AD-0011) and
+     `tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md`
+     (declares TF0001 with rule ID, category, severity, and notes).
+     `TabFlow.Analyzers.csproj` now feeds both files via
+     `<AdditionalFiles>` and removes the `RS2008` `NoWarn`
+     suppression. Future TF* rules add a row to
+     `AnalyzerReleases.Unshipped.md` in the same PR that authors
+     the analyser; the next release PR moves the rows to
+     `AnalyzerReleases.Shipped.md` under a version heading.
 - Linked: AD-0015, AC-117, AC-118, AC-119,
   [`/.editorconfig`](/.editorconfig),
   [`/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs`](/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs)

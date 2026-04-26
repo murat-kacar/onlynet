@@ -184,6 +184,58 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Tools
+
+- **TD-0009 step 4–5: TF0001 regression suite + AnalyzerReleases
+  files (PR #24).** The English-first identifier analyser
+  (`TabFlow.Analyzers.EnglishFirstIdentifierAnalyzer`, rule
+  `TF0001`) is now backed by an xUnit regression test project and
+  the `AnalyzerReleases.{Shipped,Unshipped}.md` release-tracking
+  files that RS2008 requires.
+  - **Test project.** New
+    [`/tests/Analyzers.Tests/`](./tests/Analyzers.Tests/) project
+    drives `CSharpAnalyzerTest<EnglishFirstIdentifierAnalyzer, DefaultVerifier>`
+    over 7 cases:
+      - ASCII baseline (no diagnostic),
+      - positive cases for `NamedType`, `Method`, `Property`,
+        `Field`, `Parameter` (one TF0001 per declaration),
+      - compiler-generated names baseline (auto-property accessors
+        do not surface separately).
+    The suite carries `[Trait("Category", "Unit")]` so the existing
+    PR workflow `Run unit tests` step picks it up; no workflow
+    change required.
+  - **Analyser bug fixed.** The harness surfaced one bug:
+    property and event accessor methods (`get_X`, `set_X`,
+    `add_X`, `remove_X`, `raise_X`) inherited the property's
+    non-ASCII name and reported a diagnostic each, so a single
+    Turkish property emitted three TF0001 lines instead of one.
+    `EnglishFirstIdentifierAnalyzer.AnalyzeSymbol` now early-exits
+    on `IMethodSymbol` whose `MethodKind` is one of the five
+    accessor kinds; each non-ASCII identifier is reported exactly
+    once at the user's declaration site.
+  - **Release-tracking files.** New
+    [`/tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Shipped.md`](./tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Shipped.md)
+    (empty until the first tagged release per AD-0011) and
+    [`/tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md`](./tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md)
+    (declares TF0001 with rule ID, category, severity, notes).
+    `TabFlow.Analyzers.csproj` feeds both files via
+    `<AdditionalFiles>` and the `RS2008` `NoWarn` suppression has
+    been removed; the release-tracking analyser now validates that
+    every `TFxxxx` ID declared in the analyser project is
+    accounted for in one of the two files.
+  - **CPM growth.**
+    [`/Directory.Packages.props`](./Directory.Packages.props):
+    pinned `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit`
+    at 1.1.2 (matches the 4.13.0 Roslyn compiler API consumed by
+    `TabFlow.Analyzers.csproj`).
+  - **Capability matrix promotion.** "English-first lint
+    enforcement" moves from `In progress` to **`Implemented`**
+    (constitution II.4): tested (7 regression cases), observable
+    (every PR fails on a non-ASCII identifier; build error
+    surfaces in the IDE), documented (`test-taxonomy.md`,
+    `threat-model.md`, AC-117, AC-118, AC-119,
+    `internationalization.md`).
+
 ### Operations
 
 - **TD-0026 systemd lifetime hook wired into all three hosts

@@ -45,6 +45,15 @@
       generated TF* diagnostics still surface in the IDE.
     -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <!--
+      Roslyn analyser test harness for TF* regression tests under
+      /tests/Analyzers.Tests/. The xUnit verifier wraps
+      `CSharpAnalyzerTest<TAnalyzer, TVerifier>` so a test reads as a
+      string + expected diagnostic shape. Pinned at the 1.1.x line
+      that pairs with the 4.13.0 Roslyn compiler API consumed by
+      `TabFlow.Analyzers.csproj` above.
+    -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.1.2" />
   </ItemGroup>
   <!-- Testing -->
   <ItemGroup>

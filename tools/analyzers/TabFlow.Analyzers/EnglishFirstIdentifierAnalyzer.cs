@@ -79,6 +79,23 @@ public sealed class EnglishFirstIdentifierAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Property and event accessors (`get_X`, `set_X`, `add_X`,
+        // `remove_X`) are compiler-synthesised methods whose name
+        // mirrors the user-authored property or event. Reporting
+        // them produces three diagnostics for one property declaration
+        // (the property + the two accessors); skipping the accessors
+        // keeps each non-ASCII identifier reported exactly once at
+        // the user's declaration site.
+        if (symbol is IMethodSymbol method &&
+            (method.MethodKind == MethodKind.PropertyGet ||
+             method.MethodKind == MethodKind.PropertySet ||
+             method.MethodKind == MethodKind.EventAdd ||
+             method.MethodKind == MethodKind.EventRemove ||
+             method.MethodKind == MethodKind.EventRaise))
+        {
+            return;
+        }
+
         // ASCII fast-path: scan once. Any code unit > 0x7F means a
         // non-ASCII character is present. A surrogate pair where the
         // high surrogate is < 0x80 is impossible, so this is safe
