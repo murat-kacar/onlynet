@@ -186,6 +186,59 @@ AD-0011.
 
 ### Architecture
 
+- **TD-0021 steps 1–2, 4: 3 customer-tier shim controllers under
+  `/api/public/*` + Blazor caller switch (PR #30).** AD-0003
+  designates `/api/public/*` as the unambiguous customer-tier
+  prefix; before PR #30 only `PublicOrdersController` (PR #6)
+  shipped under it, while `/api/menu`, `/api/cart`, and
+  `/api/sessions/{open,{ticketId}}` carried customer-tier actions
+  separated from the staff tier only by attribute. PR #30 mounts
+  three shim controllers under the canonical prefix and points the
+  customer-facing Blazor components at them.
+  - **New shim controllers (3)** under
+    [`/src/apps/tenant/Controllers/Api/`](./src/apps/tenant/Controllers/Api/):
+    - `PublicCatalogController` at `/api/public/catalog`
+      (`GET`, `GET category/{categoryId}`) — delegates to
+      `IMenuReadService`.
+    - `PublicCartController` at `/api/public/cart`
+      (`POST`, `DELETE {id}`, `PUT {id}/quantity`,
+      `GET session/{sessionId}`) — delegates to `ICartService`.
+    - `PublicSessionController` at `/api/public/session`
+      (`POST open`, `GET {ticketId}`) — delegates to
+      `ICustomerSessionService`. The `open` action sets the same
+      `tabflow_session_device` HttpOnly cookie that the legacy
+      `SessionsController` already sets (TD-0017).
+    Each carries `[AllowAnonymous]` at the controller level so a
+    grep for `[AllowAnonymous]` returns the entire customer-tier
+    surface and so a future-added staff endpoint cannot
+    accidentally inherit anonymous access.
+  - **Blazor callers updated.**
+    - `Menu.razor`: `/api/menu` → `/api/public/catalog`;
+      `/api/cart` → `/api/public/cart`.
+    - `Cart.razor`: cart paths moved to `/api/public/cart/...`
+      and the submit call moved from the **stale**
+      `/api/orders/submit` (a route that never shipped) to the
+      actual shipping `/api/public/orders`. A previously-broken
+      submit path is fixed in the same PR.
+    - `ScanQr.razor`: `/api/sessions/open` →
+      `/api/public/session/open`.
+    `Order.razor` still calls the staff-tier `/api/orders/{id}`
+    route; introducing a customer-tier order-detail surface is
+    out of scope for TD-0021 (tracked as future work).
+  - **Deprecation window declared.** The legacy `/api/menu`,
+    `/api/cart`, and customer-tier slices of `/api/sessions`
+    stay operational for one minor release per AD-0011 SemVer.
+    Step 3 of TD-0021 returns HTTP 410 from those routes after
+    the window, then removes them.
+  - **Documentation.**
+    [`/doc/docs/reference/api/tenant-api.md`](./doc/docs/reference/api/tenant-api.md):
+    the two Migration status callouts under "Public Catalog" and
+    "Customer Session" now record PR #30's shim mount + Blazor
+    switch + deprecation window.
+  - **Tech debt ledger.** TD-0021 status `[TRIAGE]` →
+    `[OPEN]`; payoff plan steps 1, 2, 4 done in PR #30; step 3
+    (legacy 410 + remove) is the remaining work.
+
 - **TD-0022 closed: 6 controllers → application services + TF0003
   Roslyn rule (PR #29).** Six controllers under
   `/src/apps/{tenant,platform}/Controllers/Api/` previously held a

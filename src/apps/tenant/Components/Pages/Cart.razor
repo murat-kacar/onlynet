@@ -74,14 +74,14 @@ else
             TableLabel = tableLabel ?? "";
             HasSession = true;
 
-            CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/cart/session/{CurrentSessionId}");
+            CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/public/cart/session/{CurrentSessionId}");
             Total = CartItems?.Sum(ci => ci.UnitPrice * ci.Quantity) ?? 0;
         }
     }
 
     private async Task RemoveItem(Guid id)
     {
-        await Http.DeleteAsync($"/api/cart/{id}");
+        await Http.DeleteAsync($"/api/public/cart/{id}");
         await OnInitializedAsync();
     }
 
@@ -108,7 +108,7 @@ else
             Guid.NewGuid().ToString(),
             null);
 
-        var result = await Http.PostAsJsonAsync("/api/orders/submit", request);
+        var result = await Http.PostAsJsonAsync("/api/public/orders", request);
         if (result.IsSuccessStatusCode)
         {
             await JS.InvokeVoidAsync("localStorage.removeItem", "ticketId");

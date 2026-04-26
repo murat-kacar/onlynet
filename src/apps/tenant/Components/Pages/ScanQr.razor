@@ -83,7 +83,7 @@
 
         try
         {
-            var result = await Http.PostAsJsonAsync("/api/sessions/open", new { QrTokenValue = QrToken });
+            var result = await Http.PostAsJsonAsync("/api/public/session/open", new { QrTokenValue = QrToken });
             result.EnsureSuccessStatusCode();
 
             var sessionResult = await result.Content.ReadFromJsonAsync<OpenSessionResult>();

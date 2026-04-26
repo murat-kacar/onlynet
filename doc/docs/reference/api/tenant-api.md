@@ -95,13 +95,16 @@ Returns:
 Anonymous. The payload is scoped to customer-relevant fields only.
 Internal routing and pricing-construction fields stay server-side.
 
-> **Migration status (TD-0021).** The shipping catalog surface is
-> mounted at `/api/menu` and `/api/menu/category/{categoryId}` per
-> [`MenuController`](/src/apps/tenant/Controllers/Api/MenuController.cs).
-> The move to `/api/public/catalog` happens in
-> [TD-0021](/doc/buildlog/tech-debt-ledger.md#triage-td-0021--customer-tier-http-endpoints-not-on-the-apipublic-prefix)
-> step 1; the legacy `/api/menu` route returns HTTP 410 after the
-> deprecation window per step 3.
+> **Migration status (TD-0021, PR #30).** The customer-tier catalog
+> surface now ships at `/api/public/catalog` and
+> `/api/public/catalog/category/{categoryId}` per
+> [`PublicCatalogController`](/src/apps/tenant/Controllers/Api/PublicCatalogController.cs);
+> `Menu.razor` calls the new prefix. The legacy `/api/menu` and
+> `/api/menu/category/{categoryId}` routes on
+> [`MenuController`](/src/apps/tenant/Controllers/Api/MenuController.cs)
+> stay operational during the deprecation window TD-0021 step 3
+> declares (one minor release per AD-0011) and are removed in a
+> follow-up PR that returns HTTP 410 from the legacy routes.
 
 ### Customer Session
 
@@ -116,14 +119,18 @@ A customer-initiated logout endpoint is intentionally not exposed.
 Access tickets become invalid automatically when the parent table
 session closes; a browser-side logout would not add operational value.
 
-> **Migration status (TD-0021).** The shipping session surface is
-> mounted at `/api/sessions/open` (POST, opens a customer session
-> from a fresh QR token) and `/api/sessions/{ticketId}` (GET,
-> returns the session state for the cookie-bearing browser) per
-> [`SessionsController`](/src/apps/tenant/Controllers/Api/SessionsController.cs).
-> The move to `/api/public/session` happens in
-> [TD-0021](/doc/buildlog/tech-debt-ledger.md#triage-td-0021--customer-tier-http-endpoints-not-on-the-apipublic-prefix)
-> step 1.
+> **Migration status (TD-0021, PR #30).** The customer-tier session
+> surface now ships at `/api/public/session/open` (POST, opens a
+> customer session from a fresh QR token) and
+> `/api/public/session/{ticketId}` (GET, returns the session state
+> for the cookie-bearing browser) per
+> [`PublicSessionController`](/src/apps/tenant/Controllers/Api/PublicSessionController.cs);
+> `ScanQr.razor` calls the new prefix. The legacy
+> `/api/sessions/open` and `/api/sessions/{ticketId}` routes on
+> [`SessionsController`](/src/apps/tenant/Controllers/Api/SessionsController.cs)
+> stay operational during the deprecation window TD-0021 step 3
+> declares; the staff-tier `POST /api/sessions/{sessionId}/close`
+> action is unaffected and stays under `Tenant:Write`.
 
 ### Customer Order Submission
 

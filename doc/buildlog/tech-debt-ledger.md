@@ -503,10 +503,10 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0021 (the prefix migration calls the same services),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
 
-### [TRIAGE] TD-0021 — Customer-tier HTTP endpoints not on the `/api/public/*` prefix
+### [OPEN] TD-0021 — Customer-tier HTTP endpoints not on the `/api/public/*` prefix
 
 - Opened: 2026-04-26
-- Owner: TBD
+- Owner: closed steps 1, 2, 4 in PR #30; step 3 (legacy 410 + remove) is the remaining work and stays open for the deprecation window declared below.
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
   B-1 finding B-1.2). The runtime surface map at
@@ -535,30 +535,69 @@ ledger; orphan `TD-` references are a documentation bug.
   and inherits the attribute-only authorisation. A drift here
   re-creates the AC-010 / AC-043 violation that TD-0015 closed.
 - Payoff plan:
-  1. (Open) Mount four shim controllers under `/api/public/*` that
-     forward to the existing services:
-       /api/public/catalog       -> existing menu controller surface
-       /api/public/cart          -> existing cart controller surface
-       /api/public/session       -> existing sessions open / read
-       /api/public/profile       -> not implemented today; folded
-                                    into the migration only when a
-                                    real per-tenant profile surface
-                                    is needed.
-     The shim controllers carry `[AllowAnonymous]` at the controller
-     level. The current `/api/menu`, `/api/cart`, `/api/sessions/open`,
-     and `/api/sessions/{ticketId}` routes remain operational during
-     a deprecation window.
-  2. (Open) Update the customer-facing Blazor components
-     (`/g/{token}`, `/menu`, `/order/{id}`, `Cart.razor`,
-     `ScanQr.razor`) to call the `/api/public/*` routes.
-  3. (Open) After the deprecation window, return `Gone` (HTTP 410)
-     from the legacy customer-tier routes, then remove them.
-     Constitution III.4 requires the deprecation window to be stated
-     in the same PR that introduces the replacement.
-  4. (Open) Update
+  1. (Done in PR #30) Three shim controllers mounted under
+     `/api/public/*`, each carrying `[AllowAnonymous]` at the
+     controller level and delegating to the existing application
+     service:
+     - `/api/public/catalog` (`GET`, `GET category/{categoryId}`) —
+       [`PublicCatalogController`](/src/apps/tenant/Controllers/Api/PublicCatalogController.cs)
+       → `IMenuReadService`.
+     - `/api/public/cart` (`POST`, `DELETE {id}`,
+       `PUT {id}/quantity`, `GET session/{sessionId}`) —
+       [`PublicCartController`](/src/apps/tenant/Controllers/Api/PublicCartController.cs)
+       → `ICartService`.
+     - `/api/public/session` (`POST open`, `GET {ticketId}`) —
+       [`PublicSessionController`](/src/apps/tenant/Controllers/Api/PublicSessionController.cs)
+       → `ICustomerSessionService`. The `open` action sets the
+       same `tabflow_session_device` HttpOnly cookie that
+       `SessionsController` already sets (TD-0017).
+     The fourth originally-listed shim, `/api/public/profile`, is
+     **not** part of PR #30 because no real per-tenant profile
+     surface ships today; it is folded into the migration when a
+     consumer requires it.
+     `PublicOrdersController` was already at `/api/public/orders`
+     (PR #6, TD-0015 step 3).
+     The legacy `/api/menu`, `/api/cart`, and
+     `/api/sessions/{open,{ticketId}}` routes stay operational
+     during the deprecation window declared in step 3.
+  2. (Done in PR #30) Customer-facing Blazor components updated to
+     call the new prefix:
+     - `Menu.razor`: `/api/menu` → `/api/public/catalog`;
+       `/api/cart` → `/api/public/cart`.
+     - `Cart.razor`: `/api/cart/session/{id}` →
+       `/api/public/cart/session/{id}`; `/api/cart/{id}` →
+       `/api/public/cart/{id}`. The submit call also moved from
+       the **stale** `/api/orders/submit` (the route never shipped;
+       `PublicOrdersController` lives at `/api/public/orders`) to
+       the actual shipping route, so a previously-broken submit
+       path is fixed in the same PR.
+     - `ScanQr.razor`: `/api/sessions/open` →
+       `/api/public/session/open`.
+     `Order.razor` continues to call the staff-tier
+     `/api/orders/{id}` route; introducing a customer-tier
+     order-detail surface is out of scope for TD-0021 and is left
+     as future work (no TD opened — track with the AD-0003
+     follow-up that adds a customer-tier read for the bill view).
+  3. (Open) After the deprecation window — one minor release per
+     AD-0011 — return `Gone` (HTTP 410) from
+     `MenuController` (full controller), `CartController` (full
+     controller), and the customer-tier actions of
+     `SessionsController` (`POST open`, `GET {ticketId}`). The
+     staff-tier close action stays at
+     `POST /api/sessions/{sessionId}/close`. Then remove the
+     410-bodied actions in a subsequent PR. Constitution III.4
+     requires the deprecation window to be stated in the same PR
+     that introduces the replacement; this entry's step 1 is that
+     statement.
+  4. (Done in PR #30)
      [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md)
-     and the OpenAPI export (when it lands) to use the
-     `/api/public/*` prefix as the canonical customer-tier shape.
+     updated: the two Migration status callouts under "Public
+     Catalog" and "Customer Session" now record that PR #30
+     mounted the shim controllers, that the Blazor pages call the
+     new prefix, and that the legacy routes stay through the
+     deprecation window. The OpenAPI export is not yet in place;
+     when it lands, it will declare the `/api/public/*` prefix as
+     the canonical customer-tier shape.
 - Linked: AC-010, AC-030, AC-043,
   [`/doc/docs/reference/architecture/runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints),
   [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md),

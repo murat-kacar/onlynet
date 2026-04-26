@@ -63,7 +63,7 @@ else
             HasSession = true;
 
             // Load from API
-            MenuItems = await Http.GetFromJsonAsync<List<MenuItemDto>>("/api/menu");
+            MenuItems = await Http.GetFromJsonAsync<List<MenuItemDto>>("/api/public/catalog");
         }
     }
 
@@ -76,7 +76,7 @@ else
         }
 
         var request = new AddCartItemRequest(CurrentSessionId.Value, itemId, 1);
-        await Http.PostAsJsonAsync("/api/cart", request);
+        await Http.PostAsJsonAsync("/api/public/cart", request);
     }
 
     private record CategoryItem(Guid Id, string Name);
