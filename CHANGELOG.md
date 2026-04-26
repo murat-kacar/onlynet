@@ -186,6 +186,54 @@ AD-0011.
 
 ### Documentation
 
+- **Phase B-1 of the alignment pass closed (PR #18).** Five findings
+  in the five self-consistency tables that
+  [`/doc/docs/meta/contributing.md`](./doc/docs/meta/contributing.md#self-consistency)
+  names (capability matrix, acceptance criteria, glossary, runtime
+  surfaces, SLOs):
+  - **B-1.1 (`clean`)** — capability matrix carried 8 stale rows
+    after the PR #6–#16 cluster; rewrote them to name the shipping
+    PR / TD per row and added a 9th row for `Test taxonomy via xUnit
+    Traits` (TD-0010). Affected capabilities: Platform Identity
+    store, Bootstrap admin CLI, Tenant migrations, Customer session,
+    Fresh-QR checkout proof, Structured logging, English-first lint,
+    GitHub Actions CI.
+  - **B-1.2 (`correct`)** — `runtime-surfaces.md` declared four
+    customer-tier endpoints under `/api/public/*` but only
+    `/api/public/orders` ships there today; the other three
+    customer surfaces are routed under `/api/menu`, `/api/cart`,
+    `/api/sessions/*` and gated by `[AllowAnonymous]` attributes
+    per TD-0015 step 2. Rewrote the runtime-surfaces HTTP table to
+    reflect the shipping route map (8 endpoint groups split into
+    customer-tier and staff-tier rows, each citing the controller
+    and `[Authorize]` policy) and opened TD-0021 with a four-step
+    migration plan.
+  - **B-1.3 (`aligned`)** — `acceptance-criteria.md` AC-005, AC-006,
+    AC-030..AC-036 confirmed aligned with the PR #7 / #9 / #11 /
+    #12 / #16 closures.
+  - **B-1.4 (`aligned`)** — `slos.md` surface-ID references
+    (P-02..P-07, T-06..T-16) resolve into `runtime-surfaces.md`.
+  - **B-1.5 (`aligned`)** — `glossary.md` cross-refs resolve;
+    `/doc/buildlog/spikes/` text-vs-href divergence inherited
+    closure from A-2.
+- **Capability matrix refresh.**
+  [`/doc/docs/reference/architecture/capability-matrix.md`](./doc/docs/reference/architecture/capability-matrix.md):
+  9 rows updated to reflect what shipped in PRs #6–#16. Each row
+  now names the PR, the TD, and any open tail steps. The matrix is
+  back in sync with the constitution II.4 definition of `Done`.
+- **Runtime-surface map refresh.**
+  [`/doc/docs/reference/architecture/runtime-surfaces.md`](./doc/docs/reference/architecture/runtime-surfaces.md):
+  the Tenant Host HTTP Endpoints table replaced. The new table has
+  a `Tier` column (`customer` / `staff` / `n/a`) and lists every
+  shipping route with its controller and `[Authorize]` policy. The
+  prefix-level customer-tier separation (`/api/public/*`) is
+  documented as TD-0021 follow-up work.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  Opened **TD-0021** — Customer-tier HTTP endpoints not on the
+  `/api/public/*` prefix (four-step migration plan: shim
+  controllers, Blazor caller switch, HTTP 410 on legacy routes,
+  `tenant-api.md` + OpenAPI update).
 - **Code ↔ documentation alignment pass opened (PR #17).** New
   buildlog entry at
   [`/doc/buildlog/code-audit-2026-04-26.md`](./doc/buildlog/code-audit-2026-04-26.md)

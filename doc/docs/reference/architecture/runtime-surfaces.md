@@ -119,15 +119,35 @@ Render-mode column values:
 
 ### Tenant Host — HTTP Endpoints
 
-| Group | Routes | Purpose |
-| --- | --- | --- |
-| Health | `GET /health`, `/health/live`, `/health/ready` | Probes |
-| Public | `GET /api/public/profile`, `GET /api/public/catalog`, `GET /api/public/session`, `POST /api/public/orders` | Customer-facing HTTP contracts. See [`../api/tenant-api.md`](../api/tenant-api.md). |
+The tenant host carries two tiers of HTTP endpoint: customer-tier
+(anonymous, called from the Static SSR customer surfaces and the
+table device) and staff-tier (authenticated, called from the
+Interactive Server staff surfaces). The two tiers are separated by
+authorisation (controller-level `[AllowAnonymous]` vs
+`[Authorize(Policy = "Tenant:Read|Write")]`) per TD-0015 step 2; the
+prefix-level separation (`/api/public/*` for customer-tier) is a
+follow-up tracked under TD-0021.
 
-Administrative HTTP endpoints are not part of the runtime surface. Admin
-and staff interactions run through Blazor components that depend on
-application services directly. See [`./decisions.md`](./decisions.md)
-AD-0003.
+| Group | Routes | Tier | Purpose |
+| --- | --- | --- | --- |
+| Health | `GET /health`, `GET /health/live`, `GET /health/ready` | n/a | Probes (anonymous, AC-101). |
+| Customer order submission | `POST /api/public/orders` | customer | The only endpoint that ships under the prefix today. Submission gate per AC-030..AC-036; routed by `PublicOrdersController` per TD-0015 step 3 and PR #6. |
+| Customer menu read | `GET /api/menu`, `GET /api/menu/category/{categoryId}` | customer | Catalog reads. Controller-level `[AllowAnonymous]` per TD-0015. Migration to `/api/public/catalog` tracked under TD-0021. |
+| Customer cart mutation | `POST /api/cart`, `GET /api/cart/session/{sessionId}` | customer | Cart manipulation against an open access ticket. Controller-level `[AllowAnonymous]` per TD-0015. Migration to `/api/public/cart` tracked under TD-0021. |
+| Customer session lifecycle | `POST /api/sessions/open`, `GET /api/sessions/{ticketId}` | customer | QR-token consumption + access-cookie issue, and ticket state read. Action-level `[AllowAnonymous]` per TD-0015 (controller default is `Tenant:Read` to avoid the ASP0026 trap). Migration to `/api/public/session` tracked under TD-0021. |
+| Staff session close | `POST /api/sessions/{sessionId}/close` | staff | Closes a customer session. `[Authorize(Policy = "Tenant:Write")]`. AC-044. |
+| Staff orders read | `GET /api/orders/{id}`, `GET /api/orders/session/{sessionId}` | staff | Read-only views for the floor and cash workspace. `[Authorize(Policy = "Tenant:Read")]`. |
+| Staff kitchen board | `GET /api/kitchen/orders`, `POST /api/kitchen/items/{id}/status` | staff | Station-board reads and item-state transitions. The mutation action carries `[Authorize(Policy = "Tenant:Write")]` per AC-052. |
+| Staff tables read | `GET /api/tables`, `GET /api/tables/{id}` | staff | Floor layout read for the workspace. `[Authorize(Policy = "Tenant:Read")]`. |
+
+The staff-tier HTTP endpoints above are deliberately exposed (rather
+than running through Blazor application services) because the staff
+Blazor pages call them via `HttpClient` rather than through DI; this
+is a transitional shape from the pre-TD-0015 era. They are still
+"administrative HTTP endpoints" in the sense of AD-0003 and are not
+considered part of the public contract surface. Administrative
+mutations served from Blazor components without an HTTP boundary
+remain the architectural target.
 
 ## Shared Runtime Language
 

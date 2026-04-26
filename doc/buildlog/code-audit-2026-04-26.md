@@ -312,7 +312,151 @@ Phase opened 2026-04-26. Inputs:
 
 ## 5. Phase B — Reference Tree Findings
 
-*Pass-in-progress.*
+The reference tree has 19 documents totalling ~3 982 lines; Phase B is
+sequenced into three sub-passes:
+
+- **B-1** — the five self-consistency tables that
+  [`/doc/docs/meta/contributing.md`](../docs/meta/contributing.md#self-consistency)
+  names: capability matrix, acceptance criteria, glossary, runtime
+  surfaces, SLOs.
+- **B-2** — `decisions.md` (the ADR set).
+- **B-3** — the remaining reference documents: `api/*`, `database/*`,
+  `health-checks.md`, `system-overview.md`, `render-modes.md`,
+  `firmware.md`.
+
+This Section records B-1 findings; B-2 and B-3 land in subsequent PRs.
+
+### B-1.1 — Capability matrix carries 8 stale rows after the PR #6–#16 cluster
+
+- **Bucket:** `clean`.
+- **Claim:** the capability matrix at
+  [`/doc/docs/reference/architecture/capability-matrix.md`](../docs/reference/architecture/capability-matrix.md)
+  is the single document that tracks the implementation status of
+  every capability against the baseline architecture; per
+  [`/doc/docs/reference/glossary.md`](../docs/reference/glossary.md#capability-matrix)
+  a capability is `Implemented` only when all three Done criteria
+  (tested, observable, documented) hold.
+- **Evidence:** at pass open the matrix described 8 capabilities in
+  language predating the PR #6–#16 cluster:
+  - **Platform Identity store** — claimed "bootstrap admin command
+    pending" although `BootstrapAdminCommand` landed in PR #9 and
+    the must-change-password redirect in PR #16.
+  - **Bootstrap platform admin via CLI** — claimed `Target` although
+    the CLI exists in source; should read `In progress` (operator
+    half pending).
+  - **Tenant schema via EF Core migrations** — claimed "design-time
+    factories pending" although the factories live at
+    `/src/infra/postgres/DesignTime/` and the tenant `InitialCreate`
+    scaffold (586 lines, 64 `CreateTable`) landed in PR #10.
+  - **Customer session with server-side cart** — did not mention the
+    device-binding (TD-0017) and idempotency (TD-0018) gates that
+    landed in PRs #11 and #12.
+  - **Fresh-QR checkout proof on submit** — claimed `Target`
+    although `OrderService.SubmitAsync` enforces the four halves of
+    AC-030..AC-036 since PR #7 (TD-0015 step 4).
+  - **Structured logging via Serilog** — did not mention the
+    `LoggerMessage` adoption that landed in PR #15 (TD-0014 step 3).
+  - **English-first lint enforcement** — claimed `Target` although
+    the `TabFlow.Analyzers` project ships `TF0001` since PR #14
+    (TD-0009 steps 1–3).
+  - **GitHub Actions CI workflows** — did not mention the Unit /
+    Integration test split that landed in PR #13 (TD-0010 step 3).
+  Additionally the row for **Test taxonomy via xUnit Traits** did
+  not exist at all even though TD-0010 steps 1–3 closed in PR #13.
+- **Conflict:** documentation lagged code by one full PR cluster.
+  Constitution III.2 requires architectural change to land in docs
+  first or alongside the code, never after; the gap here is the
+  knock-on effect of PRs #6–#16 not refreshing this row each time.
+- **Constitution anchor:** II.4 (Done = tested + observable +
+  documented), III.1 (documentation reflects reality), III.2.
+- **Resolution:** PR #18 rewrote the 8 stale rows to name the
+  shipping PR and TD, and added a 9th row for `Test taxonomy via
+  xUnit Traits`. Going forward, the PR template at
+  [`/doc/docs/meta/amendment-template.md`](../docs/meta/amendment-template.md)
+  already lists the capability matrix in its self-consistency
+  checklist; reviewers MUST tick that row when a PR moves a
+  capability forward.
+
+### B-1.2 — Customer-tier HTTP endpoints declared on `/api/public/*` prefix but routed under `/api/<noun>`
+
+- **Bucket:** `correct` (the runtime-surfaces map was the aspirational
+  shape; the shipping code is the real shape; the gap is its own TD).
+- **Claim:**
+  [`/doc/docs/reference/architecture/runtime-surfaces.md`](../docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints)
+  listed four customer-tier endpoints under `/api/public/*`:
+  `profile`, `catalog`, `session`, `orders`.
+- **Evidence:** a grep over `/src/apps/tenant/Controllers/Api/*.cs`
+  showed only `PublicOrdersController` mounted at `/api/public/orders`.
+  The other three customer surfaces ship as `/api/menu`,
+  `/api/cart`, and `/api/sessions/open` / `/api/sessions/{ticketId}`,
+  separated from the staff tier by `[AllowAnonymous]` attributes
+  per TD-0015 step 2 rather than by route prefix. The audit closure
+  for re-review finding RR-C2 ("tenant API controllers expose every
+  endpoint anonymously") consequently relied on attribute audit, not
+  route audit.
+- **Conflict:** `runtime-surfaces.md` is the single document the rest
+  of the docs read back into for routes; an aspirational shape
+  presented as current routes is a constitution III.1 problem.
+- **Constitution anchor:** III.1 (documentation reflects reality),
+  III.4 (stable contracts have a deprecation path; the prefix
+  migration MUST honour this).
+- **Resolution:** PR #18 (a) rewrote the runtime-surfaces HTTP
+  endpoints table to reflect the shipping route map (8 endpoint
+  groups split into customer / staff tiers, each citing the
+  controller and the `[Authorize]` policy), and (b) opened TD-0021
+  with a four-step migration to `/api/public/*` (shim controllers,
+  Blazor caller switch, deprecation HTTP 410 on legacy routes,
+  `tenant-api.md` + OpenAPI update).
+
+### B-1.3 — `acceptance-criteria.md` is now aligned with the shipping behaviour for AC-005, AC-006, AC-030–AC-036
+
+- **Bucket:** `aligned`.
+- **Claim:** AC-005 ("first platform admin … MUST be forced through
+  `/change-password` on first authenticated request"), AC-006
+  (bootstrap-admin refuses on populated `AspNetUsers`), AC-030
+  (open customer session for the submitting device), AC-031 (fresh
+  QR proof), AC-032 (consumed proof rejected), AC-035 (empty cart
+  rejected), AC-036 (successful submit closes the session).
+- **Evidence:** AC-005 closed by PR #16 (TD-0002 step 3,
+  `PasswordChangeRequiredMiddleware`). AC-006 closed by PR #9
+  (TD-0002 step 1, `BootstrapAdminCommand` AnyAsync gate). AC-030
+  closed by PR #11 (TD-0017 device-binding cookie). AC-031 / AC-032
+  closed by PR #7 (TD-0015 step 4 token consumption). AC-035 closed
+  by `OrderService.SubmitAsync` empty-cart guard. AC-036 closed by
+  PR #7 (session-close + token-consume in same `SaveChangesAsync`).
+- **Constitution anchor:** II.4 (capability matrix tracks these as
+  `In progress` until the integration tests in TD-0015 step 6,
+  TD-0017 step 4, and TD-0018 step 3 land).
+- **Resolution:** none required for the AC text; the matrix
+  evidence for these ACs is addressed in B-1.1.
+
+### B-1.4 — `slos.md` surface ID references resolve
+
+- **Bucket:** `aligned`.
+- **Claim:** the SLO table cites surface IDs `P-02`..`P-07` and
+  `T-06`..`T-16`, plus `T-13` and `T-16` by name in the event-push
+  SLI.
+- **Evidence:** `runtime-surfaces.md` declares P-01..P-08 (platform)
+  and T-01..T-16 (tenant); every SLO reference resolves into the
+  declared range.
+- **Constitution anchor:** III.3 (one fact, one place — surface IDs
+  declared in `runtime-surfaces.md`, cited from `slos.md`).
+- **Resolution:** none required.
+
+### B-1.5 — `glossary.md` cross-references resolve and the post-Phase-A `/doc/buildlog/spikes/` link now points to a real path
+
+- **Bucket:** `aligned`.
+- **Claim:** every cross-reference inside the glossary resolves,
+  including the previously text-vs-href-divergent
+  `/doc/buildlog/spikes/` mention.
+- **Evidence:** glossary line 264 cites `/doc/buildlog/spikes/`; the
+  Phase A resolution (A-2) created the `spikes/README.md` stub, so
+  the path is now a real directory and the cited href falls onto a
+  real document. The same is true for the constitution's II.1 / VI.3
+  references and the data-protection / amendment-template / branch-
+  protection mentions of `postmortems/`.
+- **Constitution anchor:** III.1, III.3.
+- **Resolution:** none required (closure inherited from Phase A).
 
 ## 6. Phase C — Explanation Tree Findings
 
@@ -342,6 +486,11 @@ TD that resolved it, and the date.
 | A-3 | `clean` | PR #17 — opened TD-0019; rewrote 13 TODO comment occurrences across 11 source files to carry `TODO(TD-0019): ...` prefix. Bare TODO count: 0. | 2026-04-26 |
 | A-4 | `correct` | PR #17 — opened TD-0020 with three-exit payoff plan; pre-1.0 PRs flagged for retroactive review or constitutional amendment. | 2026-04-26 |
 | A-5 | `aligned` | No action required. | 2026-04-26 |
+| B-1.1 | `clean` | PR #18 — rewrote 8 stale capability-matrix rows to name the shipping PR / TD; added the missing Test taxonomy row for TD-0010. | 2026-04-26 |
+| B-1.2 | `correct` | PR #18 — rewrote runtime-surfaces HTTP table to reflect the shipping route map; opened TD-0021 with a four-step `/api/public/*` migration plan. | 2026-04-26 |
+| B-1.3 | `aligned` | No AC text change required; matrix evidence handled in B-1.1. | 2026-04-26 |
+| B-1.4 | `aligned` | No action required. | 2026-04-26 |
+| B-1.5 | `aligned` | Closure inherited from A-2 (subtree stubs created in PR #17). | 2026-04-26 |
 
 ## 11. Sign-Off
 

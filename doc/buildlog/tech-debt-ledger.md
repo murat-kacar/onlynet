@@ -73,6 +73,69 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0021 — Customer-tier HTTP endpoints not on the `/api/public/*` prefix
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  B-1 finding B-1.2). The runtime surface map at
+  [`/doc/docs/reference/architecture/runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints)
+  declared four customer-tier endpoints under the `/api/public/*`
+  prefix (`profile`, `catalog`, `session`, `orders`); only `orders`
+  ships under that prefix today. The other three customer-tier
+  surfaces ship as `/api/menu`, `/api/cart`, and `/api/sessions/open`
+  / `/api/sessions/{ticketId}` and are gated by `[AllowAnonymous]`
+  attributes rather than by a route prefix. Phase B-1 of the
+  alignment pass updated the runtime-surfaces map to reflect the
+  shipping reality and pointed the prefix migration at this entry.
+- Symptom: `/api/public/*` was meant to be the unambiguous
+  customer-tier surface — readable in logs, easy to tag in WAF /
+  rate-limit rules, easy to grep for in security reviews. Today the
+  customer-tier surface is mixed with the staff-tier surface under
+  generic `/api/*` paths, separated only by attribute. A reviewer
+  who searches for "customer surface" by route grep finds only one
+  controller (`PublicOrdersController`); the other three are
+  invisible to that search. The asymmetry also leaks into the audit
+  finding RR-C2 ("tenant API controllers expose every endpoint
+  anonymously") closed in TD-0015: the closure relies on attribute
+  audit, not route audit.
+- Risk if unpaid: a future contributor adding a new customer-tier
+  endpoint follows the dominant pattern (mount under `/api/<noun>`)
+  and inherits the attribute-only authorisation. A drift here
+  re-creates the AC-008 / AC-043 violation that TD-0015 closed.
+- Payoff plan:
+  1. (Open) Mount four shim controllers under `/api/public/*` that
+     forward to the existing services:
+       /api/public/catalog       -> existing menu controller surface
+       /api/public/cart          -> existing cart controller surface
+       /api/public/session       -> existing sessions open / read
+       /api/public/profile       -> not implemented today; folded
+                                    into the migration only when a
+                                    real per-tenant profile surface
+                                    is needed.
+     The shim controllers carry `[AllowAnonymous]` at the controller
+     level. The current `/api/menu`, `/api/cart`, `/api/sessions/open`,
+     and `/api/sessions/{ticketId}` routes remain operational during
+     a deprecation window.
+  2. (Open) Update the customer-facing Blazor components
+     (`/g/{token}`, `/menu`, `/order/{id}`, `Cart.razor`,
+     `ScanQr.razor`) to call the `/api/public/*` routes.
+  3. (Open) After the deprecation window, return `Gone` (HTTP 410)
+     from the legacy customer-tier routes, then remove them.
+     Constitution III.4 requires the deprecation window to be stated
+     in the same PR that introduces the replacement.
+  4. (Open) Update
+     [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md)
+     and the OpenAPI export (when it lands) to use the
+     `/api/public/*` prefix as the canonical customer-tier shape.
+- Linked: AC-008, AC-030, AC-043,
+  [`/doc/docs/reference/architecture/runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints),
+  [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md),
+  TD-0015 step 2 (closure relied on attribute audit; this entry adds
+  the prefix audit),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
+
 ### [TRIAGE] TD-0020 — Pre-1.0 single-author phase: review-pair and security-review rules effectively suspended
 
 - Opened: 2026-04-26
