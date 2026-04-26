@@ -95,6 +95,25 @@ AD-0011.
 
 ### Security
 
+- **Bootstrap admin forced through `/change-password` on first sign-in
+  (TD-0002 step 3).** A new `PasswordChangeRequiredMiddleware`,
+  registered in the platform `Program.cs` after `UseAuthorization`
+  and before route mapping, redirects any authenticated principal
+  carrying the `tabflow:must_change_password` claim to
+  `/change-password` unless the request path falls in an explicit
+  exemption list (`/change-password`, `/login`, `/logout`,
+  `/_blazor`, `/_framework`, `/_content`, `/health`, `/api`, `/lib`,
+  `/css`, `/js`). `BootstrapAdminCommand` now stamps this claim on
+  the user it creates between role assignment and the audit-log
+  write (new exit code 6 reserved for the claim-add failure mode).
+  The `ChangePassword` Razor page now carries `[Authorize]` and, on
+  a successful `UserManager.ChangePasswordAsync`, enumerates and
+  removes every `tabflow:must_change_password` claim on the user
+  before calling `RefreshSignInAsync`. The claim is the single piece
+  of state the middleware reads, so the loop tolerates duplicates
+  defensively. Stock `IdentityUser<Guid>` is preserved unchanged;
+  the design avoids a custom subclass and the schema migration that
+  would imply, keeping the TD-0001 / TD-0003 migration trees stable.
 - **Order idempotency key persisted with a unique index (TD-0018).**
   `Order` now carries an `IdempotencyKey` column with
   `[Index(nameof(SessionId), nameof(IdempotencyKey), IsUnique = true)]`;
@@ -202,12 +221,14 @@ AD-0011.
   a CSPRNG-backed 24-character password, calls
   `UserManager.CreateAsync` so the hash uses Identity's current hasher,
   ensures the `owner` role exists and assigns it, writes an
-  `auth.bootstrap` row to `platform_audit_log`, and prints the
-  generated password to stdout exactly once. Closes TD-0002 step 1 in
-  source. The operator-action half (running the command on a fresh
-  deployment per `/doc/docs/how-to/bootstrap-platform.md`) and the
-  force-redirect-through-`/change-password` follow-up remain pending.
-  Smoke check: `dotnet run --project src/apps/platform/TabFlow.Platform.csproj --no-build -- bootstrap-admin`
+  `auth.bootstrap` row to `platform_audit_log`, stamps the
+  `tabflow:must_change_password` claim on the freshly created admin
+  (TD-0002 step 3, see `### Security` below), and prints the
+  generated password to stdout exactly once. Closes TD-0002 steps
+  1 and 3 in source. The operator-action half (running the command
+  on a fresh deployment per `/doc/docs/how-to/bootstrap-platform.md`)
+  remains pending. Smoke check:
+  `dotnet run --project src/apps/platform/TabFlow.Platform.csproj --no-build -- bootstrap-admin`
   prints `usage: bootstrap-admin --email <address>` and returns
   without starting the web host.
 

@@ -1,9 +1,13 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using TabFlow.Platform.Middleware;
 
 namespace TabFlow.Platform.Pages;
 
+[Authorize]
 public class ChangePasswordModel : PageModel
 {
     private readonly UserManager<IdentityUser<Guid>> _userManager;
@@ -43,6 +47,25 @@ public class ChangePasswordModel : PageModel
         var result = await _userManager.ChangePasswordAsync(user, CurrentPassword, NewPassword);
         if (result.Succeeded)
         {
+            // TD-0002 step 3: clear the must-change-password claim that
+            // BootstrapAdminCommand stamps on the first admin so
+            // PasswordChangeRequiredMiddleware stops bouncing the
+            // session through this page. The claim is removed by
+            // value ("true") to match what the bootstrap command set;
+            // ASP.NET Core Identity's RemoveClaimAsync is a no-op if
+            // the claim isn't present, so this is idempotent for
+            // subsequent voluntary rotations.
+            var existing = await _userManager.GetClaimsAsync(user);
+            foreach (var claim in existing)
+            {
+                if (string.Equals(
+                        claim.Type,
+                        PasswordChangeRequiredMiddleware.MustChangePasswordClaim,
+                        StringComparison.Ordinal))
+                {
+                    await _userManager.RemoveClaimAsync(user, claim);
+                }
+            }
             await _signInManager.RefreshSignInAsync(user);
             return RedirectToPage("/Index");
         }

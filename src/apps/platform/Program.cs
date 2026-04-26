@@ -125,6 +125,14 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// TD-0002 step 3: any authenticated principal carrying the
+// must-change-password claim is bounced through /change-password
+// until the claim is removed by ChangePasswordModel.OnPostAsync. The
+// middleware sits after UseAuthorization so HttpContext.User is fully
+// populated, and before the route mapping below so the redirect wins
+// over the original handler.
+app.UseMiddleware<PasswordChangeRequiredMiddleware>();
+
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/menu") ||

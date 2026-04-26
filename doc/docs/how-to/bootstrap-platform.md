@@ -109,8 +109,12 @@ Behaviour:
    resulting hash uses ASP.NET Core Identity's current
    `IPasswordHasher` defaults.
 4. It assigns the `owner` role.
-5. It writes a row to `platform_audit_log` with `action = 'auth.bootstrap'`.
-6. It prints the generated password to stdout exactly once and exits.
+5. It stamps a `tabflow:must_change_password` claim on the user so the
+   first authenticated request after sign-in is redirected to
+   `/change-password` by `PasswordChangeRequiredMiddleware`. The claim
+   is removed by the `ChangePassword` page on a successful rotation.
+6. It writes a row to `platform_audit_log` with `action = 'auth.bootstrap'`.
+7. It prints the generated password to stdout exactly once and exits.
 
 The operator captures the printed password, signs in at
 `https://<platform-host>/login`, and is forced through `/change-password`

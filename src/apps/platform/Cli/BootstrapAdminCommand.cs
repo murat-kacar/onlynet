@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
@@ -5,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TabFlow.Platform.Middleware;
 using TabFlow.Platform.Services;
 using TabFlow.Shared.Infrastructure.Data;
 
@@ -111,6 +113,21 @@ internal static class BootstrapAdminCommand
             Console.Error.WriteLine(
                 "bootstrap-admin: failed to assign owner role.");
             return 5;
+        }
+
+        // TD-0002 step 3: stamp the must-change-password claim so the
+        // first authenticated request after sign-in is bounced through
+        // /change-password by PasswordChangeRequiredMiddleware. The
+        // claim is removed by ChangePasswordModel on a successful
+        // rotation.
+        var claimAssign = await userManager.AddClaimAsync(
+            user,
+            new Claim(PasswordChangeRequiredMiddleware.MustChangePasswordClaim, "true"));
+        if (!claimAssign.Succeeded)
+        {
+            Console.Error.WriteLine(
+                "bootstrap-admin: failed to set must-change-password claim.");
+            return 6;
         }
 
         await auditService.LogAsync(

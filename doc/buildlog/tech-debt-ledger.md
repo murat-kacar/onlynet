@@ -701,13 +701,30 @@ ledger; orphan `TD-` references are a documentation bug.
   2. (Operator action, pending) Run the command once on a fresh
      deployment per the procedure in
      [`/doc/docs/how-to/bootstrap-platform.md`](/doc/docs/how-to/bootstrap-platform.md).
-  3. (Open) Force-redirect through `/change-password` on the first
-     authenticated request after bootstrap. The Identity store
-     supports the flag; the redirect middleware is not yet wired.
-     Track as a follow-up under `bootstrap-platform.md` step 6.
+  3. (Done in PR #16) Force-redirect through `/change-password` on
+     every request from a still-bootstrap-shaped principal.
+     `BootstrapAdminCommand` now stamps a
+     `tabflow:must_change_password` claim on the user (between role
+     assignment and the audit-log write; new exit code 6 reserved for
+     the claim-add failure). A new
+     `PasswordChangeRequiredMiddleware`, registered after
+     `UseAuthorization` and before route mapping in the platform
+     `Program.cs`, redirects authenticated principals carrying the
+     claim to `/change-password` unless the request path falls in an
+     exemption list (`/change-password`, `/login`, `/logout`,
+     `/_blazor`, `/_framework`, `/_content`, `/health`, `/api`,
+     `/lib`, `/css`, `/js`). The `ChangePassword` page now carries
+     `[Authorize]` and, on a successful
+     `UserManager.ChangePasswordAsync`, enumerates the user's claims
+     and removes every `tabflow:must_change_password` claim before
+     calling `RefreshSignInAsync`. The claim is the single piece of
+     state the middleware reads, so the loop tolerates duplicates
+     defensively without a separate "already cleared" path.
 - Linked: AD-0010, AC-005, AC-006,
   [`/doc/docs/how-to/bootstrap-platform.md`](/doc/docs/how-to/bootstrap-platform.md),
   [`/src/apps/platform/Cli/BootstrapAdminCommand.cs`](/src/apps/platform/Cli/BootstrapAdminCommand.cs),
+  [`/src/apps/platform/Middleware/PasswordChangeRequiredMiddleware.cs`](/src/apps/platform/Middleware/PasswordChangeRequiredMiddleware.cs),
+  [`/src/apps/platform/Pages/ChangePassword.cshtml.cs`](/src/apps/platform/Pages/ChangePassword.cshtml.cs),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-1-migration-seeds-the-first-platform-admin-into-aspnetusers)
 
 ### [TRIAGE] TD-0001 — Hand-applied platform schema instead of EF Core migration
