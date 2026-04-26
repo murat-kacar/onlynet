@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
@@ -53,42 +53,41 @@ builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<TenantDbContext>()
     .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.HttpOnly = true;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.LoginPath = "/login";
-        options.AccessDeniedPath = "/login";
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/login";
 
-        // Cookie auth defaults to 302-redirect on a missing or
-        // unauthorised principal. That is the right answer for HTML
-        // page navigations but the wrong answer for API callers, who
-        // expect 401/403 status codes. The handlers below short-circuit
-        // the redirect for any path under `/api/` and let HTML routes
-        // continue to redirect to the configured LoginPath /
-        // AccessDeniedPath. Tracked under TD-0015 step 5.
-        options.Events.OnRedirectToLogin = ctx =>
+    // Cookie auth defaults to 302-redirect on a missing or
+    // unauthorised principal. That is the right answer for HTML
+    // page navigations but the wrong answer for API callers, who
+    // expect 401/403 status codes. The handlers below short-circuit
+    // the redirect for any path under `/api/` and let HTML routes
+    // continue to redirect to the configured LoginPath /
+    // AccessDeniedPath. Tracked under TD-0015 step 5.
+    options.Events.OnRedirectToLogin = ctx =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api"))
         {
-            if (ctx.Request.Path.StartsWithSegments("/api"))
-            {
-                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return Task.CompletedTask;
-            }
-            ctx.Response.Redirect(ctx.RedirectUri);
+            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return Task.CompletedTask;
-        };
-        options.Events.OnRedirectToAccessDenied = ctx =>
+        }
+        ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = ctx =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api"))
         {
-            if (ctx.Request.Path.StartsWithSegments("/api"))
-            {
-                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                return Task.CompletedTask;
-            }
-            ctx.Response.Redirect(ctx.RedirectUri);
+            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
-        };
-    });
+        }
+        ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    };
+});
 
 builder.Services.AddAuthorization(options =>
 {
@@ -102,6 +101,11 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation());
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 // Health checks per /doc/docs/reference/architecture/health-checks.md.
 // /health/live carries no probes (liveness only). /health/ready runs
@@ -153,6 +157,7 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
