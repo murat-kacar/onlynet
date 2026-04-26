@@ -994,10 +994,10 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/Directory.Build.props`](/Directory.Build.props),
   [`/Directory.Packages.props`](/Directory.Packages.props)
 
-### [TRIAGE] TD-0013 — Advanced health-check probes still missing
+### [OPEN] TD-0013 — Advanced health-check probes still missing
 
 - Opened: 2026-04-25
-- Owner: TBD
+- Owner: closed steps 1, 2, 4, 5 in PR #31; steps 3 (worker heartbeat — blocked on schema) and 6 (release-gate smoke check — blocked on TD-0010 step 6 Playwright bootstrap) remain open.
 - Origin: code audit of 2026-04-25
   ([`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md), finding
   C-4). The audit change set landed the three endpoints (`/health`,
@@ -1016,18 +1016,51 @@ ledger; orphan `TD-` references are a documentation bug.
   1. (Done in audit change set) Wire `platform-db:ping` /
      `tenant-db:ping` via `AddDbContextCheck<T>` on both hosts. Wire
      the IETF `health+json` writer in `TabFlow.Shared`.
-  2. Implement `MigrationHeadHealthCheck<TContext>` and register it
-     under tag `ready` for both hosts.
-  3. Implement `WorkerHeartbeatHealthCheck` reading `worker_heartbeats`
-     (rows newer than 30s) and register it on the platform host with
-     `failureStatus: HealthStatus.Degraded`.
-  4. Implement `EventBusCapacityHealthCheck` against the in-process
-     event bus per AD-0006 and register it on the tenant host.
-  5. Implement `TenantContextHealthCheck` resolving
-     `TABFLOW_TENANT_CODE` against the platform's `tenant_registry`
-     and register it on the tenant host.
-  6. Add a release-gate smoke check that hits all three endpoints on
-     the staging tenant.
+  2. (Done in PR #31)
+     `TabFlow.Shared.Infrastructure.Diagnostics.MigrationHeadHealthCheck<TContext>`
+     authored. Generic over the `DbContext`; calls
+     `_context.Database.GetPendingMigrationsAsync(ct)` and reports
+     `Healthy` with `"Database schema is at the migration head."`
+     when the result is empty, otherwise `Unhealthy` with the
+     pending-migration list. Registered on both hosts under the
+     `ready` tag as `platform-db:migrations` /
+     `tenant-db:migrations`. Smoke-tested: both hosts now emit the
+     pass row alongside the existing `*-db:ping` probe.
+  3. (Open, blocked on schema) `WorkerHeartbeatHealthCheck`
+     reading `worker_heartbeats` (rows newer than 30s) is gated on
+     the `worker_heartbeats` table, which does not yet exist in
+     the platform schema. Lands alongside the worker-instrumentation
+     work that introduces the table; the schema-spec docs at
+     `/doc/docs/reference/architecture/health-checks.md` continue
+     to declare the probe so the ratchet target is visible.
+  4. (Done in PR #31) `IEventBus` extended with a `GetCapacityStats()`
+     diagnostic method returning `(SubscriberCount, MaxQueueDepth,
+     PerSubscriberCapacity)`. `InProcessEventBus` implements the
+     method by locking the subscriber list and walking each
+     channel's `Reader.Count`.
+     `TabFlow.Shared.Infrastructure.Diagnostics.EventBusCapacityHealthCheck`
+     authored: computes saturation as
+     `MaxQueueDepth / PerSubscriberCapacity`; reports `Healthy`
+     below 80%, `Degraded` at 80%–95%, `Unhealthy` at and above
+     95%. Registered on the tenant host under the `ready` tag as
+     `event-bus:capacity`. Smoke-tested: idle tenant reports
+     `pass` with `"subscribers=1 max-depth=0/256 (0%)"`.
+  5. (Done in PR #31)
+     `TabFlow.Shared.Infrastructure.Diagnostics.TenantContextHealthCheck`
+     authored. Reads the `TABFLOW_TENANT_CODE` environment variable
+     and reports `Unhealthy` when the variable is unset or empty.
+     The richer "resolve TABFLOW_TENANT_CODE against the platform's
+     `tenant_registry`" lift waits on a platform→tenant connection
+     contract that is not in scope for PR #31. Registered on the
+     tenant host under the `ready` tag as `tenant-context`.
+     Smoke-tested: a tenant host launched without
+     `TABFLOW_TENANT_CODE` returns `/health/ready` with
+     `status="fail"` and the env-var message; the platform host's
+     readiness is unaffected.
+  6. (Open, blocked on Playwright bootstrap) Add a release-gate
+     smoke check that hits all three endpoints on the staging
+     tenant and asserts the JSON shape. Blocked on TD-0010 step 6
+     (the smoke-tier infrastructure that hosts the assertion).
 - Linked: AC-101, AC-102,
   [`/doc/docs/reference/architecture/health-checks.md`](/doc/docs/reference/architecture/health-checks.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-4-no-health-endpoints-on-either-host)

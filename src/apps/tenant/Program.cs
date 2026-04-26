@@ -112,6 +112,22 @@ string[] readyTag = ["ready"];
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<TenantDbContext>(
         name: "tenant-db:ping",
+        tags: readyTag)
+    // TD-0013 step 2: migration-head probe surfaces an out-of-date
+    // database against the running binary's migration set.
+    .AddCheck<MigrationHeadHealthCheck<TenantDbContext>>(
+        name: "tenant-db:migrations",
+        tags: readyTag)
+    // TD-0013 step 4: event-bus capacity probe surfaces subscriber
+    // saturation on the in-process bus (AD-0006).
+    .AddCheck<EventBusCapacityHealthCheck>(
+        name: "event-bus:capacity",
+        tags: readyTag)
+    // TD-0013 step 5: tenant-context probe surfaces a tenant host
+    // launched without its provisioning contract
+    // (TABFLOW_TENANT_CODE env var).
+    .AddCheck<TenantContextHealthCheck>(
+        name: "tenant-context",
         tags: readyTag);
 
 // AD-0004 + TD-0027: Blazor Web App composition. AddRazorComponents

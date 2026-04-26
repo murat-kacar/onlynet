@@ -186,6 +186,70 @@ AD-0011.
 
 ### Architecture
 
+- **TD-0013 steps 2 + 4 + 5: 3 advanced health-check probes (PR #31).**
+  The `health-checks.md` spec at
+  [`/doc/docs/reference/architecture/health-checks.md`](./doc/docs/reference/architecture/health-checks.md)
+  declared four advanced probes (`*-db:migrations`,
+  `worker-heartbeat`, `event-bus:capacity`, `tenant-context`); only
+  the basic `*-db:ping` probes shipped before PR #31. Three of the
+  four advanced probes ship now; the fourth waits on a schema that
+  does not yet exist.
+  - **`MigrationHeadHealthCheck<TContext>`** (TD-0013 step 2) — new
+    [`/src/packages/shared-dotnet/Infrastructure/Diagnostics/MigrationHeadHealthCheck.cs`](./src/packages/shared-dotnet/Infrastructure/Diagnostics/MigrationHeadHealthCheck.cs).
+    Generic over the `DbContext`. Calls
+    `Database.GetPendingMigrationsAsync(ct)`; reports `Healthy`
+    when the result is empty, `Unhealthy` with the pending-migration
+    list otherwise. Registered on both hosts under the `ready` tag
+    as `platform-db:migrations` and `tenant-db:migrations`.
+  - **`EventBusCapacityHealthCheck`** (TD-0013 step 4) — new
+    [`/src/packages/shared-dotnet/Infrastructure/Diagnostics/EventBusCapacityHealthCheck.cs`](./src/packages/shared-dotnet/Infrastructure/Diagnostics/EventBusCapacityHealthCheck.cs).
+    Computes saturation as `MaxQueueDepth / PerSubscriberCapacity`
+    over the new `IEventBus.GetCapacityStats()` snapshot; reports
+    `Healthy` below 80%, `Degraded` at 80–95%, `Unhealthy` at and
+    above 95%. Registered on the tenant host under the `ready` tag
+    as `event-bus:capacity`.
+  - **`TenantContextHealthCheck`** (TD-0013 step 5) — new
+    [`/src/packages/shared-dotnet/Infrastructure/Diagnostics/TenantContextHealthCheck.cs`](./src/packages/shared-dotnet/Infrastructure/Diagnostics/TenantContextHealthCheck.cs).
+    Reads the `TABFLOW_TENANT_CODE` environment variable; reports
+    `Unhealthy` when unset. The richer "resolve against the
+    platform's `tenant_registry`" lift waits on a platform→tenant
+    connection contract that is not in scope for PR #31.
+    Registered on the tenant host under the `ready` tag as
+    `tenant-context`.
+  - **`IEventBus.GetCapacityStats()`** — new diagnostic method on
+    [`/src/packages/shared-dotnet/Application/EventBus/IEventBus.cs`](./src/packages/shared-dotnet/Application/EventBus/IEventBus.cs)
+    returns `(SubscriberCount, MaxQueueDepth, PerSubscriberCapacity)`.
+    `InProcessEventBus` implements the method by locking the
+    subscriber list and walking each channel's `Reader.Count`; the
+    256 channel-capacity literal is now a public const
+    `InProcessEventBus.SubscriberChannelCapacity` so the health check
+    reuses it.
+  - **Smoke verification.** Platform host: `/health/live` `200`
+    `pass`; `/health/ready` `200` `pass` with `platform-db:ping`
+    and `platform-db:migrations` both reporting `pass`. Tenant
+    host (no `TABFLOW_TENANT_CODE`): `/health/live` `200` `pass`;
+    `/health/ready` `503` `fail` with `tenant-db:ping` and
+    `tenant-db:migrations` `pass`, `event-bus:capacity` `pass`
+    (`subscribers=1 max-depth=0/256 (0%)`), and `tenant-context`
+    `fail` with the env-var message. Both behaviours match the
+    `health-checks.md` spec.
+  - **Documentation.**
+    [`/doc/docs/reference/architecture/health-checks.md`](./doc/docs/reference/architecture/health-checks.md):
+    each row in the platform and tenant probe tables now records
+    PR #31 + TD-0013 step number + the implementation type. The
+    smoke-verification footnote names the warn-vs-pass rule for
+    `event-bus:capacity`. The implementation-block example drops
+    the `WorkerHeartbeatHealthCheck` registration with a comment
+    pointing at TD-0013 step 3.
+  - **Capability matrix.** "Health check endpoints" row updated to
+    record the three new probes and to name the two remaining open
+    steps with their blockers (TD-0013 step 3 on schema; step 6 on
+    TD-0010 step 6).
+  - **Tech debt ledger.** TD-0013 status `[TRIAGE]` → `[OPEN]`;
+    payoff plan steps 2, 4, 5 done in PR #31. Step 3 (worker
+    heartbeat) is blocked on the `worker_heartbeats` schema; step
+    6 (release-gate smoke) is blocked on TD-0010 step 6.
+
 - **TD-0021 steps 1–2, 4: 3 customer-tier shim controllers under
   `/api/public/*` + Blazor caller switch (PR #30).** AD-0003
   designates `/api/public/*` as the unambiguous customer-tier

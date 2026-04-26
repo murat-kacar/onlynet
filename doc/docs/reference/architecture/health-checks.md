@@ -56,8 +56,8 @@ diagnostic detail.
 | Probe ID | Component | Failure Means |
 | --- | --- | --- |
 | `platform-db:ping` | `PlatformDbContext.Database.CanConnectAsync()` | Cannot read the platform DB; reject traffic |
-| `platform-db:migrations` | `__EFMigrationsHistory` matches the assembly's expected head | Pending migration; reject traffic |
-| `worker-heartbeat` | A row exists in `worker_heartbeats` newer than `30s` | Worker is dead; degrade (`warn`) — admin UI still works |
+| `platform-db:migrations` | `__EFMigrationsHistory` matches the assembly's expected head | Pending migration; reject traffic. Implemented in PR #31 (TD-0013 step 2) via the generic `MigrationHeadHealthCheck<PlatformDbContext>` shipping from `TabFlow.Shared.Infrastructure.Diagnostics`. |
+| `worker-heartbeat` | A row exists in `worker_heartbeats` newer than `30s` | Worker is dead; degrade (`warn`) — admin UI still works. **Not yet wired** (TD-0013 step 3). The `worker_heartbeats` schema does not exist yet; the probe will land alongside the worker-instrumentation work that introduces the table. |
 
 `/health/live` returns `pass` unless the process is shutting down.
 
@@ -68,9 +68,9 @@ diagnostic detail.
 | Probe ID | Component | Failure Means |
 | --- | --- | --- |
 | `tenant-db:ping` | `TenantDbContext.Database.CanConnectAsync()` | Cannot read the tenant DB; reject traffic |
-| `tenant-db:migrations` | Tenant DB migration head matches assembly | Pending migration; reject traffic |
-| `event-bus:capacity` | The in-process event bus has free capacity per [AD-0006](./decisions.md#ad-0006-in-process-event-bus-for-real-time-surfaces) | Bus saturated; degrade (`warn`) |
-| `tenant-context` | The `TABFLOW_TENANT_CODE` env var resolves to an `active` row in the platform's `tenant_registry` | Tenant disabled; reject |
+| `tenant-db:migrations` | Tenant DB migration head matches assembly | Pending migration; reject traffic. Implemented in PR #31 (TD-0013 step 2) via the generic `MigrationHeadHealthCheck<TenantDbContext>`. |
+| `event-bus:capacity` | The in-process event bus has free capacity per [AD-0006](./decisions.md#ad-0006-in-process-event-bus-for-real-time-surfaces) | Bus saturated; degrade (`warn`) at 80% per-subscriber depth, reject (`fail`) at 95%. Implemented in PR #31 (TD-0013 step 4) via `EventBusCapacityHealthCheck` over the new `IEventBus.GetCapacityStats()` snapshot. |
+| `tenant-context` | The `TABFLOW_TENANT_CODE` env var is set | Tenant host launched outside its provisioning contract; reject. Implemented in PR #31 (TD-0013 step 5) via `TenantContextHealthCheck`. The richer "TABFLOW_TENANT_CODE resolves to an active row in the platform's tenant_registry" lift waits on the platform→tenant connection contract. |
 
 `/health/live` returns `pass` unless the process is shutting down.
 
@@ -106,10 +106,9 @@ builder.Services.AddHealthChecks()
     .AddCheck<MigrationHeadHealthCheck<PlatformDbContext>>(
         name: "platform-db:migrations",
         tags: new[] { "ready" })
-    .AddCheck<WorkerHeartbeatHealthCheck>(
-        name: "worker-heartbeat",
-        failureStatus: HealthStatus.Degraded,
-        tags: new[] { "ready" });
+    // The worker-heartbeat probe is TD-0013 step 3; it blocks on
+    // the worker_heartbeats table schema and is not yet wired.
+    ;
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
@@ -140,8 +139,11 @@ curl -fsS http://127.0.0.1:5001/health/ready  # tenant readiness
 ```
 
 All four MUST return `200` with `status: "pass"`. A `warn` is
-acceptable for `worker-heartbeat` immediately after worker restart but
-MUST recover within `60s`.
+acceptable for `worker-heartbeat` (once that probe ships under
+TD-0013 step 3) immediately after worker restart but MUST recover
+within `60s`. A `warn` from `event-bus:capacity` (`>=80%`
+saturation) is a signal the staff push surface is dropping events;
+investigate before serving production traffic.
 
 ## Anti-Patterns
 

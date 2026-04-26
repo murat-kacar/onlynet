@@ -117,6 +117,11 @@ string[] readyTag = ["ready"];
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlatformDbContext>(
         name: "platform-db:ping",
+        tags: readyTag)
+    // TD-0013 step 2: migration-head probe surfaces an out-of-date
+    // database against the running binary's migration set.
+    .AddCheck<MigrationHeadHealthCheck<PlatformDbContext>>(
+        name: "platform-db:migrations",
         tags: readyTag);
 
 // AD-0004 + TD-0027: Blazor Web App composition. AddRazorComponents
