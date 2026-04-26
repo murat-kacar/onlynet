@@ -80,7 +80,7 @@ the project that owns the migrations. Without these, the tooling tries
 to boot the host's `Program.cs`, which fails because the migrations
 project is a library.
 
-### `DesignTime/PlatformDesignTimeDbContextFactory.cs`
+### `DesignTime/PlatformDbContextFactory.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -89,7 +89,7 @@ using TabFlow.Shared.Infrastructure.Data;
 
 namespace TabFlow.Migrations.DesignTime;
 
-public sealed class PlatformDesignTimeDbContextFactory
+public sealed class PlatformDbContextFactory
     : IDesignTimeDbContextFactory<PlatformDbContext>
 {
     public PlatformDbContext CreateDbContext(string[] args)
@@ -106,7 +106,7 @@ public sealed class PlatformDesignTimeDbContextFactory
 }
 ```
 
-### `DesignTime/TenantDesignTimeDbContextFactory.cs`
+### `DesignTime/TenantDbContextFactory.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -115,7 +115,7 @@ using TabFlow.Shared.Infrastructure.Data;
 
 namespace TabFlow.Migrations.DesignTime;
 
-public sealed class TenantDesignTimeDbContextFactory
+public sealed class TenantDbContextFactory
     : IDesignTimeDbContextFactory<TenantDbContext>
 {
     public TenantDbContext CreateDbContext(string[] args)

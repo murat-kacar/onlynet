@@ -204,6 +204,20 @@ builder.Host.UseSystemd();
 `UseSystemd()` is a no-op when not run under systemd, so it is safe in
 local development.
 
+> **Implementation status (TD-0026).** Neither
+> `src/apps/platform/Program.cs`, `src/apps/platform-worker/Program.cs`,
+> nor `src/apps/tenant/Program.cs` calls `UseSystemd()` today. A unit
+> deployed with `Type=notify` against the current binary times out at
+> `systemctl start` until `TimeoutStartSec` elapses, then is marked
+> `failed`. The fix (add the
+> `Microsoft.Extensions.Hosting.Systemd` package and wire
+> `builder.Host.UseSystemd()` into each `Program.cs`) is tracked
+> under
+> [TD-0026](/doc/buildlog/tech-debt-ledger.md#triage-td-0026--typenotify-supervision-contract-requires-usesystemd-neither-host-calls-it).
+> Until that ships, an operator following this how-to MUST either
+> downgrade the unit to `Type=simple` or pin the call into a local
+> patch.
+
 ## File Layout
 
 Operator-controlled, outside the source tree. The reference layout:

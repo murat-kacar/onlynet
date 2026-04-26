@@ -110,7 +110,9 @@ Expected output (illustrative):
 A CI workflow `branch-protection-check` SHOULD run this verification on
 every push to `main` and fail the build if any of these fields drifts.
 The workflow lives at `.github/workflows/branch-protection-check.yml`
-when implemented (currently a tech-debt ledger entry).
+when implemented; today the wiring is tracked under
+[TD-0006](/doc/buildlog/tech-debt-ledger.md#td-0006), the
+"Branch protection on `main`" row in the capability matrix.
 
 ## Recovering From Disabled Protection
 

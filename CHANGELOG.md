@@ -186,6 +186,65 @@ AD-0011.
 
 ### Documentation
 
+- **Alignment pass closed: Phases D, E, F (PR #22).** Final three
+  phases of the 2026-04-26 alignment pass — how-to tree, tutorials
+  tree, and buildlog cross-reference — close in this PR. Eleven
+  findings, one new ledger row, three buildlog cross-reference fixes.
+  - **D-1 (`clean`)** — `setup-migrations.md` listed the design-time
+    factory class names as `PlatformDesignTimeDbContextFactory` /
+    `TenantDesignTimeDbContextFactory`; the shipping classes are
+    `PlatformDbContextFactory` / `TenantDbContextFactory`.
+    Renamed both code-block headings and class declarations.
+  - **D-2 (`implement`)** — `supervise-processes.md` declares the
+    host invariant as `Type=notify` and states the hosts MUST call
+    `UseSystemd()`; a grep over `/src/apps/*/Program.cs` returned
+    no matches. Opened **TD-0026** with a four-step payoff plan
+    (add `Microsoft.Extensions.Hosting.Systemd` package, wire
+    `builder.Host.UseSystemd()` into each `Program.cs`, ship a
+    composition-root unit test, then close the supervise-processes
+    caveat); added a TD-0026 callout under the `Type=notify`
+    requirement section.
+  - **D-3 (`clean`)** — `configure-branch-protection.md` cited
+    "currently a tech-debt ledger entry" without naming the TD.
+    Replaced the parenthetical with an explicit TD-0006 link.
+  - **D-4 (`aligned with caveat`)** — `provision-tenant.md` Step 11
+    aligned; the worker `MigrateAsync()` half is owned by TD-0003.
+  - **D-5 (`aligned`)** — `bootstrap-platform.md`, `restart-tenant.md`,
+    `inspect-provisioning-job.md`, `rotate-secrets.md`,
+    `backup-and-restore.md`, `deploy-to-production.md`, and the
+    how-to README all aligned with shipping code, surface IDs, and
+    AD-0003 / AD-0005 / AC-127..AC-130.
+  - **E-1 (`clean`)** — `tutorials/README.md` listed only
+    `getting-started.md`; the second tutorial,
+    `local-development.md`, was on disk but invisible to the index.
+    Rewrote the README to list both with one-line descriptions.
+  - **E-2 (`aligned`)** — `getting-started.md` reading order and
+    `local-development.md` reserved-identifier table both aligned.
+  - **F-1 (`clean`)** — `AC-008` cited in three ledger paragraphs
+    (TD-0023 risk-if-unpaid, TD-0015 symptom + Linked footer) but
+    undefined in `acceptance-criteria.md` (the AC range jumps from
+    AC-006 to AC-010). Replaced the three references with **AC-010**
+    ("tenant routes reject unauthenticated traffic"). The
+    `code-audit-2026-04-25.md` reference is a closed audit pass and
+    was left intact for trail integrity.
+  - **F-2 (`aligned`)** — TD-0001..TD-0026 IDs continuous; every
+    cited TD has a corresponding ledger entry. No orphans.
+  - **F-3 (`aligned`)** — AD-0001..AD-0015 IDs continuous; every
+    cited ADR is defined in `decisions.md`. No orphans.
+  - **F-4 (`aligned`)** — buildlog subtree stubs (`postmortems/`,
+    `spikes/`, `retrospectives/`, `abandoned/`) populated in PR #17
+    (A-2); every doc that links into them resolves.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  Opened **TD-0026** — `Type=notify` supervision contract requires
+  `UseSystemd()` but neither host calls it (four-step payoff plan).
+- **Audit pass closed.**
+  [`/doc/buildlog/code-audit-2026-04-26.md`](./doc/buildlog/code-audit-2026-04-26.md)
+  Sign-Off section now reads `Closed 2026-04-26`. Outcome
+  summary: 6 phases walked, 27 findings closed, 8 new TDs (TD-0019
+  through TD-0026), 1 existing TD scope-extended (TD-0022),
+  6 PRs landed (#17 Phase A, #18 B-1, #19 B-2, #20 B-3, #21 C,
+  #22 D + E + F).
 - **Phase C of the alignment pass closed (PR #21).** Six findings
   in the explanation tree (`/doc/docs/explanation/concepts/`):
   - **C-1 (`clean`)** — `implementation-patterns.md` carried 4 stale

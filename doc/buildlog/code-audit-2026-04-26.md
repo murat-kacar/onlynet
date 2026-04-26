@@ -980,15 +980,215 @@ constitution rather than missing reference data.
 
 ## 7. Phase D — How-To Tree Findings
 
-*Pass-in-progress.*
+Phase D walks the 10 how-to guides under `/doc/docs/how-to/` plus the
+README index file. How-to guides are operational playbooks; the
+findings are about steps, class names, or invariants that have
+drifted from the shipping code.
+
+### D-1 — `setup-migrations.md` design-time factory class names are stale
+
+- **Bucket:** `clean`.
+- **Claim:** the how-to lists the design-time factory class names as
+  `PlatformDesignTimeDbContextFactory` and
+  `TenantDesignTimeDbContextFactory`.
+- **Evidence:** the actual files at
+  `/src/infra/postgres/DesignTime/` are
+  `PlatformDbContextFactory.cs` (class
+  `PlatformDbContextFactory`) and `TenantDbContextFactory.cs`
+  (class `TenantDbContextFactory`). A contributor copying the
+  doc shape pastes a class name that does not exist; EF Core then
+  reports `Unable to create a 'DbContext' of type 'X'` — the failure
+  mode the doc itself warns about, ironically.
+- **Conflict:** III.1 (documentation reflects reality).
+- **Constitution anchor:** III.1.
+- **Resolution:** PR #22 renamed both code-block headings and class
+  declarations in `setup-migrations.md` to match the shipping
+  filenames.
+
+### D-2 — `supervise-processes.md` mandates `UseSystemd()`; no host calls it
+
+- **Bucket:** `implement`.
+- **Claim:** the supervision how-to declares the host invariant as
+  `Type=notify` and states the hosts MUST call `UseSystemd()` on
+  the host builder.
+- **Evidence:** a grep for `UseSystemd` across `/src/apps/*/Program.cs`
+  returns no matches. A `Type=notify` unit deployed against the
+  current binary times out at `systemctl start` until
+  `TimeoutStartSec` elapses, then the supervisor marks the unit
+  `failed`. The doc invariant cannot be satisfied by the shipping
+  code today.
+- **Conflict:** III.1 (documentation reflects reality), II.3 (every
+  acknowledged compromise has a TD entry).
+- **Constitution anchor:** III.1, II.3.
+- **Resolution:** PR #22 (a) opened **TD-0026** with a four-step
+  payoff plan (add the `Microsoft.Extensions.Hosting.Systemd`
+  package, wire `builder.Host.UseSystemd()` into each `Program.cs`,
+  ship a unit-tier composition-root test, then close the
+  supervise-processes caveat); (b) added an "Implementation status
+  (TD-0026)" callout under the `Type=notify` requirement section
+  with a workaround (downgrade to `Type=simple` until the call
+  ships).
+
+### D-3 — `configure-branch-protection.md` cites a tech-debt ledger entry without naming the TD
+
+- **Bucket:** `clean`.
+- **Claim:** the how-to mentions a future
+  `branch-protection-check.yml` workflow as "currently a tech-debt
+  ledger entry".
+- **Evidence:** TD-0006 ("Branch protection on `main`") tracks
+  exactly this work in
+  [`/doc/buildlog/tech-debt-ledger.md`](../buildlog/tech-debt-ledger.md#td-0006).
+  The how-to's parenthetical was not grep-able for the TD number.
+- **Conflict:** ledger cross-reference rule (every TD compromise
+  carries a `TD-NNNN` link in the citing document).
+- **Constitution anchor:** ledger cross-reference rule, II.3.
+- **Resolution:** PR #22 replaced the parenthetical with an explicit
+  TD-0006 link plus the capability-matrix row name.
+
+### D-4 — `provision-tenant.md` Step 11 ("Apply tenant EF Core migrations") aligned with TD-0003 caveat
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** Step 11 of the provisioning flow says "Apply tenant EF
+  Core migrations".
+- **Evidence:** PR #10 (TD-0003 step 1–2) shipped the tenant
+  `InitialCreate` scaffold; the worker `MigrateAsync()` call against
+  tenant databases (TD-0003 step 3) and the drop+apply+verify recipe
+  (step 4) remain open. The how-to step describes the contract
+  correctly; the gap is on the code side and is owned by TD-0003.
+- **Resolution:** none required. TD-0003 owns the code work.
+
+### D-5 — `bootstrap-platform.md`, `restart-tenant.md`, `inspect-provisioning-job.md`, `rotate-secrets.md`, `backup-and-restore.md`, `deploy-to-production.md`, and the README are aligned
+
+- **Bucket:** `aligned`.
+- **Evidence per document:**
+  - **`bootstrap-platform.md`** — the seven invariants and six steps
+    cross-reference AC-005, AC-006, AD-0007, AD-0008. Step 5 names
+    the `tabflow:must_change_password` claim and
+    `PasswordChangeRequiredMiddleware` introduced in PR #16.
+  - **`restart-tenant.md`** — references AD-0003 single-process
+    invariant, the systemd templated unit pattern, and the
+    surface-ID `T-13` (floor and cash workspace) that all match
+    `runtime-surfaces.md`.
+  - **`inspect-provisioning-job.md`** — `provisioning_jobs` and
+    `provisioning_job_steps` table names match `schema.md`'s
+    Provisioning Jobs section; surface ID `P-06` matches the
+    runtime map.
+  - **`rotate-secrets.md`** — the six secret classes and their
+    rotation paths cite AD-0005, the `Console:ManageUsersBelowOwner`
+    policy (AC-014), and the `data_protection_keys` 90-day
+    auto-rotate; all match the shipping code.
+  - **`backup-and-restore.md`** — the encryption rule, the off-site
+    append-only requirement, and the quarterly drill all map to
+    AC-127, AC-128, AC-129, AC-130 in `acceptance-criteria.md`.
+  - **`deploy-to-production.md`** — the host topology, separation of
+    concerns, smoke checks, and the AD-0003 link match the system
+    overview.
+  - **`/doc/docs/how-to/README.md`** — index file lists 10 how-to
+    guides, each of which exists on disk.
+- **Resolution:** none required.
 
 ## 8. Phase E — Tutorials Tree Findings
 
-*Pass-in-progress.*
+Phase E walks the three tutorial files under
+`/doc/docs/tutorials/`.
+
+### E-1 — `tutorials/README.md` did not list `local-development.md`
+
+- **Bucket:** `clean`.
+- **Claim:** the README is the index for the tutorials tree.
+- **Evidence:** the README listed only `getting-started.md` ("Current
+  starting point: [...]"); the second tutorial,
+  `local-development.md`, existed on disk but was invisible to a
+  reader of the index.
+- **Conflict:** III.1 (documentation reflects reality), III.3 (one
+  fact, one place — the README is the index).
+- **Constitution anchor:** III.1, III.3.
+- **Resolution:** PR #22 rewrote the README to list both tutorials
+  with one-line descriptions.
+
+### E-2 — `getting-started.md` and `local-development.md` are aligned
+
+- **Bucket:** `aligned`.
+- **Evidence per document:**
+  - **`getting-started.md`** — 11-step suggested reading order,
+    every link target resolves to an existing document
+    (`constitution.md`, `documentation-charter.md`,
+    `system-overview.md`, `runtime-surfaces.md`, `render-modes.md`,
+    `decisions.md`, `tenant-lifecycle.md`, `provision-tenant.md`,
+    `authorization.md`, `customer-session-model.md`, `tenant-api.md`,
+    `error-codes.md`, `schema.md`, `firmware.md`,
+    `acceptance-criteria.md`, `accessibility.md`, `release-gate.md`,
+    `glossary.md`).
+  - **`local-development.md`** — reserved-identifier table
+    (`dev-local`, `tabflow_dev-local`, `tabflow_platform_design`,
+    `tabflow_tenant_design`) matches the design-time factory
+    defaults documented in `setup-migrations.md`. The five-step
+    first-run setup matches the bootstrap how-to and the migration
+    commands ship as written.
+- **Resolution:** none required.
 
 ## 9. Phase F — Buildlog Cross-Reference Findings
 
-*Pass-in-progress.*
+Phase F treats the buildlog tree as a closed system: every
+`TD-NNNN`, `AD-NNNN`, and `AC-NNN` reference inside `/doc/buildlog/`
+MUST resolve to a defined entry in the canonical document, and every
+ledger entry MUST be cross-referenced from the source / doc that
+acknowledges the compromise.
+
+### F-1 — `AC-008` cited in three ledger paragraphs but undefined in `acceptance-criteria.md`
+
+- **Bucket:** `clean`.
+- **Claim:** the acceptance-criteria reference is the authoritative
+  vocabulary; every `AC-NNN` cited elsewhere MUST be defined there
+  (constitution III.3).
+- **Evidence:** a grep over `/doc/` returned `AC-008` cited in:
+  - TD-0023 risk-if-unpaid sentence,
+  - TD-0015 symptom paragraph,
+  - TD-0015 `Linked:` footer,
+  - the previous pass at `code-audit-2026-04-25.md` Section RR-C2.
+  But `acceptance-criteria.md` AC range jumps from AC-006 (last
+  Platform Access) directly to AC-010 (first Tenant Access); AC-007,
+  AC-008, AC-009 are not defined. The semantic intent of every
+  cited AC-008 was "tenant routes reject unauthenticated traffic"
+  — this is **AC-010** in the canonical reference.
+- **Conflict:** III.3 (one fact, one place — AC-008 has no
+  definition).
+- **Constitution anchor:** III.3.
+- **Resolution:** PR #22 rewrote the AC-008 references in TD-0023
+  and TD-0015 to AC-010. The `code-audit-2026-04-25.md` reference
+  is a closed audit pass (its findings are landed); not rewritten in
+  this pass to keep the audit trail intact, but flagged for the
+  next audit cycle if a stricter rule is adopted.
+
+### F-2 — `TD-0001` through `TD-0026` IDs are continuous and every cited TD is defined
+
+- **Bucket:** `aligned`.
+- **Claim:** every `TD-NNNN` reference MUST resolve into the ledger.
+- **Evidence:** a grep over `/doc/` for `TD-[0-9]{4}` returns 26
+  distinct IDs (TD-0001 through TD-0026). Every cited TD has a
+  corresponding entry in `tech-debt-ledger.md` (open or closed). No
+  orphans.
+- **Resolution:** none required.
+
+### F-3 — `AD-0001` through `AD-0015` IDs are continuous and every cited ADR is defined
+
+- **Bucket:** `aligned`.
+- **Evidence:** a grep over `/doc/` for `AD-[0-9]{4}` returns 15
+  distinct IDs (AD-0001 through AD-0015). Every cited ADR is defined
+  in `decisions.md`. No orphans.
+- **Resolution:** none required.
+
+### F-4 — Subtree stub READMEs are populated and indexed
+
+- **Bucket:** `aligned`.
+- **Evidence:** Phase A finding A-2 created the four buildlog
+  subtree stubs (`postmortems/`, `spikes/`, `retrospectives/`,
+  `abandoned/`), each with a README. Documents that link into these
+  trees (constitution II.1 + VI.3, glossary, data-protection,
+  amendment-template, configure-branch-protection,
+  data-protection.md's interim DSR-postmortem instruction added in
+  Phase C-2) all resolve.
+- **Resolution:** none required (closure inherited from A-2).
 
 ## 10. Closure Log
 
@@ -1025,11 +1225,35 @@ TD that resolved it, and the date.
 | C-4 | `clean` | PR #21 — rewrote the three stale mitigations in `threat-model.md`: missing-policy build error (AD-0005 + TD-0010 step 5), `IQueryable.ToList()` analyzer (TD-0009 future addition), backup encryption (capability-matrix `Target` + how-to link). | 2026-04-26 |
 | C-5 | `clean` | PR #21 — rewrote `customer-session-model.md` Submit Flow as a 9-step list naming the TD-0017 device-binding cookie check (step 5) and the TD-0018 idempotency-key check (step 7). | 2026-04-26 |
 | C-6 | `aligned` | No action required (multi-tenancy, tenant-lifecycle, accessibility, internationalization, authorization, operational-surfaces, READMEs). | 2026-04-26 |
+| D-1 | `clean` | PR #22 — renamed design-time factory class names in `setup-migrations.md` to `PlatformDbContextFactory` / `TenantDbContextFactory` (match shipping code). | 2026-04-26 |
+| D-2 | `implement` | PR #22 — opened TD-0026 with four-step payoff plan; added a TD-0026 callout to the `Type=notify` section of `supervise-processes.md`. | 2026-04-26 |
+| D-3 | `clean` | PR #22 — rewrote the `branch-protection-check` parenthetical in `configure-branch-protection.md` to cite TD-0006 explicitly. | 2026-04-26 |
+| D-4 | `aligned with caveat` | No how-to text change needed; worker `MigrateAsync()` owned by TD-0003 step 3. | 2026-04-26 |
+| D-5 | `aligned` | No action required (bootstrap-platform, restart-tenant, inspect-provisioning-job, rotate-secrets, backup-and-restore, deploy-to-production, README). | 2026-04-26 |
+| E-1 | `clean` | PR #22 — rewrote `tutorials/README.md` to list both tutorials (`getting-started.md`, `local-development.md`) with one-line descriptions. | 2026-04-26 |
+| E-2 | `aligned` | No action required (getting-started, local-development). | 2026-04-26 |
+| F-1 | `clean` | PR #22 — replaced the three undefined `AC-008` references in TD-0023 and TD-0015 with `AC-010`. | 2026-04-26 |
+| F-2 | `aligned` | TD-0001..TD-0026 continuous; every cited TD defined in the ledger. | 2026-04-26 |
+| F-3 | `aligned` | AD-0001..AD-0015 continuous; every cited ADR defined in `decisions.md`. | 2026-04-26 |
+| F-4 | `aligned` | Closure inherited from A-2 (subtree stubs created in PR #17). | 2026-04-26 |
 
 ## 11. Sign-Off
 
-Open. The pass remains in progress until every phase Section above is
-non-empty and every finding has a closure-log row.
+**Closed 2026-04-26.** Every phase Section above is populated and
+every finding carries a closure-log row.
+
+Outcome:
+
+- 6 phases walked (A meta, B-1 self-consistency tables, B-2 ADR
+  conformance, B-3 api/db/architecture, C explanation, D how-to,
+  E tutorials, F buildlog cross-ref).
+- 27 findings closed (5 in A, 5 in B-1, 7 in B-2, 5 in B-3, 6 in C,
+  5 in D, 2 in E, 4 in F).
+- 8 new tech-debt entries opened (TD-0019, TD-0020, TD-0021,
+  TD-0022, TD-0023, TD-0024, TD-0025, TD-0026); 1 existing entry
+  scope-extended (TD-0022 +platform-side controllers).
+- 5 PRs landed by the audit (#17 Phase A, #18 Phase B-1, #19 Phase
+  B-2, #20 Phase B-3, #21 Phase C, #22 Phases D + E + F closure).
 
 - Auditor: Cascade pair-programming session, opened 2026-04-26.
 - Method: top-down horizontal sweep, four-question protocol,

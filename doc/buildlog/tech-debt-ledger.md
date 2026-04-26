@@ -73,6 +73,55 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0026 — `Type=notify` supervision contract requires `UseSystemd()`; neither host calls it
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  D finding D-2).
+- Symptom: the supervision how-to at
+  [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md#typenotify-requirement)
+  declares the host invariant as `Type=notify` and states that the
+  hosts **MUST** call `UseSystemd()` on the host builder so systemd
+  considers them started only after ASP.NET Core signals readiness.
+  The shipping `Program.cs` for both hosts (and the platform worker)
+  has no `UseSystemd()` call:
+    `src/apps/platform/Program.cs`
+    `src/apps/platform-worker/Program.cs`
+    `src/apps/tenant/Program.cs`
+  A `Type=notify` unit deployed against a binary that never signals
+  ready hangs at `systemctl start` until the unit's
+  `TimeoutStartSec` elapses, then the supervisor marks the unit
+  `failed`. This is benign in development (the doc says
+  `UseSystemd()` is a no-op when not run under systemd) but breaks
+  the production deploy contract.
+- Risk if unpaid: the first production rollout that follows the
+  reference unit set times out at start. Operators downgrade to
+  `Type=simple`, lose the readiness handshake, and find out about a
+  bad start only when `/health/ready` fails — which is what the
+  `Type=notify` choice was meant to prevent.
+- Payoff plan:
+  1. (Open) Add the `Microsoft.Extensions.Hosting.Systemd` package
+     reference to the three host projects (or to
+     `Directory.Build.props` so it applies repository-wide).
+  2. (Open) Call `builder.Host.UseSystemd()` (or, for `WebApplication`,
+     `builder.Services.AddSystemd()` per the .NET 10 API) immediately
+     after `WebApplication.CreateBuilder(args)` in each `Program.cs`.
+     The call is a no-op when `INVOCATION_ID` is unset, so it is
+     safe in `dotnet run` and in tests.
+  3. (Open) Add an integration smoke test under
+     `tests/Platform.Tests/HostStartupTests.cs` (and the tenant
+     equivalent) that verifies `Microsoft.Extensions.Hosting.Systemd`
+     is in the composition root. The test runs in the Unit tier
+     (no `INVOCATION_ID`, no actual sd_notify call).
+  4. (Open) Update the supervise-processes how-to to point at this
+     entry as `Closed` once the call ships, and to remove the "is a
+     no-op when not run under systemd" sentence as a live caveat.
+- Linked: AD-0003,
+  [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#7-phase-d--how-to-tree-findings)
+
 ### [TRIAGE] TD-0025 — `test-taxonomy.md` says "no mocking framework"; every test project references NSubstitute
 
 - Opened: 2026-04-26
@@ -199,7 +248,7 @@ ledger; orphan `TD-` references are a documentation bug.
   when they want to know "what HTTP do we expose internally"; a
   drift this large means the answer is wrong. A future PR adding a
   staff endpoint copies the dominant `Policy: None` pattern and
-  re-creates the AC-008 / AC-043 violation that TD-0015 closed.
+  re-creates the AC-010 / AC-043 violation that TD-0015 closed.
 - Payoff plan:
   1. (Open) Mark the document as TD-0023 owned via a banner at the
      top, pointing readers at this entry until the rewrite lands.
@@ -346,7 +395,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Risk if unpaid: a future contributor adding a new customer-tier
   endpoint follows the dominant pattern (mount under `/api/<noun>`)
   and inherits the attribute-only authorisation. A drift here
-  re-creates the AC-008 / AC-043 violation that TD-0015 closed.
+  re-creates the AC-010 / AC-043 violation that TD-0015 closed.
 - Payoff plan:
   1. (Open) Mount four shim controllers under `/api/public/*` that
      forward to the existing services:
@@ -372,7 +421,7 @@ ledger; orphan `TD-` references are a documentation bug.
      [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md)
      and the OpenAPI export (when it lands) to use the
      `/api/public/*` prefix as the canonical customer-tier shape.
-- Linked: AC-008, AC-030, AC-043,
+- Linked: AC-010, AC-030, AC-043,
   [`/doc/docs/reference/architecture/runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints),
   [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md),
   TD-0015 step 2 (closure relied on attribute audit; this entry adds
@@ -650,7 +699,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Symptom: every staff-only endpoint on the tenant host (kitchen
   ticket state, table layout, raw cart manipulation, raw order
   submission, raw session open/close) responds to anonymous callers.
-  AC-008, AC-043, and AC-051 cannot be satisfied. The
+  AC-010, AC-043, and AC-051 cannot be satisfied. The
   `Tenant:Read` / `Tenant:Write` policies registered in `Program.cs`
   are never invoked.
 - Risk if unpaid: any reachable tenant host leaks the full state of
@@ -692,7 +741,7 @@ ledger; orphan `TD-` references are a documentation bug.
      anonymous request to a known staff endpoint yields HTTP `401` or
      `403`. Depends on TD-0010 (test taxonomy + fixture infrastructure
      for `Tenant.Tests`).
-- Linked: AC-008, AC-030, AC-031, AC-043, AC-051,
+- Linked: AC-010, AC-030, AC-031, AC-043, AC-051,
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#rr-c2-tenant-api-controllers-expose-every-endpoint-anonymously)
 
 ### [TRIAGE] TD-0014 — `Directory.Build.props` analyzer baseline ratchet back up to `All`
