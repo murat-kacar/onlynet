@@ -11,6 +11,26 @@ understands the intent before reading the diff.
 - ADR (if architectural):
 - Tech-debt ledger entry (if relevant): `TD-NNNN`
 
+## Working Mode
+
+Primary mode:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
+Secondary modes, if this PR intentionally crosses modes:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
+Mode handoff / output:
+
+```text
+Explain what this PR produces for each selected mode, or why a mode changed.
+```
+
 ## Type Of Change
 
 - [ ] Bug fix (non-breaking)
@@ -36,6 +56,8 @@ A self-check against [`/doc/docs/constitution.md`](../doc/docs/constitution.md):
 - [ ] **V.4 Security review trigger** — if this PR touches auth,
   authorization, secrets, payment, or personal data, a `security:
   reviewed` note is in this description below
+- [ ] **VIII. Working Modes** — primary mode is declared; secondary modes
+  and handoffs are listed when applicable
 
 ## Documentation Knock-On Effects
 
@@ -84,6 +106,7 @@ security: [reviewed | n/a]
 
 - [ ] Diff matches the summary
 - [ ] Constitution self-check is honest
+- [ ] Working mode declaration and output are reviewable
 - [ ] Documentation knock-on list is complete
 - [ ] Test tier placement is correct per
   [`/doc/docs/explanation/concepts/test-taxonomy.md`](../doc/docs/explanation/concepts/test-taxonomy.md)

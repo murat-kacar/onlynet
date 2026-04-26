@@ -53,12 +53,14 @@ The procedure runs against a read replica or a backup-restored copy
 when one exists; against the live primary when no replica exists. The
 queries below are read-only and safe to run against the primary.
 
-1. **Open a postmortem-style record.** Until the operator-side audit
-   log columns ship under [TD-0008](/doc/buildlog/tech-debt-ledger.md)
-   (retention sweep jobs), record the request opening in
-   `/doc/buildlog/dsr-NNNN.md` so the regulatory clock and the eventual
-   response are reproducible. Include: request received-at timestamp,
-   subject identifier, tenant scope, and the operator's identity.
+1. **Open a secure DSR case record.** Until the operator-side audit
+   log columns ship under [TD-0008](/doc/buildlog/tech-debt-ledger.md#td-0008)
+   (retention sweep jobs), record the request opening in the operator's
+   access-controlled case system, not in this repository. Include:
+   request received-at timestamp, subject identifier, tenant scope, and
+   the operator's identity. Repository documentation may reference only
+   the redacted request id (`dsr-NNNN`) and must never contain real
+   customer, staff, or device identifiers.
 
 2. **Collect from the platform database.** For platform admin data
    subjects only — staff who hold a `Platform:*` policy:
@@ -115,15 +117,15 @@ queries below are read-only and safe to run against the primary.
    one top-level key per source table. Each value is the rows the
    query returned, serialised with column names preserved. Personal
    data classified as `Sensitive` per
-   [`../explanation/concepts/data-protection.md`](../explanation/concepts/data-protection.md#classes)
+   [`../explanation/concepts/data-protection.md`](../explanation/concepts/data-protection.md#data-classification)
    (passwords, device-key hashes) is **omitted** even when the
    subject's row contains it; the export carries a top-level
    `omitted` array naming each (table, column) tuple that was
    redacted and the legal basis for the redaction.
 
 5. **Sign and seal.** Compute a SHA-256 of the JSON document. Record
-   the digest in the postmortem opened in step 1. The digest plus the
-   delivery channel forms a tamper-evident handoff trail.
+   the digest in the secure DSR case record opened in step 1. The digest
+   plus the delivery channel forms a tamper-evident handoff trail.
 
 6. **Deliver.** Send the JSON file plus the SHA-256 digest to the
    verified contact address the requester supplied. Encrypt at rest
@@ -170,8 +172,8 @@ the export touched:
   `action = 'dsr.access.exported'`, same payload shape.
 
 Until the audit-log helpers ship under
-[TD-0008](/doc/buildlog/tech-debt-ledger.md), the operator inserts the
-row by hand in the same transaction that wraps step 6.
+[TD-0008](/doc/buildlog/tech-debt-ledger.md#td-0008), the operator
+inserts the row by hand in the same transaction that wraps step 6.
 
 ## Regulatory Timing
 

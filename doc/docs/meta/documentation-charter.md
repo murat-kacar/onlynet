@@ -265,7 +265,7 @@ These never go into any tree:
 - Personal opinions framed as facts
 - Meeting transcripts
 - Vendor marketing material
-- Credentials, secrets, real customer data
+- Credentials, secrets, real customer data, DSR case records, or DSR exports
 - Half-finished sentences left as "TODO" without an owner
 - Historical narrative ("we used to do X, then Y, now Z") — the
   current state is what we document; a `Status: Superseded` ADR is
@@ -286,9 +286,10 @@ To decide if existing content should stay or go:
 - Every cross-tree link uses an absolute path from the repository
   root: e.g. `/doc/docs/reference/database/schema.md`. Relative paths
   break when documents move between trees.
-- `buildlog/` may link out to anywhere; nothing should link *into*
-  `buildlog/` except `docs/` "Known Failure Modes" sections and
-  ledger references (`TD-NNNN`).
+- `buildlog/` may link out to anywhere; other trees link *into*
+  `buildlog/` only for `docs/` "Known Failure Modes" sections,
+  release-gate evidence records (for example recovery drill
+  retrospectives), and ledger references (`TD-NNNN`).
 
 ## Amendment
 

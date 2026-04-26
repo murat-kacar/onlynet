@@ -294,6 +294,32 @@ stopped, no contributor starts new work; the team converges on the fix
 until `main` is green again. Per
 [`../constitution.md`](../constitution.md) Section VI.
 
+### Working Mode
+
+The declared mode of a work item: `documentation`, `implementation`, or
+`review`. A work item has one primary mode and can list secondary modes
+when it intentionally crosses modes. Per
+[`../constitution.md`](../constitution.md) Section VIII.
+
+### Documentation Mode
+
+A working mode whose output is a source-of-truth document or a documented
+deletion. It starts with the documentation charter's decision test.
+
+### Implementation Mode
+
+A working mode whose output is code plus the tests, observability, and
+documentation required by `Done`. It starts from the governing ADR,
+reference document, acceptance criterion, capability-matrix row, and
+tech-debt entry.
+
+### Review Mode
+
+A working mode whose output is actionable findings or an explicit approval
+against the review policy. It starts with risk: correctness, security,
+contract drift, missing tests, missing observability, missing
+documentation, and untracked technical debt.
+
 ### Done
 
 A capability is *done* when it is tested, observable, and documented.

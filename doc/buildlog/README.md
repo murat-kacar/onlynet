@@ -12,7 +12,7 @@ This tree's shape, audience, and lifecycle are defined by
 | Subtree / File | Content | Filename Format |
 | --- | --- | --- |
 | `postmortems/` | Production or preview incidents | `YYYY-MM-DD-<slug>.md` |
-| `retrospectives/` | Release / milestone / sprint retros | `YYYY-Qn-<topic>.md` |
+| `retrospectives/` | Release / milestone / sprint retros; recovery drill records | `YYYY-Qn-<topic>.md` |
 | `spikes/` | Completed spike outcomes worth keeping | `<topic>.md` |
 | `abandoned/` | Approaches we tried and rejected | `<topic>.md` |
 | `code-audit-*.md` | Periodic constitution-versus-code audits | `code-audit-YYYY-MM-DD.md` |
@@ -36,6 +36,7 @@ deleted.
 
 - Postmortems with timeline, contributing factors, follow-ups
 - Retrospective findings worth carrying forward
+- Recovery drill records required by the release gate
 - Spike findings that didn't become an ADR but contain useful insight
 - Approaches we tried, why we tried them, why we rejected them
 

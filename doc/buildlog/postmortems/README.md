@@ -57,7 +57,7 @@ that activates the moment the first incident closes.
 
 - Constitution VI.3 — postmortem requirement
 - Charter `buildlog/` section — append-only lifecycle
-- [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#breach-response)
+- [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#breach-notification)
   — KVKK/GDPR breach response writes a postmortem within 5 working
   days
 - [`/doc/docs/how-to/configure-branch-protection.md`](/doc/docs/how-to/configure-branch-protection.md#recovering-from-disabled-protection)

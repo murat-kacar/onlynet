@@ -46,10 +46,11 @@ The procedure runs against the live primary in a single transaction
 per database. The transaction is the rollback boundary if the
 verification step (step 6) fails.
 
-1. **Open a postmortem-style record** at `/doc/buildlog/dsr-NNNN.md`
-   (same convention as the access procedure). Record the request
-   opening, subject identifier, tenant scope, reason for erasure,
-   and cut-off timestamp.
+1. **Open a secure DSR case record** in the operator's access-controlled
+   case system (same convention as the access procedure). Record the
+   request opening, subject identifier, tenant scope, reason for erasure,
+   and cut-off timestamp. Repository documentation may reference only
+   the redacted request id (`dsr-NNNN`).
 
 2. **Run a dry-run access export** per the access how-to. The export
    is the rollback artefact: if step 6 fails or a competing
@@ -152,7 +153,7 @@ verification step (step 6) fails.
 No separate deliverable beyond the confirmation message in step 8.
 The audit row from step 7 is the lasting evidence the procedure ran.
 The export from step 2 is retained on operator-controlled storage
-under the postmortem in step 1 for the regulatory dispute window
+under the secure DSR case record from step 1 for the regulatory dispute window
 (typically 5 years for KVKK; 6 years for GDPR-implementing
 member-state law).
 

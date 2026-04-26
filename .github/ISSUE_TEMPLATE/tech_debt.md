@@ -18,6 +18,20 @@ assignees: []
 How was this debt discovered? (postmortem, code review, spike, audit,
 pair session...). One paragraph.
 
+## Working Mode
+
+Primary mode expected after triage:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
+Secondary modes, if already known:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
 ## Symptom
 
 What is the visible problem today? Include file paths or surface IDs

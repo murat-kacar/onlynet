@@ -19,7 +19,7 @@ src/
 tests/                 Unit, integration, and end-to-end tests
 deploy/                Deployment scripts, nginx, systemd configs
 tools/                 CLI tools for firmware generation and migrations
-doc/                   All documentation, split into five trees (see below)
+doc/                   All documentation, split into four trees (see below)
 ```
 
 ## Documentation Trees

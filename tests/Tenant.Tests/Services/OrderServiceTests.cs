@@ -90,16 +90,34 @@ public sealed class OrderServiceTests : TenantTransactionalTestBase
             .WithMessage("*Device cookie mismatch*");
     }
 
+    [Fact]
+    public async Task SubmitAsync_DuplicateIdempotencyKey_ReturnsOriginalResult()
+    {
+        var seed = await SeedSubmitGraphAsync();
+        var service = new OrderService(Db);
+        var request = new SubmitOrderRequest(
+            seed.SessionId,
+            seed.TicketId,
+            seed.TableId,
+            seed.CheckoutToken,
+            IdempotencyKey: $"idem-{Guid.NewGuid():N}",
+            Note: null);
+
+        var first = await service.SubmitAsync(request, seed.DeviceCookieValue);
+        var second = await service.SubmitAsync(request, seed.DeviceCookieValue);
+
+        second.Should().Be(first);
+        var ordersForKey = await Db.Orders
+            .CountAsync(o => o.SessionId == seed.SessionId && o.IdempotencyKey == request.IdempotencyKey);
+        ordersForKey.Should().Be(1);
+    }
+
     /// <summary>
-    /// TD-0018 step 3: a second submit with the same idempotency key
-    /// against the same session raises the unique-index violation.
-    /// The first submit closes the session, so the second naturally
-    /// also fails on the open-session gate; the raw idempotency
-    /// constraint is exercised below by issuing two parallel orders
-    /// against the **same** session before the first commits.
+    /// TD-0018 durable guard: the database unique index still rejects
+    /// a duplicate row if two writes race past the service fast-path.
     /// </summary>
     [Fact]
-    public async Task SubmitAsync_DuplicateIdempotencyKey_RejectsSecond()
+    public async Task SubmitAsync_DuplicateIdempotencyKey_UniqueIndexRejectsSecond()
     {
         var seed = await SeedSubmitGraphAsync();
         var idempotencyKey = $"idem-{Guid.NewGuid():N}";

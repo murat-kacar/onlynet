@@ -325,7 +325,7 @@ ASP0026 surfaces and the build breaks.
   `/api/sessions/open`, and `/api/sessions/{ticketId}`. Per
   AD-0003, the public surface belongs under `/api/public/*`. The
   payoff plan in
-  [TD-0021](/doc/buildlog/tech-debt-ledger.md) introduces shim
+  [TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021) introduces shim
   controllers at `/api/public/*` that delegate into the existing
   service layer; once the shims ship, this document and
   `tenant-api.md` are the only references that change.

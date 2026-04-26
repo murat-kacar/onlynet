@@ -178,8 +178,8 @@ A drill is a real restore against a non-production target:
    procedure in the same PR that records the drill.
 
 The drill record lives in
-[`/doc/buildlog/`](/doc/buildlog/) — drills are part of the lessons
-record.
+[`/doc/buildlog/retrospectives/`](/doc/buildlog/retrospectives/) as
+`YYYY-Qn-recovery-drill.md` — drills are part of the lessons record.
 
 ## Related
 

@@ -62,7 +62,7 @@ better.
 > rule that says "no mocks" plus csprojs that reference one — is the
 > kind of drift constitution III.1 forbids. The resolution is tracked
 > under
-> [TD-0025](/doc/buildlog/tech-debt-ledger.md#triage-td-0025--test-taxonomymd-says-no-mocking-framework-every-test-project-references-nsubstitute).
+> [TD-0025](/doc/buildlog/tech-debt-ledger.md#td-0025).
 > Until that lands, hand-written fakes remain the default for new
 > tests.
 

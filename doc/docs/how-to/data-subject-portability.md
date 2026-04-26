@@ -51,9 +51,10 @@ plus:
 
 ## Procedure
 
-1. **Open a postmortem-style record** at
-   `/doc/buildlog/dsr-NNNN.md`. Record the request opening, subject
-   identifier, format preference, and recipient.
+1. **Open a secure DSR case record** in the operator's access-controlled
+   case system. Record the request opening, subject identifier, format
+   preference, and recipient. Repository documentation may reference only
+   the redacted request id (`dsr-NNNN`).
 
 2. **Run the access export.** Follow steps 2–3 of
    [`./data-subject-access.md`](./data-subject-access.md#procedure).
@@ -78,7 +79,7 @@ plus:
    each.
 
 5. **Sign and seal.** SHA-256 the deliverable (the JSON file or the
-   ZIP). Record the digest in the postmortem from step 1.
+   ZIP). Record the digest in the secure DSR case record from step 1.
 
 6. **Deliver.**
    - **To the requester.** Same channel as the access procedure

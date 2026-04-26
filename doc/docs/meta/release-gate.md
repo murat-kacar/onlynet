@@ -142,9 +142,9 @@ and [`../how-to/backup-and-restore.md`](../how-to/backup-and-restore.md#quarterl
 - [ ] The drill recorded measured RTO and RPO that meet the targets
   for every scope (platform host, tenant host, tenant database,
   multi-tenant outage).
-- [ ] The drill record is present in [`/doc/buildlog/`](/doc/buildlog/)
-  with the drill date, measured numbers, and any procedure
-  corrections.
+- [ ] The drill record is present in
+  [`/doc/buildlog/retrospectives/`](/doc/buildlog/retrospectives/) with
+  the drill date, measured numbers, and any procedure corrections.
 - [ ] Backup encryption verification (LUKS volume + age-encrypted
   dumps) passes on the production database host.
 - [ ] Off-site backup copy is reachable and append-only credentials
