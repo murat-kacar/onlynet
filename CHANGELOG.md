@@ -184,6 +184,71 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Architecture
+
+- **TD-0022 closed: 6 controllers → application services + TF0003
+  Roslyn rule (PR #29).** Six controllers under
+  `/src/apps/{tenant,platform}/Controllers/Api/` previously held a
+  `TenantDbContext` / `PlatformDbContext` directly and ran LINQ
+  queries inline. AD-0003's host → application service → domain
+  trade-off requires a service-layer seam between the HTTP transport
+  and the EF Core query shape; PR #29 introduces that seam and
+  ratchets it in code with a Roslyn rule.
+  - **New tenant-side services (3 + 1 extension)** under
+    [`/src/packages/shared-dotnet/Application/Services/`](./src/packages/shared-dotnet/Application/Services/):
+    - `IKitchenReadService` — orders-in-progress query +
+      item-status mutation.
+    - `IMenuReadService` — menu items, filtered by category.
+    - `ITableReadService` — tables list + per-table detail with
+      open-session count.
+    - `IOrderService` — extended with `GetOrderDetailAsync` and
+      `GetOrdersBySessionAsync`; the customer-tier `SubmitAsync`
+      is unchanged.
+    Implementations live in
+    [`/src/apps/tenant/Services/`](./src/apps/tenant/Services/)
+    (`KitchenReadService.cs`, `MenuReadService.cs`,
+    `TableReadService.cs`, plus the extension in `OrderService.cs`).
+  - **New platform-side services (2)** under the same shared
+    folder:
+    - `ITenantRegistryService` — tenant CRUD (`GetTenants`,
+      `GetTenant`, `CreateTenant`, `UpdateTenantRegionalSettings`).
+    - `IProvisioningJobReadService` — job list + detail.
+    Implementations live in
+    [`/src/apps/platform/Services/`](./src/apps/platform/Services/)
+    (`TenantRegistryService.cs`, `ProvisioningJobReadService.cs`).
+  - **6 controllers refactored.** `KitchenController`,
+    `MenuController`, `TablesController`, `OrdersController`
+    (tenant-side); `TenantsController`, `JobsController`
+    (platform-side). Each controller now depends on the
+    corresponding service interface; actions are thin: parameter
+    binding, `await`, return. The HTTP route, policy, and
+    status-code contract documented in
+    [`internal-api.md`](./doc/docs/reference/api/internal-api.md)
+    (PR #27) is preserved exactly.
+  - **DI registration.** Both `Program.cs` files register the new
+    services via `AddScoped`. Both hosts smoke-tested with
+    `dotnet run` + `curl /health/live` returning `200` with
+    `{"status":"pass",...}` after the refactor.
+  - **TF0003 Roslyn rule.** New
+    [`/tools/analyzers/TabFlow.Analyzers/ControllerDbContextAnalyzer.cs`](./tools/analyzers/TabFlow.Analyzers/ControllerDbContextAnalyzer.cs)
+    declares rule `TF0003` (category `Design`, default severity
+    `Warning` → build break under `TreatWarningsAsErrors=true`).
+    The analyser fires on any class derived from
+    `Microsoft.AspNetCore.Mvc.ControllerBase` that holds a
+    `Microsoft.EntityFrameworkCore.DbContext` as a field, property,
+    or constructor parameter; compiler-generated auto-property
+    backing fields are skipped so a single property declaration
+    produces one diagnostic. Backed by 4 Unit-tier regression
+    tests in
+    [`/tests/Analyzers.Tests/ControllerDbContextAnalyzerTests.cs`](./tests/Analyzers.Tests/ControllerDbContextAnalyzerTests.cs)
+    (positive: field, property, constructor parameter; negative:
+    same DbContext shape on a non-controller class). 18 of 18
+    tests in `Analyzers.Tests` now pass.
+  - **Tech debt ledger.** TD-0022 status `[TRIAGE]` →
+    `[CLOSED]`; payoff plan steps 1, 2, and 4 done in PR #29;
+    step 3 (service-level tests) remains open against TD-0010
+    step 5.
+
 ### Documentation
 
 - **TD-0024 closed: four DSR operator procedures (PR #28).** The

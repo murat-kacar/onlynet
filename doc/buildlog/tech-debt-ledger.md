@@ -402,10 +402,11 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0022 (controller-to-service migration overlaps),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
 
-### [TRIAGE] TD-0022 — Read-only API controllers bypass the application service layer
+### [CLOSED] TD-0022 — Read-only API controllers bypass the application service layer
 
 - Opened: 2026-04-26
-- Owner: TBD
+- Closed: 2026-04-26
+- Owner: closed in PR #29 by single-author pre-1.0 (TD-0020).
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
   B-2 finding B-2.7 and Phase B-3 cross-check). AD-0003 trade-off
@@ -452,39 +453,50 @@ ledger; orphan `TD-` references are a documentation bug.
   inside a controller action). Re-aligning later requires touching
   every read path simultaneously, which is a much bigger change
   than fixing four controllers today.
-- Payoff plan:
-  1. (Open) Introduce application services to mirror the existing
-     pattern. Tenant-side:
-     - `IKitchenReadService` — exposes the queries used by
-       `KitchenController.GetKitchenOrders` and the
-       `OrderItem.Status` mutation by `UpdateItemStatus`.
-     - `IMenuReadService` — exposes
-       `GetMenuItems` / `GetMenuItemsByCategory`.
-     - `ITableReadService` — exposes `GetTables` / `GetTable`.
-     - Order detail and order-by-session reads currently live in
-       `OrdersController`; fold them into the existing
-       `IOrderService` rather than introducing a fourth read service.
-     Platform-side:
-     - `ITenantRegistryService` — exposes `GetTenants` / `GetTenant`
-       / `CreateTenant` / `UpdateTenant`. The write actions emit a
-       `tenant.create` provisioning job and write a `tenant.create`
-       row to `platform_audit_log` (AC-071) inside the same
-       transaction.
-     - `IProvisioningJobReadService` — exposes `GetJobs` /
-       `GetJob`.
-  2. (Open) Rewrite the six controllers (4 tenant-side + 2
-     platform-side) to depend on the services instead of the
-     `DbContext`. Controller actions become thin: parameter
-     binding, `await`, return.
-  3. (Open) Each new service ships with at least one unit test that
-     exercises the projection against an in-memory or transactional
-     fixture (covered under TD-0010 step 5 once the integration
-     fixture lands).
-  4. (Open) Once all six controllers are migrated, add a Roslyn
-     analyzer rule (extending the `TabFlow.Analyzers` project from
-     TD-0009) that flags any
-     `Microsoft.EntityFrameworkCore.DbContext` parameter or field
-     on a class derived from `ControllerBase`.
+- Resolution (PR #29):
+  1. (Done in PR #29) Five new application-service interfaces
+     introduced, plus an extension of the existing `IOrderService`:
+     - **Tenant-side, new** under
+       `/src/packages/shared-dotnet/Application/Services/`:
+       `IKitchenReadService` (orders-in-progress + item-status
+       mutation), `IMenuReadService`
+       (menu-items + filtered-by-category), `ITableReadService`
+       (tables + per-table detail with open-session count).
+     - **Tenant-side, extended:** `IOrderService` gains
+       `GetOrderDetailAsync` and `GetOrdersBySessionAsync`. The
+       customer-tier `SubmitAsync` is unchanged.
+     - **Platform-side, new** under the same path:
+       `ITenantRegistryService` (tenant CRUD), and
+       `IProvisioningJobReadService` (job list + detail).
+     The audit-row half of the registry write actions (AC-071)
+     waits on TD-0019; the read paths surface a TODO that names
+     it.
+  2. (Done in PR #29) Six controllers rewritten to depend on the
+     services rather than on `TenantDbContext` / `PlatformDbContext`:
+     `KitchenController`, `MenuController`, `TablesController`,
+     `OrdersController` (tenant-side), `TenantsController`,
+     `JobsController` (platform-side). Controller actions are now
+     thin: parameter binding, `await`, return. Each action keeps
+     the same authorise / route / status-code contract that
+     `internal-api.md` documents (PR #27).
+  3. (Open) Service-level tests for the new read paths land with
+     the Integration-tier transactional fixture in TD-0010 step 5.
+     Until then, the contract is enforced by the smoke check (each
+     controller route returns the same HTTP shape it did before
+     the refactor) and by the new Roslyn rule below.
+  4. (Done in PR #29) Authored a third Roslyn analyser
+     `TabFlow.Analyzers.ControllerDbContextAnalyzer` (rule
+     `TF0003`, category `Design`, default severity `Warning`).
+     The analyser fires on any class derived from
+     `Microsoft.AspNetCore.Mvc.ControllerBase` that holds a
+     `Microsoft.EntityFrameworkCore.DbContext` as a field, property,
+     or constructor parameter; compiler-generated auto-property
+     backing fields are skipped so a single property declaration
+     produces one diagnostic. Backed by 4 Unit-tier regression
+     tests at
+     `tests/Analyzers.Tests/ControllerDbContextAnalyzerTests.cs`.
+     Released in
+     `tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md`.
 - Linked: AD-0003,
   [`/doc/docs/reference/architecture/decisions.md`](/doc/docs/reference/architecture/decisions.md#ad-0003-one-host-process-per-side),
   TD-0010 step 5 (integration fixture for service-level tests),

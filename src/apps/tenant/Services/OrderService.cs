@@ -114,4 +114,46 @@ public class OrderService : IOrderService
 
         return new SubmitOrderResult(order.Id, totalAmount);
     }
+
+    public async Task<OrderDetailDto?> GetOrderDetailAsync(Guid orderId, CancellationToken ct = default)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        if (order is null)
+        {
+            return null;
+        }
+
+        var table = await _context.Stations.FindAsync(new object[] { order.TableId }, ct);
+        var tableLabel = table?.Name ?? $"Table {order.TableId}";
+
+        var items = order.Items
+            .Select(i => new OrderItemDto(
+                i.Id,
+                i.ItemName,
+                i.Quantity,
+                i.UnitPrice,
+                i.Status.ToString()))
+            .ToList();
+
+        // The aggregate-level order status is tracked under TD-0019;
+        // until that lands the read returns the placeholder
+        // "Submitted" so the surface stays stable.
+        return new OrderDetailDto(
+            order.Id,
+            tableLabel,
+            order.TotalAmount,
+            "Submitted",
+            items);
+    }
+
+    public async Task<IReadOnlyList<OrderSummaryDto>> GetOrdersBySessionAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        return await _context.Orders
+            .Where(o => o.SessionId == sessionId)
+            .OrderByDescending(o => o.SubmittedAt)
+            .Select(o => new OrderSummaryDto(o.Id, o.TotalAmount, o.SubmittedAt))
+            .ToListAsync(ct);
+    }
 }

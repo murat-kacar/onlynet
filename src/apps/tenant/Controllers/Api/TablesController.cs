@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TabFlow.Shared.Infrastructure.Data;
+using TabFlow.Shared.Application.Services;
 
 namespace TabFlow.Tenant.Controllers.Api;
 
@@ -11,55 +10,26 @@ namespace TabFlow.Tenant.Controllers.Api;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "Tenant:Read")]
-public class TablesController : ControllerBase
+public sealed class TablesController : ControllerBase
 {
-    private readonly TenantDbContext _context;
+    private readonly ITableReadService _service;
 
-    public TablesController(TenantDbContext context)
+    public TablesController(ITableReadService service)
     {
-        _context = context;
+        _service = service;
     }
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TableDto>>> GetTables(CancellationToken ct)
     {
-        var tables = await _context.Stations
-            .Select(s => new TableDto(
-                s.Id,
-                s.Name,
-                s.Code,
-                s.IsActive,
-                s.SortOrder))
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync(ct);
-
+        var tables = await _service.GetTablesAsync(ct);
         return Ok(tables);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TableDetailDto>> GetTable(Guid id, CancellationToken ct)
     {
-        var table = await _context.Stations.FindAsync(new object[] { id }, ct);
-        if (table == null)
-        {
-            return NotFound();
-        }
-
-        var activeSessions = await _context.CustomerSessions
-            .Where(cs => cs.TableId == id && cs.IsOpen)
-            .CountAsync(ct);
-
-        return Ok(new TableDetailDto(
-            table.Id,
-            table.Name,
-            table.Code,
-            table.Color,
-            table.Type,
-            table.IsActive,
-            table.SortOrder,
-            activeSessions > 0));
+        var table = await _service.GetTableAsync(id, ct);
+        return table is null ? NotFound() : Ok(table);
     }
 }
-
-public record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder);
-public record TableDetailDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool IsOccupied);
