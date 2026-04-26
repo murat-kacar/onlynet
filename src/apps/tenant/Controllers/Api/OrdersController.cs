@@ -49,7 +49,7 @@ public class OrdersController : ControllerBase
             order.Id,
             tableLabel,
             order.TotalAmount,
-            "Submitted", // TODO: Get actual status
+            "Submitted", // TODO(TD-0019): Get actual status
             items));
     }
 

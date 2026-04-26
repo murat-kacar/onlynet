@@ -82,7 +82,7 @@ public class EventSubscriptionService : BackgroundService
             TableId = @event.TableId
         }, ct);
         
-        // TODO: Send notification to kitchen staff
+        // TODO(TD-0019): Send notification to kitchen staff
         await Task.CompletedTask;
     }
 

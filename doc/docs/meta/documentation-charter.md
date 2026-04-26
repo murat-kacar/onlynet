@@ -59,7 +59,7 @@ reviewers, anyone who is *building* or *running* TabFlow.
 **Purpose.** The single source of truth for what TabFlow is, how it
 behaves, why it was designed this way, and how to operate it.
 
-**Structure (Diataxis).**
+**Structure (Diátaxis).**
 
 - `tutorials/` — learning paths
 - `how-to/` — task-oriented procedures
@@ -90,7 +90,7 @@ drafts, postmortems, marketing copy.
 **Purpose.** Step-by-step, screenshot-bearing help written in the
 language of the persona. Not engineering language.
 
-**Structure.** Per persona, organised by task. No shared "Diataxis"
+**Structure.** Per persona, organised by task. No shared "Diátaxis"
 folders — each persona's tree is flat enough to be findable.
 
 **Stability.** Versioned with product release. Changes follow product

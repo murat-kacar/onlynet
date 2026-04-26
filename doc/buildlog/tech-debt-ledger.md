@@ -73,6 +73,131 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0020 — Pre-1.0 single-author phase: review-pair and security-review rules effectively suspended
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase A
+  finding A-4). The constitution
+  ([`/doc/docs/constitution.md`](/doc/docs/constitution.md), V.2 and
+  V.4) requires every PR to land with at least one non-author
+  reviewer, and every security-sensitive PR to carry a
+  `security: reviewed` note from a security-focused reviewer. With a
+  single active maintainer through the pre-1.0 window, both rules are
+  effectively suspended on every merge: no PR has carried a
+  non-author approval, and no security-sensitive PR (PRs #6, #7,
+  #11, #12, #16) has carried a `security: reviewed` note.
+- Symptom: The constitution V.2 and V.4 invariants are visible in
+  source but cannot be enforced today. Every merge during the pre-1.0
+  window is effectively a stop-the-line solo merge per V.2's narrow
+  exception, but PR bodies do not declare this explicitly, and there
+  is no retroactive review PR scheduled per the
+  [`./review-policy.md`](/doc/docs/meta/review-policy.md#stop-the-line-exception)
+  one-working-day rule. The release-gate check at
+  [`./release-gate.md`](/doc/docs/meta/release-gate.md#sign-off)
+  step 3 ("every security-sensitive PR merged since the previous
+  release carries a `security: reviewed` note") cannot pass on the
+  first release.
+- Risk if unpaid: V.2 and V.4 silently become aspirational rather
+  than operational, repeating the failure mode the constitution's
+  Amendment section explicitly forbids ("if a rule is being
+  routinely ignored, that is a constitution bug, fixed by amendment,
+  not by silence"). The first release-gate run hits a checklist that
+  cannot be satisfied for the entire pre-1.0 history.
+- Payoff plan:
+  1. (Open) Add a second active maintainer with security focus, OR
+     amend the constitution to add an explicit pre-1.0 single-author
+     bypass (Section V.6 or equivalent) per the amendment template at
+     [`/doc/docs/meta/amendment-template.md`](/doc/docs/meta/amendment-template.md).
+     The amendment, if chosen, MUST cite this ledger entry as the
+     motivating experience and MUST state the condition under which
+     the bypass expires (e.g. first paying tenant, first release tag).
+  2. (Open) Until step 1 lands, every PR opened during the pre-1.0
+     window MUST carry an explicit "stop-the-line: pre-1.0
+     single-author" line in the PR body so the bypass is auditable in
+     git history rather than implicit.
+  3. (Open) Once step 1 lands, retroactively review every PR merged
+     during the pre-1.0 window in a single follow-up PR, OR open the
+     first release-gate run with an explicit waiver line that lists
+     the un-reviewed PRs by SHA.
+- Linked: [`/doc/docs/constitution.md`](/doc/docs/constitution.md)
+  Section V.2, V.4,
+  [`/doc/docs/meta/review-policy.md`](/doc/docs/meta/review-policy.md),
+  [`/doc/docs/meta/release-gate.md`](/doc/docs/meta/release-gate.md),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#4-phase-a--meta-tree-findings)
+
+### [TRIAGE] TD-0019 — Pre-1.0 placeholder TODOs lacking tech-debt ledger entries
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase A
+  finding A-3). A grep for `TODO|FIXME|XXX|HACK` across `/src/` and
+  `/tests/` returns 12 placeholder comments, none of which carry a
+  `TD-NNNN` reference. The constitution
+  ([`/doc/docs/constitution.md`](/doc/docs/constitution.md) II.3)
+  forbids the phrase "we'll fix it later" without a corresponding
+  ledger entry.
+- Inventory of un-ledgered TODOs (snapshot at pass open):
+  - `src/apps/platform/Components/Pages/Audit.razor:39` — load audit
+    list from database
+  - `src/apps/platform/Components/Pages/Dashboard.razor:25` — load
+    counters from database
+  - `src/apps/platform/Components/Pages/TenantsDetail.razor:47` —
+    load tenant detail from database
+  - `src/apps/platform/Components/Pages/TenantsNew.razor:66` —
+    create tenant + provisioning job
+  - `src/apps/platform/Middleware/AuditMiddleware.cs:16` —
+    automatic audit logging for mutating requests
+  - `src/apps/tenant/Components/Pages/Cart.razor:105` — get TableId
+    from session
+  - `src/apps/tenant/Components/Pages/Cart.razor:106` — get
+    checkout-proof token from QR token
+  - `src/apps/tenant/Components/Pages/Cart.razor:116` — read
+    actual order ID from `/api/public/orders` response
+  - `src/apps/tenant/Components/Pages/ScanQr.razor:59` — implement
+    real QR scanning with the camera
+  - `src/apps/tenant/Components/Pages/TableView.razor:33` — load
+    table state from database
+  - `src/apps/tenant/Controllers/Api/OrdersController.cs:52` —
+    expose actual order status instead of the literal `"Submitted"`
+  - `src/apps/tenant/Services/EventSubscriptionService.cs:85` —
+    notify kitchen staff on order submitted
+  - `src/apps/tenant/WebSocket/TableWebSocketHandler.cs:116` —
+    publish table-status events via the in-process bus
+- Symptom: Constitution II.3 is violated by inspection: 12 untracked
+  "we'll fix it later" markers. Each individual TODO is small, but
+  the pattern is the failure mode II.3 is meant to prevent.
+- Risk if unpaid: Each placeholder has a real implementation cost
+  that is invisible to ledger-based planning; release-gate triage
+  cannot find them; the first contributor to ship a UI surface in
+  this area trips over a behaviour that "looked done" because it
+  compiled.
+- Payoff plan:
+  1. (Done in PR #17) Inventoried the 12 TODOs above and rewrote the
+     comments to carry a `TD-0019` reference, so a grep for
+     `TD-0019` in source returns this ledger entry. Constitution II.3
+     is back in compliance for the existing TODOs; the rule continues
+     to forbid future TODOs without a `TD-NNNN` reference.
+  2. (Open) For each TODO above, decide whether the gap is a
+     ledgered-debt item that deserves its own `TD-NNNN` (because the
+     resolution is non-trivial) or a hot-path implementation that
+     should be closed before any UI surface in the same file ships.
+     Resolution either splits TD-0019 into per-area TDs and closes
+     this entry, or closes individual lines as their owners pick them
+     up.
+  3. (Open) Add a static-analysis rule that any remaining
+     `TODO|FIXME|XXX|HACK` comment without a `TD-NNNN` reference is
+     a build warning at minimum. The English-first analyser project
+     at `/tools/analyzers/TabFlow.Analyzers/` is the natural home;
+     this would be diagnostic ID `TF0003` (after `TF0001`
+     non-ASCII identifiers and TD-0010 step 4's planned `TF0002`
+     unit-tier-import rule).
+- Linked: [`/doc/docs/constitution.md`](/doc/docs/constitution.md)
+  Section II.3,
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#4-phase-a--meta-tree-findings)
+
 ### [TRIAGE] TD-0018 — Order idempotency key accepted on the wire but never persisted
 
 - Opened: 2026-04-25

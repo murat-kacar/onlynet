@@ -5,7 +5,7 @@ The `docs/` tree is one of five documentation trees in TabFlow. It is the
 operators. The full tree map and cross-tree rules live in
 [`meta/documentation-charter.md`](./meta/documentation-charter.md).
 
-This tree's folders are grouped by reader intent (Diataxis):
+This tree's folders are grouped by reader intent (Diátaxis):
 
 - `tutorials/` — reading paths for someone new
 - `how-to/` — task-oriented operational guides

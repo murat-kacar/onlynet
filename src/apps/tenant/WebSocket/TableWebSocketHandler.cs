@@ -113,7 +113,7 @@ public class TableWebSocketHandler
         var status = messageData.RootElement.GetProperty("status").GetString();
         _logger.TableStatus(tableNumber, status);
 
-        // TODO: Publish table status event via EventBus
+        // TODO(TD-0019): Publish table status event via EventBus
         // Example:
         // if (status == "occupied")
         //     _eventBus.Publish(new TableOpenedEvent(tableNumber, sessionId));

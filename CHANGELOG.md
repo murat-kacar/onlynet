@@ -186,6 +186,58 @@ AD-0011.
 
 ### Documentation
 
+- **Code ↔ documentation alignment pass opened (PR #17).** New
+  buildlog entry at
+  [`/doc/buildlog/code-audit-2026-04-26.md`](./doc/buildlog/code-audit-2026-04-26.md)
+  conducts a top-down horizontal sweep over every `/doc/` tree
+  through the lens of the constitution and the documentation
+  charter, classifying findings into four buckets (`aligned`,
+  `implement`, `clean`, `correct`). Phase A (Meta tree) closed in
+  this PR with five findings:
+  - **A-1 (`correct`)** — `Diataxis` mis-spelt in the charter (two
+    sites) and in `/doc/docs/README.md` (one site); rewritten to
+    `Diátaxis`.
+  - **A-2 (`correct`)** — the four `buildlog/` subtree directories
+    (`postmortems/`, `spikes/`, `retrospectives/`, `abandoned/`)
+    were named in the charter and the buildlog README but absent on
+    disk; six documents (constitution, glossary, data-protection,
+    amendment-template, configure-branch-protection) linked into
+    them. Created stub READMEs for each subtree, parallel to the
+    existing `/doc/userdocs/` and `/doc/apidocs/` stub-tree pattern.
+  - **A-3 (`clean`)** — opened TD-0019 with the inventory of 12
+    placeholder TODO comments in `/src/` lacking a `TD-NNNN`
+    reference (constitution II.3 violation). Rewrote each comment as
+    `TODO(TD-0019): ...` so a grep for `TD-0019` returns the ledger
+    entry. Bare TODO count after rewrite: 0.
+  - **A-4 (`correct`)** — opened TD-0020 documenting that the
+    constitution's V.2 (review-pair) and V.4 (security review)
+    invariants cannot be met during the pre-1.0 single-author
+    window, with a three-exit payoff plan (add a maintainer, amend
+    the constitution, or retroactively review the pre-1.0 PRs).
+  - **A-5 (`aligned`)** — meta tree internal cross-references all
+    resolve.
+- **Charter spelling fix.**
+  [`/doc/docs/meta/documentation-charter.md`](./doc/docs/meta/documentation-charter.md)
+  and [`/doc/docs/README.md`](./doc/docs/README.md): `Diataxis` →
+  `Diátaxis` (Daniele Procida's framework name carries an acute
+  accent on the first `a`).
+- **Four buildlog stub READMEs landed.** New files:
+  [`/doc/buildlog/postmortems/README.md`](./doc/buildlog/postmortems/README.md),
+  [`/doc/buildlog/spikes/README.md`](./doc/buildlog/spikes/README.md),
+  [`/doc/buildlog/retrospectives/README.md`](./doc/buildlog/retrospectives/README.md),
+  [`/doc/buildlog/abandoned/README.md`](./doc/buildlog/abandoned/README.md).
+  Each carries the subtree's filename format, append-only rule,
+  what-goes-here / does-not, document skeleton, and a `Status Today`
+  line. The charter's buildlog tree map and the buildlog README's
+  subtree table are now both backed by the file system.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  - Opened **TD-0019** — Pre-1.0 placeholder TODOs lacking ledger
+    entries (12 source-side `TODO` comments, full inventory in the
+    entry, payoff plan steps 1 done in this PR).
+  - Opened **TD-0020** — Pre-1.0 single-author review-pair shortfall
+    (constitution V.2/V.4 cannot be met today, three-exit payoff
+    plan).
 - `/doc/buildlog/code-audit-2026-04-25.md` extended with **Section 11
   (Re-Review Findings)**. The re-review treated the original audit as
   an artefact under inspection and recorded:
