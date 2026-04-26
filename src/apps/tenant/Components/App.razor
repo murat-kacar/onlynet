@@ -1,0 +1,30 @@
+@*
+    Root document component for the Blazor Web App per AD-0004.
+
+    Replaces the legacy _Host.cshtml + standalone Blazor Server
+    bootstrap. Mapped via app.MapRazorComponents<App>() in
+    Program.cs; the framework renders this component as the HTML
+    document at the root of every Razor-Components-served route.
+
+    The default render mode for components hosted under this
+    document is Static SSR (per AD-0004's matrix). Components that
+    need interactivity opt in with `@rendermode InteractiveServer`
+    at the top of their .razor file (TD-0016 step 1). The server
+    must call `.AddInteractiveServerRenderMode()` on the
+    `MapRazorComponents<App>()` builder for those opt-ins to take
+    effect.
+*@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <HeadOutlet />
+    <title>TabFlow Tenant</title>
+</head>
+<body>
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>

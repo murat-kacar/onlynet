@@ -73,6 +73,95 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0028 — Customer-facing Razor pages still Interactive Server; AD-0004 mandates Static SSR
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: PR #25 Blazor Web App migration. Closing TD-0016
+  required a render-mode opt-in on every interactive page; the
+  customer-facing pages (`Cart.razor`, `Menu.razor`, `Order.razor`,
+  `ScanQr.razor`) currently rely on `@onclick`, `@bind`, and
+  `IJSRuntime` calls that only work under `InteractiveServer`. They
+  shipped that way to keep customer behaviour unchanged through
+  the migration, but AD-0004 explicitly assigns customer-facing
+  surfaces to Static SSR.
+- Symptom: four customer-facing components carry
+  `@rendermode InteractiveServer` even though AD-0004 requires
+  Static SSR. Each interactive customer session opens a SignalR
+  circuit that AD-0004 expects only staff-facing surfaces to use,
+  inflating the per-customer memory and CPU footprint and breaking
+  the capacity model in `capability-matrix.md`.
+- Risk if unpaid: customer load multiplies the SignalR circuit
+  count by roughly the number of concurrent diners (vs the staff
+  population); the latency target in AD-0006 was sized against
+  staff population only and will be missed under busy-day customer
+  load.
+- Payoff plan:
+  1. Convert customer flows to a Static-SSR-friendly shape:
+     replace `@onclick` cart manipulation with `<form method="post">`
+     handlers, replace IJSRuntime `confirm()`/`alert()` with
+     server-rendered confirmation pages, and surface server push
+     (table updates) via a small partial-page refresh primitive
+     instead of full SignalR.
+  2. Remove `@rendermode InteractiveServer` from `Cart.razor`,
+     `Menu.razor`, `Order.razor`, and `ScanQr.razor` once the
+     conversion lands. Capability matrix row "Tenant customer
+     surfaces (Static SSR)" advances from `In progress` to
+     `Implemented`.
+  3. Add a release-gate smoke check that fetches each customer
+     route and asserts the rendered HTML does not include
+     `_framework/blazor.web.js` references inside an interactive
+     marker (i.e. the page is fully static).
+- Linked: AD-0004, AD-0006,
+  [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md),
+  [`/doc/docs/reference/architecture/capability-matrix.md`](/doc/docs/reference/architecture/capability-matrix.md)
+
+### [CLOSED] TD-0027 — Hosts use standalone Blazor Server; AD-0004 contract assumes Blazor Web App
+
+- Opened: 2026-04-26
+- Closed: 2026-04-26
+- Owner: closed in PR #25 by single-author pre-1.0 (TD-0020).
+- Origin: code-audit-2026-04-26 follow-up while implementing
+  TD-0016 step 1. The first audit pass observed that no `.razor`
+  file carried a `@rendermode` directive; the deeper cause was
+  that the three hosts ran in **standalone Blazor Server** mode
+  (`AddServerSideBlazor()` + `MapBlazorHub()` + `_Host.cshtml`
+  fallback), not the **Blazor Web App** model that AD-0004's
+  mixed-mode matrix presumes. `@rendermode` is a no-op outside
+  Blazor Web App, so TD-0016 step 1 could not land without first
+  migrating the hosts.
+- Symptom: every component ran on a single, repository-wide,
+  always-Interactive SignalR circuit; AD-0004's matrix
+  ("customer Static SSR, staff Interactive Server") could not be
+  honoured by any annotation alone.
+- Risk if unpaid: AD-0004 stays a paper contract; release-gate
+  smoke checks that key off the rendered HTML's interactivity
+  marker (TD-0028 step 3, future TD-0010 step 6) cannot
+  distinguish per-route render modes.
+- Resolution (PR #25):
+  - `src/apps/platform/Program.cs` and
+    `src/apps/tenant/Program.cs` swapped
+    `builder.Services.AddServerSideBlazor()` for
+    `builder.Services.AddRazorComponents().AddInteractiveServerComponents()`
+    and replaced `app.MapBlazorHub()` +
+    `app.MapFallbackToPage("/_Host")` with
+    `app.MapRazorComponents<App>().AddInteractiveServerRenderMode()`.
+  - The legacy `App.razor` (Router) is now `Components/Routes.razor`;
+    a new `Components/App.razor` carries the HTML document root
+    that `MapRazorComponents<App>()` requires.
+  - `src/apps/{platform,tenant}/Pages/_Host.cshtml` removed.
+  - `_Imports.razor` extended with
+    `@using static Microsoft.AspNetCore.Components.Web.RenderMode`
+    so component-level `@rendermode InteractiveServer` resolves
+    without a fully-qualified type name.
+  - Smoke verification: `/health/live` returns
+    `{"status":"pass",...}` from both hosts under the new
+    composition.
+- Follow-up: customer-page Static SSR alignment tracked under
+  TD-0028 (above).
+- Linked: AD-0004, AD-0006, TD-0016, TD-0028,
+  [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md)
+
 ### [TRIAGE] TD-0026 — `Type=notify` supervision contract requires `UseSystemd()`; neither host calls it
 
 - Opened: 2026-04-26
@@ -674,17 +763,37 @@ ledger; orphan `TD-` references are a documentation bug.
   reloads; `tenant_event_push_p95_latency_ms` cannot be met regardless
   of the event bus speed.
 - Payoff plan:
-  1. Annotate each Razor component family with the render mode it
-     needs per the matrix in AD-0004 (customer surfaces → Static SSR,
-     staff surfaces → InteractiveServer, station boards →
-     InteractiveServer with explicit prerendering off).
-  2. Add a release-gate smoke check that, for one representative
-     component per family, asserts the rendered HTML carries the
-     expected `blazor-server` script reference (or its absence for
-     Static SSR).
-  3. Update the capability matrix row for "Mixed render modes" once
-     step 1 is in.
-- Linked: AD-0004,
+  1. (Done in PR #25) The hosts were first migrated from
+     standalone Blazor Server to Blazor Web App (TD-0027); on top
+     of that, every `.razor` page that needs interactivity now
+     carries a `@rendermode InteractiveServer` directive:
+       - **Platform host (6 staff pages):** `Dashboard.razor`,
+         `Tenants.razor`, `TenantsNew.razor`, `TenantsDetail.razor`,
+         `Jobs.razor`, `Audit.razor`.
+       - **Tenant host (3 staff pages):** `Kitchen.razor`,
+         `Tables.razor`, `TableView.razor`.
+       - **Tenant host (4 customer pages):** `Cart.razor`,
+         `Menu.razor`, `Order.razor`, `ScanQr.razor` carry the
+         directive provisionally so the migration does not break
+         existing `@onclick` / `IJSRuntime` behaviour. AD-0004
+         requires Static SSR on those four pages; the conversion
+         is tracked under TD-0028.
+       Each `_Imports.razor` brings the
+       `Microsoft.AspNetCore.Components.Web.RenderMode` static
+       fields into scope so `@rendermode InteractiveServer`
+       resolves without a fully-qualified type name.
+  2. (Blocked) Add a release-gate smoke check that fetches one
+     representative route per render-mode family and asserts the
+     rendered HTML carries (or omits) the
+     `_framework/blazor.web.js` interactive marker. Blocked on
+     TD-0010 step 6 (Playwright bootstrap for the E2E /
+     Smoke tier); landing the smoke check before that fixture is
+     not feasible.
+  3. (Done in PR #25) Capability matrix row "Tenant customer
+     surfaces (Static SSR)" notes the four customer pages still
+     run interactive and points at TD-0028; new row "Mixed render
+     modes (AD-0004)" added with status `In progress`.
+- Linked: AD-0004, TD-0027, TD-0028,
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#section-11-re-review-findings-2026-04-25)
 
 ### [TRIAGE] TD-0015 — Tenant API controllers expose every endpoint anonymously

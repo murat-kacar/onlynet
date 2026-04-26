@@ -114,8 +114,16 @@ builder.Services.AddHealthChecks()
         name: "platform-db:ping",
         tags: readyTag);
 
+// AD-0004 + TD-0027: Blazor Web App composition. AddRazorComponents
+// registers the new component model (root component +
+// MapRazorComponents<App>()); AddInteractiveServerComponents adds
+// the SignalR-backed interactive server render mode that staff
+// pages opt into via `@rendermode InteractiveServer`. AddRazorPages
+// stays so Identity's Login.cshtml and ChangePassword.cshtml keep
+// rendering as classic Razor Pages.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 var app = builder.Build();
 
@@ -175,8 +183,15 @@ app.MapHealthChecks("/health/live", livenessOptions).AllowAnonymous();
 app.MapHealthChecks("/health/ready", readinessOptions).AllowAnonymous();
 
 app.MapRazorPages();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+
+// AD-0004 + TD-0027: Blazor Web App route mapping. MapRazorComponents
+// hosts the App root component (the HTML document) and serves every
+// `@page` Razor component under it. AddInteractiveServerRenderMode
+// wires the SignalR endpoint that components annotated with
+// `@rendermode InteractiveServer` connect to; without that call,
+// the annotation has no effect.
+app.MapRazorComponents<TabFlow.Platform.Components.App>()
+    .AddInteractiveServerRenderMode();
 
 Log.Information("TabFlow Platform started successfully");
 app.Run();

@@ -75,6 +75,42 @@ the family-level reasoning only.
 
 Customer surfaces never open a SignalR connection. Staff surfaces do.
 
+## Implementation Status
+
+PR #25 migrated the platform and tenant hosts from standalone
+Blazor Server (`AddServerSideBlazor()` + `MapBlazorHub()` +
+`_Host.cshtml`) to the Blazor Web App composition
+(`AddRazorComponents().AddInteractiveServerComponents()` +
+`MapRazorComponents<App>().AddInteractiveServerRenderMode()`),
+which is the precondition for any per-component `@rendermode`
+directive to take effect (TD-0027 closed).
+
+On top of that, the 9 staff-facing pages assigned to Interactive
+Server above carry the directive today (TD-0016 step 1):
+
+- **Platform host:** `Dashboard.razor`, `Tenants.razor`,
+  `TenantsNew.razor`, `TenantsDetail.razor`, `Jobs.razor`,
+  `Audit.razor`.
+- **Tenant host:** `Kitchen.razor`, `Tables.razor`,
+  `TableView.razor`.
+
+The 4 customer-facing pages (`Cart.razor`, `Menu.razor`,
+`Order.razor`, `ScanQr.razor`) **also** carry
+`@rendermode InteractiveServer` provisionally because their
+current implementation depends on `@onclick` handlers and
+`IJSRuntime` calls that only work under Interactive Server. AD-0004
+assigns them Static SSR; the conversion (replace `@onclick` with
+form posts, replace JS interop with server-rendered confirmation
+pages) is tracked under
+[TD-0028](/doc/buildlog/tech-debt-ledger.md#triage-td-0028--customer-facing-razor-pages-still-interactive-server-ad-0004-mandates-static-ssr).
+
+The release-gate smoke check that asserts each route renders with
+the expected interactivity marker
+(`_framework/blazor.web.js` present or absent) is
+[TD-0016 step 2](/doc/buildlog/tech-debt-ledger.md#triage-td-0016--ad-0004-mixed-render-modes-never-exercised),
+blocked on TD-0010 step 6 (Playwright bootstrap for the E2E /
+Smoke tier).
+
 ## Authoring Rules
 
 - A Razor component declares its mode with `@rendermode InteractiveServer`

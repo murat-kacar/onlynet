@@ -184,6 +184,67 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Architecture
+
+- **TD-0027 closed + TD-0016 step 1 + 3: Blazor Web App migration
+  with per-page render modes (PR #25).** AD-0004 (mixed render
+  modes per surface family) was a paper contract until PR #25:
+  every Blazor component ran on a single, repository-wide,
+  always-Interactive SignalR circuit because the hosts used the
+  legacy standalone Blazor Server composition. PR #25 migrates the
+  three hosts to the Blazor Web App composition and ships the
+  per-page `@rendermode` opt-ins that AD-0004 demands.
+  - **Composition migration (closes TD-0027).**
+    `src/apps/platform/Program.cs` and
+    `src/apps/tenant/Program.cs` swap
+    `AddServerSideBlazor()` for
+    `AddRazorComponents().AddInteractiveServerComponents()` and
+    swap `MapBlazorHub() + MapFallbackToPage("/_Host")` for
+    `MapRazorComponents<App>().AddInteractiveServerRenderMode()`.
+    The legacy `App.razor` (router) is now
+    `Components/Routes.razor`; a new `Components/App.razor`
+    carries the HTML document root that `MapRazorComponents<App>()`
+    requires. `src/apps/{platform,tenant}/Pages/_Host.cshtml`
+    removed. `_Imports.razor` extended with
+    `@using static Microsoft.AspNetCore.Components.Web.RenderMode`
+    so component-level `@rendermode InteractiveServer` resolves
+    without a fully-qualified type name.
+  - **Render-mode opt-ins (closes TD-0016 step 1).** 13
+    `.razor` pages now carry `@rendermode InteractiveServer`:
+      - **Platform host (6 staff):** `Dashboard.razor`,
+        `Tenants.razor`, `TenantsNew.razor`,
+        `TenantsDetail.razor`, `Jobs.razor`, `Audit.razor`.
+      - **Tenant host (3 staff):** `Kitchen.razor`,
+        `Tables.razor`, `TableView.razor`.
+      - **Tenant host (4 customer, provisional):** `Cart.razor`,
+        `Menu.razor`, `Order.razor`, `ScanQr.razor`. AD-0004
+        assigns these to Static SSR but their current
+        implementation depends on `@onclick` and `IJSRuntime`
+        calls that only work under Interactive Server. The
+        Static SSR conversion is tracked under TD-0028.
+  - **Smoke verification.** `dotnet run` on each host followed by
+    `curl /health/live` returned
+    `{"status":"pass",...}` from both hosts under the new
+    composition. The release-gate smoke check that fetches each
+    route and asserts the rendered HTML carries (or omits) the
+    `_framework/blazor.web.js` interactive marker — TD-0016
+    step 2 — is blocked on TD-0010 step 6 (Playwright bootstrap
+    for the E2E / Smoke tier).
+  - **Documentation (closes TD-0016 step 3).**
+    [`/doc/docs/reference/architecture/render-modes.md`](./doc/docs/reference/architecture/render-modes.md)
+    grew an "Implementation Status" section that names the 9 staff
+    pages, the 4 customer pages, the migration PR, and the
+    blocked smoke check.
+    [`/doc/docs/reference/architecture/capability-matrix.md`](./doc/docs/reference/architecture/capability-matrix.md):
+    customer-surfaces row updated to record the
+    Interactive-Server-during-migration status; new "Mixed render
+    modes per surface family (AD-0004)" row added.
+  - **New tech debt:**
+    - TD-0027 — opened and closed in PR #25 (Blazor Web App
+      migration).
+    - TD-0028 — opened: customer pages still Interactive Server;
+      AD-0004 mandates Static SSR.
+
 ### Tools
 
 - **TD-0009 step 4–5: TF0001 regression suite + AnalyzerReleases
