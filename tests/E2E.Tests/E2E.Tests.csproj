@@ -18,18 +18,8 @@
     -->
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
-  <!--
-    Both hosts auto-generate a top-level `Program` class with the
-    same name. Aliases route each ProjectReference into its own
-    extern alias so test files can disambiguate via
-    `extern alias PlatformHost;` / `extern alias TenantHost;` and
-    address `PlatformHost::Program` or `TenantHost::Program`
-    explicitly.
-  -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\apps\platform\TabFlow.Platform.csproj"
-                      Aliases="PlatformHost" />
-    <ProjectReference Include="..\..\src\apps\tenant\TabFlow.Tenant.csproj"
-                      Aliases="TenantHost" />
+    <ProjectReference Include="..\..\src\apps\platform\TabFlow.Platform.csproj" />
+    <ProjectReference Include="..\..\src\apps\tenant\TabFlow.Tenant.csproj" />
   </ItemGroup>
 </Project>

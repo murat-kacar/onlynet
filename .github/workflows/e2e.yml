@@ -1,0 +1,43 @@
+# End-to-end browser CI workflow.
+# Per TD-0010 step 6, this workflow owns the Playwright browser
+# bootstrap that is intentionally excluded from the PR unit /
+# integration fast path.
+
+name: e2e
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Build E2E project
+        run: dotnet build tests/E2E.Tests/E2E.Tests.csproj --configuration Release --no-restore
+      - name: Install Playwright browsers
+        run: pwsh tests/E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - name: Run E2E tests
+        run: dotnet test tests/E2E.Tests/E2E.Tests.csproj --configuration Release --no-build --filter "Category=E2E" --logger "trx;LogFileName=test-results-e2e.trx"
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: '**/test-results-e2e.trx'

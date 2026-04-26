@@ -253,8 +253,10 @@ container. Unit step does not; a broken unit test cancels the whole
 job before the integration step pays for the database fixture.
 
 The E2E tier (Playwright + headless Chromium) is intentionally
-excluded from the PR workflow today; it runs as a separate workflow
-once the browser bootstrap step is wired (TD-0010 follow-up).
+excluded from the PR workflow's unit / integration fast path. It runs
+from `.github/workflows/e2e.yml`, which builds the E2E project,
+installs Chromium through Playwright, and executes the `E2E` trait
+filter.
 
 ## Related
 

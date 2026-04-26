@@ -1214,9 +1214,11 @@ ledger; orphan `TD-` references are a documentation bug.
   5. (Open) Move the existing `Tenant.Tests/Services/*` tests off a
      real PostgreSQL fixture and onto a per-test transactional
      fixture so the Integration step is hermetic.
-  6. (Open) Wire the browser-bootstrap step
-     (`microsoft.playwright.cli install`) into a separate
-     `e2e.yml` workflow and unblock the E2E tier in CI.
+  6. (Done) Wire the browser-bootstrap step into a separate
+     `e2e.yml` workflow and unblock the E2E tier in CI. The workflow
+     builds `tests/E2E.Tests`, runs the generated Playwright install
+     script with `--with-deps chromium`, then executes the `E2E`
+     trait filter.
 - Linked: AC-131, AC-132, AC-133, AC-134,
   [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md),
   [`/.github/workflows/pr.yml`](/.github/workflows/pr.yml)
