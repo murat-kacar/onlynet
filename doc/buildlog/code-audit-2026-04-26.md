@@ -458,6 +458,179 @@ This Section records B-1 findings; B-2 and B-3 land in subsequent PRs.
 - **Constitution anchor:** III.1, III.3.
 - **Resolution:** none required (closure inherited from Phase A).
 
+### Phase B-2 — `decisions.md` ADR conformance
+
+`decisions.md` carries 15 ADRs (`AD-0001` through `AD-0015`). Phase
+B-2 walks each ADR and asks whether the shipping code, schema, and
+tooling are consistent with the decision text. The findings below are
+recorded against the ADR's actual claim, not against the audit's
+prior interpretation of it (the previous pass at
+[`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#section-6)
+mis-attributed several ADR topics; this pass re-reads each ADR
+end-to-end before classifying).
+
+### B-2.1 — ADR status taxonomy is intact and unanimous
+
+- **Bucket:** `aligned`.
+- **Claim:** the documentation charter
+  ([`/doc/docs/meta/documentation-charter.md`](../docs/meta/documentation-charter.md#adr-status-lifecycle))
+  defines five legal statuses (`Proposed`, `Accepted`, `Rejected`,
+  `Deprecated`, `Superseded`); `decisions.md` line 14 declares the
+  same five.
+- **Evidence:** all 15 ADRs carry `Accepted` (no `Proposed` drafts,
+  no `Deprecated`, no `Superseded` chains). This is the expected
+  shape for a pre-1.0 single-author repository where every ADR
+  recorded so far has been adopted in the same PR that introduced
+  it.
+- **Constitution anchor:** III.6 (charter governs subordinate
+  trees), I.1 (architecture changes go through ADRs).
+- **Resolution:** none required.
+
+### B-2.2 — AD-0001 / AD-0002 / AD-0005 / AD-0006 / AD-0007 / AD-0009 / AD-0011 / AD-0012 / AD-0013 / AD-0014 are aligned with shipping code
+
+- **Bucket:** `aligned`.
+- **Evidence per ADR:**
+  - **AD-0001 (Platform / Tenant separation)** — `/src/apps/platform/`
+    and `/src/apps/tenant/` are independent host projects with
+    independent `DbContext` types (`PlatformDbContext`,
+    `TenantDbContext`); no cross-database references in either
+    direction.
+  - **AD-0002 (ASP.NET Core 10 + Blazor Web App)** — `Directory.Build.props`
+    pins `<TargetFramework>net10.0</TargetFramework>` repository-wide;
+    both hosts are Blazor Web App projects.
+  - **AD-0005 (ASP.NET Core Identity)** — both hosts call
+    `AddIdentity<ApplicationUser, ...>` and use the framework's
+    `UserManager` / `SignInManager`; the bootstrap-admin command
+    landed in PR #9 with `UserManager.CreateAsync`.
+  - **AD-0006 (in-process event bus)** — `EventSubscriptionService`
+    and the channel-backed dispatcher ship under
+    `/src/apps/tenant/Services/EventSubscriptionService.cs` and
+    `/src/apps/tenant/WebSocket/`.
+  - **AD-0007 (PostgreSQL 17)** — Npgsql connection strings; no
+    other database driver referenced.
+  - **AD-0009 (standalone migrations project + design-time
+    factories)** — `/src/infra/postgres/TabFlow.Migrations.csproj`
+    exists with `DesignTime/PlatformDbContextFactory.cs` and
+    `DesignTime/TenantDbContextFactory.cs`. Both hosts and the
+    platform worker reference the assembly.
+  - **AD-0011 (SemVer + tagged commits + Keep-a-Changelog format)** —
+    no release tags exist yet (pre-1.0); `CHANGELOG.md` carries an
+    `[Unreleased]` block in Keep-a-Changelog 1.1.0 format. Aligned
+    by absence; the rule activates at the first release tag.
+  - **AD-0012 (Apache 2.0)** — `LICENSE` and `NOTICE` exist at the
+    repository root.
+  - **AD-0013 (GitHub Actions CI)** — `.github/workflows/`
+    contains `pr.yml`, `main.yml`, and `release.yml`; the previous
+    pass at
+    [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#section-6)
+    listed `release.yml` as missing, which was incorrect — the file
+    landed before that pass was opened. This pass treats the prior
+    note as an audit-side error, not a code-side one.
+  - **AD-0014 (`.editorconfig` + `Directory.Build.props`)** — both
+    files exist and ship the analyzer-warnings-as-errors rule;
+    `TF0001` (English-first identifier analyzer) sits on top of
+    that contract per AD-0015 / TD-0009.
+- **Resolution:** none required.
+
+### B-2.3 — AD-0004 mixed render modes: declared baseline holds, code-side `@rendermode` annotation tracked under TD-0016
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** AD-0004 baseline — Static SSR for tenant customer and
+  authentication surfaces, Interactive Server for staff surfaces —
+  is the contract.
+- **Evidence:** the contract holds in `runtime-surfaces.md`'s render
+  mode column. The code-side `@rendermode InteractiveServer`
+  annotation is missing from the staff Razor pages (TD-0016); the
+  audit re-review finding RR-H1 ("AD-0004 not exercised") tracks the
+  same gap.
+- **Resolution:** no ADR-text change needed. TD-0016 owns the code
+  fix.
+
+### B-2.4 — AD-0008 EF Core schema authority: TD-0003 covers the unmet half
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** "Tenant bootstrap applies the committed migration
+  history rather than executing handwritten idempotent ALTER
+  scripts."
+- **Evidence:** the committed migration tree exists for both contexts
+  (PR #8 platform, PR #10 tenant scaffold per TD-0003 step 1–2).
+  The platform worker's `MigrateAsync()` call against tenant
+  databases (TD-0003 step 3) and the drop+apply+verify recipe
+  (step 4) remain open.
+- **Resolution:** no ADR-text change needed. TD-0003 owns the code
+  fix.
+
+### B-2.5 — AD-0010 bootstrap CLI: TD-0002 closure path tracks the unmet half
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** "EF Core migrations never INSERT into `AspNetUsers`";
+  the first admin is created by a `bootstrap-admin` command that
+  refuses on populated databases, generates a CSPRNG password,
+  writes an `auth.bootstrap` audit row, and forces a password change
+  on first sign-in.
+- **Evidence:** PR #9 (TD-0002 step 1) shipped the command exactly
+  as the ADR describes; PR #16 (TD-0002 step 3) shipped the
+  must-change-password redirect via
+  `PasswordChangeRequiredMiddleware`. The operator-action half
+  (`drop+apply+verify` + run command on the deployed host) remains
+  open as TD-0002 step 4 / step 5.
+- **Resolution:** no ADR-text change needed. TD-0002 owns the
+  operator-action work.
+
+### B-2.6 — AD-0015 English-first: TF0001 ships, IStringLocalizer half tracked under TD-0011
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** "Translation happens at the presentation layer only";
+  identifiers in `/src/` and `/tests/` are ASCII-only English; the
+  markdown lint workflow flags non-English content in `/doc/`.
+- **Evidence:** PR #14 (TD-0009 step 1–3) shipped `TF0001` (the
+  English-first identifier analyzer) — controller, action, type,
+  property, field, event, and parameter declarations now break the
+  build on a non-ASCII letter. The Phase A finding A-3 caught and
+  removed one Turkish word ("fiilen") that had slipped into a ledger
+  comment, confirming the analyzer covers source identifiers but
+  not free prose. The `IStringLocalizer<T>` + `*.resx` half is
+  tracked as TD-0011.
+- **Resolution:** no ADR-text change needed. TD-0009 step 4–5 cover
+  the analyzer's regression tests and `AnalyzerReleases` files;
+  TD-0011 covers the translation half.
+
+### B-2.7 — AD-0003 trade-off: read-only API controllers bypass the application service layer
+
+- **Bucket:** `implement`.
+- **Claim:** AD-0003's tradeoffs paragraph requires that "the
+  internal layer boundary (host → application service → domain)
+  must remain explicit in code."
+- **Evidence:** of the seven controllers in
+  `/src/apps/tenant/Controllers/Api/`:
+  - 3 inject application services (`CartController` →
+    `ICartService`, `PublicOrdersController` → `IOrderService`,
+    `SessionsController` → `ICustomerSessionService`); these are
+    post-TD-0015 / post-TD-0017 work.
+  - 4 inject `TenantDbContext` directly and run LINQ inline
+    (`KitchenController`, `MenuController`, `OrdersController`,
+    `TablesController`).
+  The 4-of-7 ratio means a future contributor reading the dominant
+  pattern picks raw `_context` and re-creates the gap. AD-0003 does
+  not say "every controller goes through a service" but does say
+  the boundary "must remain explicit"; today it is observed
+  inconsistently.
+- **Conflict:** the ADR is correct as written; the gap is on the
+  code side. This is `implement` rather than `clean` because
+  bringing the four controllers in line is a non-trivial code
+  change with its own integration-test obligations.
+- **Constitution anchor:** III.5 (architectural decisions land in
+  ADRs and the code follows them).
+- **Resolution:** PR #19 (this pass) opened TD-0022 with a
+  four-step migration: introduce three read services
+  (`IKitchenReadService`, `IMenuReadService`, `ITableReadService`)
+  and fold the order detail / by-session reads into the existing
+  `IOrderService`; rewrite the four controllers to depend on the
+  read services; ship a unit test per service (transactional
+  fixture from TD-0010 step 5); add a Roslyn analyzer rule
+  (extending the `TabFlow.Analyzers` project from TD-0009) that
+  flags `DbContext` injection on `ControllerBase` derivatives.
+
 ## 6. Phase C — Explanation Tree Findings
 
 *Pass-in-progress.*
@@ -491,6 +664,13 @@ TD that resolved it, and the date.
 | B-1.3 | `aligned` | No AC text change required; matrix evidence handled in B-1.1. | 2026-04-26 |
 | B-1.4 | `aligned` | No action required. | 2026-04-26 |
 | B-1.5 | `aligned` | Closure inherited from A-2 (subtree stubs created in PR #17). | 2026-04-26 |
+| B-2.1 | `aligned` | All 15 ADRs carry `Accepted`; status taxonomy intact. No action required. | 2026-04-26 |
+| B-2.2 | `aligned` | 10 ADRs (AD-0001/2/5/6/7/9/11/12/13/14) verified against shipping code; `release.yml` confirmed present (correcting prior pass mis-attribution). No action required. | 2026-04-26 |
+| B-2.3 | `aligned with caveat` | AD-0004 baseline holds; code-side `@rendermode` annotation owned by TD-0016. | 2026-04-26 |
+| B-2.4 | `aligned with caveat` | AD-0008 schema authority intact; worker `MigrateAsync()` + drop+apply+verify owned by TD-0003. | 2026-04-26 |
+| B-2.5 | `aligned with caveat` | AD-0010 bootstrap CLI shipped (PR #9 + #16); operator-action half owned by TD-0002. | 2026-04-26 |
+| B-2.6 | `aligned with caveat` | AD-0015 enforced via `TF0001` (PR #14); IStringLocalizer half owned by TD-0011, analyzer release files by TD-0009. | 2026-04-26 |
+| B-2.7 | `implement` | PR #19 — opened TD-0022 with four-step migration: 3 read services + fold order reads into `IOrderService`, controller rewrite, unit tests, Roslyn `DbContext`-on-`ControllerBase` analyzer. | 2026-04-26 |
 
 ## 11. Sign-Off
 

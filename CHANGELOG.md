@@ -186,6 +186,58 @@ AD-0011.
 
 ### Documentation
 
+- **Phase B-2 of the alignment pass closed (PR #19).** Seven findings
+  in `decisions.md` (15 ADRs walked end-to-end against shipping code,
+  schema, and tooling):
+  - **B-2.1 (`aligned`)** — ADR status taxonomy intact; all 15 ADRs
+    carry `Accepted` (no `Proposed` / `Deprecated` / `Superseded`
+    chains, expected for a pre-1.0 single-author repository).
+  - **B-2.2 (`aligned`)** — 10 ADRs verified against shipping code:
+    AD-0001 (Platform / Tenant separation), AD-0002 (ASP.NET Core 10
+    + Blazor Web App), AD-0005 (Identity), AD-0006 (in-process bus),
+    AD-0007 (PostgreSQL 17), AD-0009 (standalone migrations
+    project), AD-0011 (SemVer + Keep-a-Changelog), AD-0012 (Apache
+    2.0; `LICENSE` + `NOTICE` present), AD-0013 (GitHub Actions;
+    `pr.yml` / `main.yml` / `release.yml` all present —
+    `release.yml`'s prior "missing" note in
+    [`/doc/buildlog/code-audit-2026-04-25.md`](./doc/buildlog/code-audit-2026-04-25.md)
+    Section 6 was an audit-side error), AD-0014 (`.editorconfig` +
+    `Directory.Build.props`).
+  - **B-2.3 (`aligned with caveat`)** — AD-0004 mixed render modes
+    baseline holds; code-side `@rendermode InteractiveServer` on
+    staff Razor pages owned by **TD-0016**.
+  - **B-2.4 (`aligned with caveat`)** — AD-0008 EF Core schema
+    authority intact; worker `MigrateAsync()` + drop+apply+verify
+    owned by **TD-0003**.
+  - **B-2.5 (`aligned with caveat`)** — AD-0010 bootstrap CLI
+    shipped per ADR text (PRs #9 + #16); operator-action half
+    owned by **TD-0002**.
+  - **B-2.6 (`aligned with caveat`)** — AD-0015 English-first
+    enforced via `TF0001` (PR #14); `IStringLocalizer` + `*.resx`
+    half owned by **TD-0011**; `AnalyzerReleases.{Shipped,Unshipped}.md`
+    files owned by **TD-0009 step 4–5**.
+  - **B-2.7 (`implement`)** — AD-0003 trade-off ("internal layer
+    boundary [host → application service → domain] must remain
+    explicit in code") observed inconsistently: 3 of 7 tenant API
+    controllers go through application services
+    (`CartController` → `ICartService`, `PublicOrdersController` →
+    `IOrderService`, `SessionsController` →
+    `ICustomerSessionService`), 4 inject `TenantDbContext`
+    directly and run LINQ inline (`KitchenController`,
+    `MenuController`, `OrdersController`, `TablesController`).
+    Opened **TD-0022** with a four-step migration plan.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  Opened **TD-0022** — Read-only tenant-side API controllers bypass
+  the application service layer (4 of 7 controllers inject
+  `TenantDbContext` directly). Four-step payoff plan: introduce
+  `IKitchenReadService`, `IMenuReadService`, `ITableReadService` and
+  fold order reads into the existing `IOrderService`; rewrite the
+  four controllers to depend on the read services; ship a unit test
+  per service against TD-0010's transactional fixture; add a Roslyn
+  analyzer rule to `TabFlow.Analyzers` (extending the TD-0009
+  project) that flags `DbContext` injection on `ControllerBase`
+  derivatives.
 - **Phase B-1 of the alignment pass closed (PR #18).** Five findings
   in the five self-consistency tables that
   [`/doc/docs/meta/contributing.md`](./doc/docs/meta/contributing.md#self-consistency)

@@ -73,6 +73,72 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0022 — Read-only tenant-side API controllers bypass the application service layer
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  B-2 finding B-2.7). AD-0003 trade-off
+  ([`/doc/docs/reference/architecture/decisions.md`](/doc/docs/reference/architecture/decisions.md#ad-0003-one-host-process-per-side))
+  states: "host process shape now carries both UI and API concerns;
+  the internal layer boundary (host → application service → domain)
+  must remain explicit in code." Today the boundary is observed
+  inconsistently across the seven controllers under
+  `/src/apps/tenant/Controllers/Api/`:
+  - **Through service layer** (3): `CartController` →
+    `ICartService`, `PublicOrdersController` → `IOrderService`,
+    `SessionsController` → `ICustomerSessionService`. These
+    controllers are post-TD-0015 and post-TD-0017 work.
+  - **Direct `TenantDbContext`** (4): `KitchenController`,
+    `MenuController`, `OrdersController`, `TablesController`. These
+    inject `TenantDbContext` and run LINQ queries inline. The
+    application service layer for these read paths does not exist.
+- Symptom: a controller that runs LINQ over `TenantDbContext`
+  inside an action method couples the HTTP transport surface to the
+  EF Core query shape. Three knock-on effects:
+  1. The "host → application service → domain" boundary AD-0003
+     calls out is invisible to a reader of the controller.
+  2. Tests for these read paths cannot exercise the read query in
+     isolation; an integration test against a controller pulls in
+     ASP.NET Core routing, model binding, and `WebApplicationFactory`
+     even when the only thing under test is a SQL projection.
+  3. When a future read path needs caching, observability spans, or
+     authorization-shaped filtering ("only the open bills on tables
+     the cashier owns"), there is no service-layer seam to add it
+     to.
+- Risk if unpaid: as the read surface grows, every new feature
+  copies the dominant pattern (raw `_context.X.Where(...).ToList()`
+  inside a controller action). Re-aligning later requires touching
+  every read path simultaneously, which is a much bigger change
+  than fixing four controllers today.
+- Payoff plan:
+  1. (Open) Introduce three application services to mirror the
+     existing pattern:
+     - `IKitchenReadService` — exposes the queries used by
+       `KitchenController.GetKitchenOrders`.
+     - `IMenuReadService` — exposes
+       `GetMenuItems` / `GetMenuItemsByCategory`.
+     - `ITableReadService` — exposes `GetTables` / `GetTable`.
+     - Order detail and order-by-session reads currently live in
+       `OrdersController`; fold them into the existing
+       `IOrderService` rather than introducing a fourth read service.
+  2. (Open) Rewrite the four controllers to depend on the read
+     services instead of `TenantDbContext`. Controller actions
+     become thin: parameter binding, `await`, return.
+  3. (Open) Each new service ships with at least one unit test that
+     exercises the projection against an in-memory or transactional
+     fixture (covered under TD-0010 step 5 once the integration
+     fixture lands).
+  4. (Open) Once all four controllers are migrated, add a Roslyn
+     analyzer rule that flags any `Microsoft.EntityFrameworkCore.DbContext`
+     parameter or field on a class derived from `ControllerBase`.
+- Linked: AD-0003,
+  [`/doc/docs/reference/architecture/decisions.md`](/doc/docs/reference/architecture/decisions.md#ad-0003-one-host-process-per-side),
+  TD-0010 step 5 (integration fixture for service-level tests),
+  TD-0021 (the prefix migration calls the same services),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
+
 ### [TRIAGE] TD-0021 — Customer-tier HTTP endpoints not on the `/api/public/*` prefix
 
 - Opened: 2026-04-26
