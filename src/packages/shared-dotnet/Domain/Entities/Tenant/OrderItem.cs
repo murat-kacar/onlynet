@@ -1,3 +1,4 @@
+using TabFlow.Shared.Domain.DataProtection;
 using TabFlow.Shared.Domain.Enums;
 
 namespace TabFlow.Shared.Domain.Entities.Tenant;
@@ -10,6 +11,12 @@ public sealed class OrderItem
     public string ItemName { get; private set; } = default!;
     public int Quantity { get; private set; }
     public decimal UnitPrice { get; private set; }
+
+    /// <summary>
+    /// Customer-provided note that may contain personal data
+    /// (e.g., dietary restrictions). Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Sensitive)]
     public string? Note { get; private set; }
     public Guid StationId { get; private set; }
     public OrderItemStatus Status { get; private set; }

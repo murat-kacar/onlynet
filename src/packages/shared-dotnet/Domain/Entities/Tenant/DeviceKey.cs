@@ -1,8 +1,15 @@
+using TabFlow.Shared.Domain.DataProtection;
+
 namespace TabFlow.Shared.Domain.Entities.Tenant;
 
 public sealed class DeviceKey
 {
     public Guid TableId { get; private set; }
+
+    /// <summary>
+    /// Device key hash. Authentication secret. Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Restricted)]
     public string DeviceKeyHash { get; private set; } = default!;
     public DateTimeOffset? LastSeenAt { get; private set; }
 

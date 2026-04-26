@@ -80,6 +80,86 @@ public sealed class DataClassCommentTests
             .Should().BeTrue();
     }
 
+    [Fact]
+    public void CartItem_Note_Carries_Sensitive_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.CartItem))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.CartItem.Note))!;
+
+        property.GetComment().Should().Be("DataClass: Sensitive");
+    }
+
+    [Fact]
+    public void Order_Note_Carries_Sensitive_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.Order))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.Order.Note))!;
+
+        property.GetComment().Should().Be("DataClass: Sensitive");
+    }
+
+    [Fact]
+    public void OrderItem_Note_Carries_Sensitive_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.OrderItem))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.OrderItem.Note))!;
+
+        property.GetComment().Should().Be("DataClass: Sensitive");
+    }
+
+    [Fact]
+    public void Bill_PaymentMethod_Carries_Restricted_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.Bill))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.Bill.PaymentMethod))!;
+
+        property.GetComment().Should().Be("DataClass: Restricted");
+    }
+
+    [Fact]
+    public void QrToken_Value_Carries_Restricted_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.QrToken))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.QrToken.Value))!;
+
+        property.GetComment().Should().Be("DataClass: Restricted");
+    }
+
+    [Fact]
+    public void DeviceKey_DeviceKeyHash_Carries_Restricted_DataClassComment()
+    {
+        var model = BuildTenantModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Tenant.DeviceKey))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Tenant.DeviceKey.DeviceKeyHash))!;
+
+        property.GetComment().Should().Be("DataClass: Restricted");
+    }
+
+    [Fact]
+    public void TenantRegistration_IntendedOwnerEmail_Carries_Sensitive_DataClassComment()
+    {
+        var model = BuildPlatformModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Platform.TenantRegistration))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Platform.TenantRegistration.IntendedOwnerEmail))!;
+
+        property.GetComment().Should().Be("DataClass: Sensitive");
+    }
+
+    [Fact]
+    public void TenantRegistration_DatabasePassword_Carries_Restricted_DataClassComment()
+    {
+        var model = BuildPlatformModel();
+        var entity = model.FindEntityType(typeof(TabFlow.Shared.Domain.Entities.Platform.TenantRegistration))!;
+        var property = entity.FindProperty(nameof(TabFlow.Shared.Domain.Entities.Platform.TenantRegistration.DatabasePassword))!;
+
+        property.GetComment().Should().Be("DataClass: Restricted");
+    }
+
     private static IModel BuildTenantModel()
     {
         // UseNpgsql with a placeholder connection string is enough to

@@ -1,3 +1,4 @@
+using TabFlow.Shared.Domain.DataProtection;
 using TabFlow.Shared.Domain.Enums;
 
 namespace TabFlow.Shared.Domain.Entities.Tenant;
@@ -8,6 +9,12 @@ public sealed class Bill
     public Guid TableId { get; private set; }
     public BillStatus Status { get; private set; }
     public decimal TotalAmount { get; private set; }
+
+    /// <summary>
+    /// Payment method used for this bill. Payment data is Restricted.
+    /// Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Restricted)]
     public string? PaymentMethod { get; private set; }
     public DateTimeOffset OpenedAt { get; private set; }
     public DateTimeOffset? ClosedAt { get; private set; }

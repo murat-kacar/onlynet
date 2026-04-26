@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TabFlow.Shared.Domain.DataProtection;
 using TabFlow.Shared.Domain.Enums;
 
 namespace TabFlow.Shared.Domain.Entities.Tenant;
@@ -22,6 +23,12 @@ public sealed class Order
     public Guid? BillId { get; private set; }
     public decimal TotalAmount { get; private set; }
     public DateTimeOffset SubmittedAt { get; private set; }
+
+    /// <summary>
+    /// Customer-provided note that may contain personal data
+    /// (e.g., dietary restrictions). Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Sensitive)]
     public string? Note { get; private set; }
 
     /// <summary>

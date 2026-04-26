@@ -1,3 +1,4 @@
+using TabFlow.Shared.Domain.DataProtection;
 using TabFlow.Shared.Domain.Enums;
 
 namespace TabFlow.Shared.Domain.Entities.Platform;
@@ -12,9 +13,20 @@ public sealed class TenantRegistration
     public string LanguageCode { get; private set; } = default!;
     public string CurrencyCode { get; private set; } = default!;
     public string TimeZone { get; private set; } = default!;
+
+    /// <summary>
+    /// Email of the person who will own the tenant. Personal data.
+    /// Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Sensitive)]
     public string IntendedOwnerEmail { get; private set; } = default!;
     public string? DatabaseName { get; private set; }
     public string? DatabaseUser { get; private set; }
+
+    /// <summary>
+    /// Database connection password. Credential secret. Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Restricted)]
     public string? DatabasePassword { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }

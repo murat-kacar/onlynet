@@ -1,8 +1,16 @@
+using TabFlow.Shared.Domain.DataProtection;
+
 namespace TabFlow.Shared.Domain.Entities.Tenant;
 
 public sealed class QrToken
 {
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// QR token value (join or checkout proof). Authentication secret.
+    /// Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Restricted)]
     public string Value { get; private set; } = default!;
     public Guid TableId { get; private set; }
     public bool IsCheckoutProof { get; private set; }

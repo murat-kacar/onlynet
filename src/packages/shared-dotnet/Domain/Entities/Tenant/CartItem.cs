@@ -1,3 +1,5 @@
+using TabFlow.Shared.Domain.DataProtection;
+
 namespace TabFlow.Shared.Domain.Entities.Tenant;
 
 public sealed class CartItem
@@ -6,6 +8,12 @@ public sealed class CartItem
     public Guid SessionId { get; private set; }
     public Guid ItemId { get; private set; }
     public int Quantity { get; private set; }
+
+    /// <summary>
+    /// Customer-provided note that may contain personal data
+    /// (e.g., dietary restrictions). Per TD-0007.
+    /// </summary>
+    [DataClass(DataClassification.Sensitive)]
     public string? Note { get; private set; }
 
     private CartItem() { }
