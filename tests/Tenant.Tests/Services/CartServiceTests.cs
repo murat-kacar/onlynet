@@ -1,69 +1,69 @@
-using Microsoft.EntityFrameworkCore;
+using FluentAssertions;
 using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Domain.Entities.Tenant;
-using TabFlow.Shared.Infrastructure.Data;
 using TabFlow.Tenant.Services;
+using Tenant.Tests.Infrastructure;
 using Xunit;
 
 namespace Tenant.Tests.Services;
 
-// Integration tier per /doc/docs/explanation/concepts/test-taxonomy.md.
-// Uses TenantDbContext.Database.EnsureCreatedAsync(); excluded from
-// the Unit fast-path in CI.
+/// <summary>
+/// Integration-tier tests for <see cref="CartService"/>.
+/// Uses the transactional fixture introduced under TD-0010 step 5
+/// (PR #33): every <c>[Fact]</c> opens a database transaction in
+/// <see cref="TenantTransactionalTestBase.InitializeAsync"/> and the
+/// transaction is rolled back in <see cref="TenantTransactionalTestBase.DisposeAsync"/>,
+/// so tests stay hermetic without an `EnsureDeletedAsync` per case.
+/// </summary>
 [Trait("Category", "Integration")]
-public class CartServiceTests
+[Collection(nameof(TenantDatabaseCollection))]
+public sealed class CartServiceTests : TenantTransactionalTestBase
 {
+    public CartServiceTests(TenantDatabaseFixture fixture) : base(fixture) { }
+
     [Fact]
-    public async Task AddItemAsync_ValidRequest_AddsItemToCart()
+    public async Task AddItemAsync_PersistsCartItem_WithMenuItemPriceAndName()
     {
-        // Arrange
-        var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseNpgsql("Host=localhost;Database=tabflow_test;Username=postgres;Password=test")
-            .Options;
+        var category = Category.Create("Test Category", 1);
+        Db.Categories.Add(category);
 
-        using var context = new TenantDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        
-        var sessionId = Guid.NewGuid();
-        var itemId = Guid.NewGuid();
-        var menuItem = MenuItem.Create(Guid.NewGuid(), "Test Item", 10.99m);
-        context.MenuItems.Add(menuItem);
-        await context.SaveChangesAsync();
+        var menuItem = MenuItem.Create(category.Id, "Test Item", 10.99m);
+        Db.MenuItems.Add(menuItem);
 
-        var service = new CartService(context);
-        var request = new AddCartItemRequest(sessionId, itemId, 2, "No onions");
+        var session = CustomerSession.Open(Guid.NewGuid());
+        Db.CustomerSessions.Add(session);
+        await Db.SaveChangesAsync();
 
-        // Act
+        var service = new CartService(Db);
+        var request = new AddCartItemRequest(session.Id, menuItem.Id, 2, "No onions");
+
         var result = await service.AddItemAsync(request);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(itemId, result.MenuItemId);
-        Assert.Equal(2, result.Quantity);
+        result.MenuItemId.Should().Be(menuItem.Id);
+        result.MenuItemName.Should().Be("Test Item");
+        result.Quantity.Should().Be(2);
+        result.UnitPrice.Should().Be(10.99m);
+        result.Note.Should().Be("No onions");
+
+        var persisted = await Db.CartItems.FindAsync(result.Id);
+        persisted.Should().NotBeNull();
+        persisted!.SessionId.Should().Be(session.Id);
     }
 
     [Fact]
-    public async Task RemoveItemAsync_ValidItemId_RemovesItem()
+    public async Task RemoveItemAsync_RemovesPersistedRow()
     {
-        // Arrange
-        var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseNpgsql("Host=localhost;Database=tabflow_test;Username=postgres;Password=test")
-            .Options;
+        var session = CustomerSession.Open(Guid.NewGuid());
+        Db.CustomerSessions.Add(session);
 
-        using var context = new TenantDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        
-        var cartItem = CartItem.Create(Guid.NewGuid(), Guid.NewGuid(), 1, null);
-        context.CartItems.Add(cartItem);
-        await context.SaveChangesAsync();
+        var cartItem = CartItem.Create(session.Id, Guid.NewGuid(), 1, null);
+        Db.CartItems.Add(cartItem);
+        await Db.SaveChangesAsync();
 
-        var service = new CartService(context);
-
-        // Act
+        var service = new CartService(Db);
         await service.RemoveItemAsync(cartItem.Id);
 
-        // Assert
-        var item = await context.CartItems.FindAsync(cartItem.Id);
-        Assert.Null(item);
+        var item = await Db.CartItems.FindAsync(cartItem.Id);
+        item.Should().BeNull();
     }
 }

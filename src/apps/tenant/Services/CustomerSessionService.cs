@@ -39,6 +39,7 @@ public class CustomerSessionService : ICustomerSessionService
         // header compact.
         var deviceCookieValue = Guid.NewGuid().ToString("N");
         var ticket = session.IssueTicket(deviceCookieValue);
+        _context.CustomerAccessTickets.Add(ticket);
         await _context.SaveChangesAsync(ct);
 
         var table = await _context.Stations.FindAsync(new object[] { session.TableId }, ct);

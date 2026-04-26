@@ -158,6 +158,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
+
 app.MapGet("/ws/tables/{tableNumber:int}", async (HttpContext context, int tableNumber, TableWebSocketHandler handler) =>
 {
     await handler.HandleAsync(context, tableNumber);

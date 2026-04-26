@@ -1,76 +1,62 @@
-using Microsoft.EntityFrameworkCore;
-using TabFlow.Shared.Application.Services;
+using FluentAssertions;
 using TabFlow.Shared.Domain.Entities.Tenant;
-using TabFlow.Shared.Infrastructure.Data;
 using TabFlow.Tenant.Services;
+using Tenant.Tests.Infrastructure;
 using Xunit;
 
 namespace Tenant.Tests.Services;
 
-// Integration tier per /doc/docs/explanation/concepts/test-taxonomy.md.
-// Uses TenantDbContext.Database.EnsureCreatedAsync(); excluded from
-// the Unit fast-path in CI.
 [Trait("Category", "Integration")]
-public class CustomerSessionServiceTests
+[Collection(nameof(TenantDatabaseCollection))]
+public sealed class CustomerSessionServiceTests : TenantTransactionalTestBase
 {
+    public CustomerSessionServiceTests(TenantDatabaseFixture fixture) : base(fixture) { }
+
     [Fact]
-    public async Task OpenSessionAsync_ValidQrToken_ReturnsSessionResult()
+    public async Task OpenSessionAsync_FreshJoinToken_OpensSessionAndIssuesTicket()
     {
-        // Arrange
-        var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseNpgsql("Host=localhost;Database=tabflow_test;Username=postgres;Password=test")
-            .Options;
+        var station = Station.Create("Table 1", $"T1-{Guid.NewGuid():N}", "#FF0000", "Table", 1);
+        Db.Stations.Add(station);
 
-        using var context = new TenantDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        
-        var tableId = Guid.NewGuid();
-        var table = Station.Create("Table 1", "T1", "#FF0000", "Table", 1);
-        context.Stations.Add(table);
-        await context.SaveChangesAsync();
+        var session = CustomerSession.Open(station.Id);
+        Db.CustomerSessions.Add(session);
 
-        var qrToken = QrToken.CreateJoinToken(tableId, "test-token", DateTimeOffset.UtcNow.AddHours(1));
-        context.QrTokens.Add(qrToken);
-        await context.SaveChangesAsync();
+        var qrToken = QrToken.CreateJoinToken(
+            station.Id,
+            $"join-{Guid.NewGuid():N}",
+            DateTimeOffset.UtcNow.AddHours(1));
+        Db.QrTokens.Add(qrToken);
+        await Db.SaveChangesAsync();
 
-        var service = new CustomerSessionService(context);
+        var service = new CustomerSessionService(Db);
+        var result = await service.OpenSessionAsync(qrToken.Value);
 
-        // Act
-        var result = await service.OpenSessionAsync("test-token");
+        result.SessionId.Should().NotBe(Guid.Empty);
+        result.TicketId.Should().NotBe(Guid.Empty);
+        result.DeviceCookieValue.Should().NotBeNullOrEmpty();
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.NotEqual(Guid.Empty, result.SessionId);
-        Assert.NotEqual(Guid.Empty, result.TicketId);
+        var retrievedSession = await Db.CustomerSessions.FindAsync(result.SessionId);
+        retrievedSession.Should().NotBeNull();
+        retrievedSession!.IsOpen.Should().BeTrue();
+        retrievedSession.TableId.Should().Be(station.Id);
+
+        var ticket = await Db.CustomerAccessTickets.FindAsync(result.TicketId);
+        ticket.Should().NotBeNull();
+        ticket!.DeviceCookieValue.Should().Be(result.DeviceCookieValue);
     }
 
     [Fact]
-    public async Task CloseSessionAsync_ValidSessionId_ClosesSession()
+    public async Task CloseSessionAsync_OpenSession_ClosesIt()
     {
-        // Arrange
-        var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseNpgsql("Host=localhost;Database=tabflow_test;Username=postgres;Password=test")
-            .Options;
+        var session = CustomerSession.Open(Guid.NewGuid());
+        Db.CustomerSessions.Add(session);
+        await Db.SaveChangesAsync();
 
-        using var context = new TenantDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        
-        var tableId = Guid.NewGuid();
-        var table = Station.Create("Table 1", "T1", "#FF0000", "Table", 1);
-        context.Stations.Add(table);
-        
-        var session = CustomerSession.Open(tableId);
-        context.CustomerSessions.Add(session);
-        await context.SaveChangesAsync();
-
-        var service = new CustomerSessionService(context);
-
-        // Act
+        var service = new CustomerSessionService(Db);
         await service.CloseSessionAsync(session.Id);
 
-        // Assert
-        var updatedSession = await context.CustomerSessions.FindAsync(session.Id);
-        Assert.NotNull(updatedSession);
-        Assert.False(updatedSession.IsOpen);
+        var updated = await Db.CustomerSessions.FindAsync(session.Id);
+        updated.Should().NotBeNull();
+        updated!.IsOpen.Should().BeFalse();
     }
 }
