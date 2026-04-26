@@ -186,6 +186,70 @@ AD-0011.
 
 ### Documentation
 
+- **Phase B-3 of the alignment pass closed (PR #20).** Five findings
+  in the seven remaining reference documents (`api/internal-api.md`,
+  `api/tenant-api.md`, `api/error-codes.md`, `database/schema.md`,
+  `architecture/system-overview.md`, `architecture/health-checks.md`,
+  `architecture/render-modes.md`, `firmware.md`):
+  - **B-3.1 (`clean`)** — `internal-api.md` mixes customer-tier
+    endpoints (Sessions, Cart, Orders) with the staff-tier surface,
+    lists the stale `POST /api/orders/submit` route (the real path
+    is `POST /api/public/orders` per `PublicOrdersController`), and
+    omits the actually shipping staff endpoints. Added a TD-0023
+    banner at the top of the document; opened **TD-0023** with a
+    five-step rewrite plan (banner done, customer sections move to
+    `tenant-api.md`, fix the order-submit entry, add the staff
+    endpoints, close with the AD-0003 HTTP-is-the-exception note).
+  - **B-3.2 (`correct`)** — `tenant-api.md` listed three
+    aspirational customer-tier endpoints (`/api/public/profile`,
+    `/api/public/catalog`, `/api/public/session`) and stated that
+    the order submission requires an `Idempotency-Key` *header*; the
+    shipping `PublicOrdersController.SubmitOrder` reads the
+    `IdempotencyKey` from the request *body* per TD-0018. Added a
+    "Migration status (TD-0021)" callout to each of the three
+    aspirational sections naming the actual shipping route, and
+    rewrote the order-submission section to describe the body
+    field, cite TD-0017 (device-binding cookie verification) and
+    TD-0018 (unique index), and explicitly say "not from an
+    `Idempotency-Key` HTTP header".
+  - **B-3.3 (`clean`)** — `schema.md` did not document the
+    `device_cookie_value` column (TD-0017, migration
+    `20260425214408_AddCustomerAccessTicketDeviceCookie`) or the
+    `idempotency_key` column + unique index over
+    `(session_id, idempotency_key)` (TD-0018, migration
+    `20260425214627_AddOrderIdempotencyKey`). Rewrote the
+    "Customer Session And Cart" and "Orders And Bills" bullets to
+    name the new columns and cite the migration filenames.
+  - **B-3.4 (`aligned with caveat`)** — `health-checks.md` advanced
+    probes (`*-db:migrations`, `worker-heartbeat`,
+    `event-bus:capacity`, `tenant-context`) are declared but not
+    yet implemented; owned by **TD-0013**. No doc-text change
+    needed.
+  - **B-3.5 (`aligned`)** — `system-overview.md`, `render-modes.md`,
+    `firmware.md`, and `error-codes.md` confirmed aligned with the
+    shipping stack, surface map, and error vocabulary.
+- **TD-0022 scope extended to platform-side.** PR #20's Phase B-3
+  cross-check found the same `DbContext`-on-`ControllerBase`
+  anti-pattern in the platform host's `TenantsController` and
+  `JobsController`. The TD-0022 ledger entry was rewritten to list
+  six controllers (4 tenant-side + 2 platform-side) and to add
+  `ITenantRegistryService` (writes emit a `tenant.create` job and a
+  `tenant.create` audit row inside the same transaction) and
+  `IProvisioningJobReadService` to the payoff plan.
+- **Documentation deltas in PR #20:**
+  - [`/doc/docs/reference/api/internal-api.md`](./doc/docs/reference/api/internal-api.md):
+    TD-0023 banner added at the top of the file.
+  - [`/doc/docs/reference/api/tenant-api.md`](./doc/docs/reference/api/tenant-api.md):
+    three "Migration status (TD-0021)" callouts; order-submission
+    section rewritten for the body-field idempotency contract.
+  - [`/doc/docs/reference/database/schema.md`](./doc/docs/reference/database/schema.md):
+    `device_cookie_value` and `idempotency_key` columns documented
+    with migration filenames and TD links.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  Opened **TD-0023** — `internal-api.md` rewrite (five-step plan).
+  Updated **TD-0022** — extended scope to the two platform-side
+  controllers; controller count rewritten "four → six".
 - **Phase B-2 of the alignment pass closed (PR #19).** Seven findings
   in `decisions.md` (15 ADRs walked end-to-end against shipping code,
   schema, and tooling):

@@ -73,27 +73,100 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
-### [TRIAGE] TD-0022 — Read-only tenant-side API controllers bypass the application service layer
+### [TRIAGE] TD-0023 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
 
 - Opened: 2026-04-26
 - Owner: TBD
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
-  B-2 finding B-2.7). AD-0003 trade-off
+  B-3 finding B-3.1).
+- Symptom: the document at
+  [`/doc/docs/reference/api/internal-api.md`](/doc/docs/reference/api/internal-api.md)
+  was written before the customer / staff tier split landed in
+  TD-0015 and before the public order surface moved to
+  `/api/public/orders` in PR #6. The current document carries
+  three structural defects:
+  1. **Public endpoints described as internal.** Sections "Sessions
+     API", "Cart API", and the customer half of "Orders API"
+     describe customer-tier endpoints that belong in
+     [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md).
+  2. **Stale route for order submission.** The document lists
+     `POST /api/orders/submit` as the customer order path; the real
+     shipping route is `POST /api/public/orders` per
+     `PublicOrdersController` (PR #6, TD-0015 step 3).
+  3. **Missing staff endpoints.** The actual staff-tier surface
+     under `/api/orders/{id}`, `/api/orders/session/{sessionId}`,
+     `/api/kitchen/orders`,
+     `/api/kitchen/items/{id}/status`, `/api/sessions/{sessionId}/close`,
+     `/api/tables`, `/api/tables/{id}` is not documented at all.
+  4. **Cross-tier authorisation note absent.** Each entry says
+     "Policy: None" without explaining whether that is a public-tier
+     `[AllowAnonymous]` (TD-0015 step 2) or a missing
+     authorisation contract.
+- Risk if unpaid: the document is the first hit a reviewer reads
+  when they want to know "what HTTP do we expose internally"; a
+  drift this large means the answer is wrong. A future PR adding a
+  staff endpoint copies the dominant `Policy: None` pattern and
+  re-creates the AC-008 / AC-043 violation that TD-0015 closed.
+- Payoff plan:
+  1. (Open) Mark the document as TD-0023 owned via a banner at the
+     top, pointing readers at this entry until the rewrite lands.
+     (Done in this pass.)
+  2. (Open) Move the customer-tier sections (Sessions, Cart, the
+     customer Orders endpoint) to
+     [`tenant-api.md`](/doc/docs/reference/api/tenant-api.md) under
+     the Public Endpoints heading, deduplicated against the routes
+     already documented there.
+  3. (Open) Replace the stale `POST /api/orders/submit` entry with
+     the actual `POST /api/public/orders` contract (cite AC-030,
+     AC-031, AC-035, AC-036).
+  4. (Open) Add a staff-tier section for the actually shipping
+     internal endpoints with their `[Authorize]` policy, request /
+     response shapes, and citation back to
+     [`runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints).
+  5. (Open) Add a closing note that admin and staff Razor surfaces
+     interact with the domain through Blazor + DI rather than HTTP
+     (AD-0003); the documented HTTP surfaces are the exception, not
+     the norm.
+- Linked: AD-0003,
+  [`/doc/docs/reference/api/internal-api.md`](/doc/docs/reference/api/internal-api.md),
+  [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md),
+  TD-0015 step 2 (attribute audit), TD-0021 (prefix migration),
+  TD-0022 (controller-to-service migration overlaps),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
+
+### [TRIAGE] TD-0022 — Read-only API controllers bypass the application service layer
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  B-2 finding B-2.7 and Phase B-3 cross-check). AD-0003 trade-off
   ([`/doc/docs/reference/architecture/decisions.md`](/doc/docs/reference/architecture/decisions.md#ad-0003-one-host-process-per-side))
   states: "host process shape now carries both UI and API concerns;
   the internal layer boundary (host → application service → domain)
   must remain explicit in code." Today the boundary is observed
-  inconsistently across the seven controllers under
-  `/src/apps/tenant/Controllers/Api/`:
-  - **Through service layer** (3): `CartController` →
-    `ICartService`, `PublicOrdersController` → `IOrderService`,
+  inconsistently across the controllers under
+  `/src/apps/tenant/Controllers/Api/` and
+  `/src/apps/platform/Controllers/Api/`:
+  - **Through service layer** (3, all tenant-side): `CartController`
+    → `ICartService`, `PublicOrdersController` → `IOrderService`,
     `SessionsController` → `ICustomerSessionService`. These
     controllers are post-TD-0015 and post-TD-0017 work.
-  - **Direct `TenantDbContext`** (4): `KitchenController`,
-    `MenuController`, `OrdersController`, `TablesController`. These
-    inject `TenantDbContext` and run LINQ queries inline. The
-    application service layer for these read paths does not exist.
+  - **Direct `TenantDbContext`** (4 tenant-side):
+    `KitchenController`, `MenuController`, `OrdersController`,
+    `TablesController`. These inject `TenantDbContext` and run LINQ
+    queries inline.
+  - **Direct `PlatformDbContext`** (2 platform-side):
+    `TenantsController` (`GET / GET {id} / POST / PUT {id}` over
+    `_context.Tenants`) and `JobsController` (`GET / GET {id}` over
+    `_context.ProvisioningJobs`). The application service layer for
+    these read paths does not exist; the write paths
+    (`POST /api/tenants`, `PUT /api/tenants/{id}`) call the entity
+    factories `TenantRegistration.Create(...)` directly from the
+    controller, which is acceptable shape for a thin write but
+    leaves no seam for transactional discipline (audit log writes
+    per AC-071, provisioning-job emission, validation policy).
 - Symptom: a controller that runs LINQ over `TenantDbContext`
   inside an action method couples the HTTP transport surface to the
   EF Core query shape. Three knock-on effects:
@@ -113,26 +186,38 @@ ledger; orphan `TD-` references are a documentation bug.
   every read path simultaneously, which is a much bigger change
   than fixing four controllers today.
 - Payoff plan:
-  1. (Open) Introduce three application services to mirror the
-     existing pattern:
+  1. (Open) Introduce application services to mirror the existing
+     pattern. Tenant-side:
      - `IKitchenReadService` — exposes the queries used by
-       `KitchenController.GetKitchenOrders`.
+       `KitchenController.GetKitchenOrders` and the
+       `OrderItem.Status` mutation by `UpdateItemStatus`.
      - `IMenuReadService` — exposes
        `GetMenuItems` / `GetMenuItemsByCategory`.
      - `ITableReadService` — exposes `GetTables` / `GetTable`.
      - Order detail and order-by-session reads currently live in
        `OrdersController`; fold them into the existing
        `IOrderService` rather than introducing a fourth read service.
-  2. (Open) Rewrite the four controllers to depend on the read
-     services instead of `TenantDbContext`. Controller actions
-     become thin: parameter binding, `await`, return.
+     Platform-side:
+     - `ITenantRegistryService` — exposes `GetTenants` / `GetTenant`
+       / `CreateTenant` / `UpdateTenant`. The write actions emit a
+       `tenant.create` provisioning job and write a `tenant.create`
+       row to `platform_audit_log` (AC-071) inside the same
+       transaction.
+     - `IProvisioningJobReadService` — exposes `GetJobs` /
+       `GetJob`.
+  2. (Open) Rewrite the six controllers (4 tenant-side + 2
+     platform-side) to depend on the services instead of the
+     `DbContext`. Controller actions become thin: parameter
+     binding, `await`, return.
   3. (Open) Each new service ships with at least one unit test that
      exercises the projection against an in-memory or transactional
      fixture (covered under TD-0010 step 5 once the integration
      fixture lands).
-  4. (Open) Once all four controllers are migrated, add a Roslyn
-     analyzer rule that flags any `Microsoft.EntityFrameworkCore.DbContext`
-     parameter or field on a class derived from `ControllerBase`.
+  4. (Open) Once all six controllers are migrated, add a Roslyn
+     analyzer rule (extending the `TabFlow.Analyzers` project from
+     TD-0009) that flags any
+     `Microsoft.EntityFrameworkCore.DbContext` parameter or field
+     on a class derived from `ControllerBase`.
 - Linked: AD-0003,
   [`/doc/docs/reference/architecture/decisions.md`](/doc/docs/reference/architecture/decisions.md#ad-0003-one-host-process-per-side),
   TD-0010 step 5 (integration fixture for service-level tests),

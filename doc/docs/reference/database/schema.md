@@ -187,7 +187,12 @@ Owns:
 - `customer_sessions` — one row per live table session (one per active
   table check), referencing the table and its state
 - `customer_access_tickets` — browser-scoped participants attached to a
-  session
+  session. Carries `device_cookie_value`, the opaque first-party
+  cookie value the server set on the browser that scanned the QR;
+  the order-submit path matches the cookie the browser sends back
+  against this column to satisfy AC-030. Per
+  [TD-0017](/doc/buildlog/tech-debt-ledger.md#triage-td-0017--customer-session-not-bound-to-the-device-that-scanned-the-qr)
+  (migration `20260425214408_AddCustomerAccessTicketDeviceCookie`).
 - `customer_session_cart_items` — server-side cart bound to the session,
   one row per item with quantity and optional note
 - `qr_tokens` — single-use tokens for join and checkout proof
@@ -200,7 +205,14 @@ converts the cart into an `orders` + `order_items` pair.
 Owns:
 
 - Orders (`id`, `table_id`, `session_id`, `ticket_id`, `submitted_at`,
-  `total_amount`)
+  `total_amount`, `idempotency_key`). The unique index over
+  `(session_id, idempotency_key)` guarantees that a duplicate
+  `POST /api/public/orders` (e.g. a customer who taps Submit twice
+  on a flaky network) cannot produce a second order — the second
+  insert fails on the unique constraint and the service returns the
+  original result. Per
+  [TD-0018](/doc/buildlog/tech-debt-ledger.md#triage-td-0018--order-submission-idempotency-key)
+  (migration `20260425214627_AddOrderIdempotencyKey`).
 - Order items (`order_id`, `item_id`, `quantity`, `note`,
   `station_id`, `status`, status timestamps)
 - Bills (`id`, `table_id`, `opened_at`, `closed_at`, `total_amount`,

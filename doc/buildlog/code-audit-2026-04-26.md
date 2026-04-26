@@ -630,6 +630,168 @@ end-to-end before classifying).
   fixture from TD-0010 step 5); add a Roslyn analyzer rule
   (extending the `TabFlow.Analyzers` project from TD-0009) that
   flags `DbContext` injection on `ControllerBase` derivatives.
+  PR #20 (Phase B-3 cross-check) extended the entry to cover the
+  two platform-side controllers (`TenantsController`,
+  `JobsController`) that follow the same anti-pattern; the payoff
+  plan now lists `ITenantRegistryService` and
+  `IProvisioningJobReadService` alongside the tenant-side services
+  and rewrites the controller count from "four" to "six".
+
+### Phase B-3 — `api/`, `database/`, and remaining `architecture/`
+
+Phase B-3 walks the seven remaining reference documents:
+[`/doc/docs/reference/api/internal-api.md`](../docs/reference/api/internal-api.md),
+[`/doc/docs/reference/api/tenant-api.md`](../docs/reference/api/tenant-api.md),
+[`/doc/docs/reference/api/error-codes.md`](../docs/reference/api/error-codes.md),
+[`/doc/docs/reference/database/schema.md`](../docs/reference/database/schema.md),
+[`/doc/docs/reference/architecture/system-overview.md`](../docs/reference/architecture/system-overview.md),
+[`/doc/docs/reference/architecture/health-checks.md`](../docs/reference/architecture/health-checks.md),
+[`/doc/docs/reference/architecture/render-modes.md`](../docs/reference/architecture/render-modes.md),
+[`/doc/docs/reference/firmware.md`](../docs/reference/firmware.md).
+
+### B-3.1 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
+
+- **Bucket:** `clean` (the document is wrong; the rewrite is large
+  enough to track as its own TD rather than land in this pass).
+- **Claim:** `internal-api.md` documents "internal HTTP endpoints —
+  the admin and staff API used by the platform admin UI and the
+  tenant admin console" and excludes "the public, externally
+  addressable HTTP surface".
+- **Evidence:** the document has four structural problems:
+  1. Sections "Sessions API", "Cart API", and the customer half of
+     "Orders API" describe customer-tier endpoints that belong in
+     [`tenant-api.md`](../docs/reference/api/tenant-api.md).
+  2. The customer order path is listed as `POST /api/orders/submit`;
+     the real shipping route is `POST /api/public/orders` per
+     `PublicOrdersController` (PR #6, TD-0015 step 3).
+  3. The actually shipping staff-tier surface (`/api/orders/{id}`,
+     `/api/orders/session/{sessionId}`, `/api/kitchen/orders`,
+     `/api/kitchen/items/{id}/status`,
+     `/api/sessions/{sessionId}/close`, `/api/tables`,
+     `/api/tables/{id}`) is not documented at all.
+  4. Every entry says `Policy: None` without explaining whether
+     this is a public-tier `[AllowAnonymous]` (TD-0015 step 2) or a
+     missing authorisation contract.
+- **Conflict:** the document is the first hit for a reviewer asking
+  "what HTTP do we expose internally"; a drift this large means the
+  answer is wrong. Constitution III.1 (documentation reflects
+  reality) and III.2 (architectural change lands in docs first or
+  alongside) both fail here.
+- **Constitution anchor:** III.1, III.2.
+- **Resolution:** PR #20 added a TD-0023 banner at the top of
+  `internal-api.md` pointing readers at `runtime-surfaces.md` /
+  `tenant-api.md` until the rewrite lands. Opened TD-0023 with a
+  five-step plan: banner (done), move customer-tier sections to
+  `tenant-api.md`, replace the stale order-submit entry, document
+  the actually shipping staff endpoints, and close with the AD-0003
+  HTTP-is-the-exception note.
+
+### B-3.2 — `tenant-api.md` aspirational `/api/public/*` triple, plus `Idempotency-Key` mis-located on the header
+
+- **Bucket:** `correct`.
+- **Claim:** `tenant-api.md` lists four customer-tier endpoints
+  under `/api/public/*` (`profile`, `catalog`, `session`, `orders`)
+  and states that "the request MUST carry an `Idempotency-Key`
+  header".
+- **Evidence:**
+  - **Aspirational triple.** Phase B-1 finding B-1.2 already showed
+    that only `POST /api/public/orders` ships under the prefix
+    today; the other three are routed under `/api/menu`, `/api/cart`,
+    `/api/sessions/*`. TD-0021 owns the migration. `tenant-api.md`
+    inherited the same aspirational shape and did not link the
+    follow-up.
+  - **Idempotency contract location.** The shipping code at
+    [`PublicOrdersController.SubmitOrder`](/src/apps/tenant/Controllers/Api/PublicOrdersController.cs)
+    binds `[FromBody] SubmitOrderRequest` and the request record
+    declares an `IdempotencyKey` field; TD-0018 enforces uniqueness
+    via a unique index over `(SessionId, IdempotencyKey)` on the
+    `orders` table (migration
+    `20260425214627_AddOrderIdempotencyKey`). The body field is the
+    contract. The "header" claim was aspirational and never landed.
+- **Conflict:** III.1 (documentation reflects reality). The header
+  claim would require a server-side change to read
+  `HttpContext.Request.Headers["Idempotency-Key"]`, which the
+  shipping code does not do.
+- **Constitution anchor:** III.1, III.4 (a stable contract has a
+  clear shape; the body field is that shape).
+- **Resolution:** PR #20 (a) added a "Migration status (TD-0021)"
+  callout to each of the three aspirational customer-tier sections
+  naming the actual shipping route, and (b) rewrote the order
+  submission section to describe the body's `idempotencyKey` field,
+  cite TD-0017 (device-binding cookie verification) and TD-0018
+  (unique index), and explicitly say "not from an `Idempotency-Key`
+  HTTP header".
+
+### B-3.3 — `schema.md` did not document the TD-0017 / TD-0018 columns
+
+- **Bucket:** `clean`.
+- **Claim:** the schema reference is "the high-level schema map for
+  TabFlow" and the per-section tables list every column.
+- **Evidence:** the migrations
+  `20260425214408_AddCustomerAccessTicketDeviceCookie` (PR #11,
+  TD-0017) and `20260425214627_AddOrderIdempotencyKey` (PR #12,
+  TD-0018) ship two new columns and one unique index that were not
+  reflected in `schema.md`'s "Customer Session And Cart" and
+  "Orders And Bills" sections.
+- **Conflict:** III.1 (documentation reflects reality). The schema
+  reference was the right place to surface the new columns; their
+  absence meant a reader skimming `schema.md` for the order shape
+  would not see the idempotency contract that TD-0018 enforces.
+- **Constitution anchor:** III.1, III.2.
+- **Resolution:** PR #20 rewrote both section bullets to name the
+  new columns, cite the migration filenames, link the relevant TDs,
+  and (for the orders row) describe the unique-index semantics.
+
+### B-3.4 — `health-checks.md` advanced probes declared, owned by TD-0013
+
+- **Bucket:** `aligned with caveat`.
+- **Claim:** `health-checks.md` lists the platform probe set as
+  `platform-db:ping`, `platform-db:migrations`, `worker-heartbeat`
+  and the tenant probe set as `tenant-db:ping`,
+  `tenant-db:migrations`, `event-bus:capacity`, `tenant-context`.
+- **Evidence:** PR #5 (or earlier) shipped `*-db:ping` for both
+  hosts; the four advanced probes (`migrations`,
+  `worker-heartbeat`, `event-bus:capacity`, `tenant-context`)
+  remain open under TD-0013. The capability matrix already names
+  TD-0013 as the owner of the gap, and this document is the
+  canonical spec for what each probe checks once landed.
+- **Constitution anchor:** III.1 (the spec is explicit; the gap is
+  in the code, not in the doc).
+- **Resolution:** none required for the doc text. TD-0013 owns the
+  code work.
+
+### B-3.5 — `system-overview.md`, `render-modes.md`, `firmware.md`, `error-codes.md` are aligned
+
+- **Bucket:** `aligned`.
+- **Evidence per document:**
+  - **`system-overview.md`** — stack table (.NET 10, ASP.NET Core
+    10 + Blazor Web App, EF Core 10 + Npgsql, PostgreSQL 17,
+    Identity, Channels, ESP32-C3) matches the shipping
+    `Directory.Build.props`, the host project references, and the
+    firmware source. Source tree map matches `/src/apps/{platform,
+    platform-worker, tenant}`, `/src/packages/{shared-dotnet,
+    firmware}`, `/src/infra/postgres`. The "API Surface" block
+    declares `/api/public/**` as the customer surface, which is
+    the aspirational shape under TD-0021; this document inherits
+    the same caveat as `tenant-api.md` but states it correctly
+    ("Customer-facing contracts that require explicit HTTP
+    semantics") and points at `tenant-api.md` for the full
+    reference.
+  - **`render-modes.md`** — surface-family-to-mode table matches
+    `runtime-surfaces.md`'s per-route render mode column. The
+    code-side `@rendermode InteractiveServer` annotation is owned
+    by TD-0016; this document is the family-level spec, not the
+    per-route enforcement point.
+  - **`firmware.md`** — ESP32-C3 hardware profile, runtime
+    contract (`auth_ok`, `new_token`, `refresh`, `ping`/`pong`,
+    backend-produced QR matrix), generated-artifacts policy, and
+    pin map all match the firmware source under
+    `/src/packages/firmware/arduino/tabflow-table-display/`.
+  - **`error-codes.md`** — the four-table vocabulary (Common,
+    Session And Access Ticket, Order Submission, Device WebSocket)
+    is consistent with `tenant-api.md`'s per-endpoint error-code
+    list and with the WebSocket close-code conventions.
+- **Resolution:** none required.
 
 ## 6. Phase C — Explanation Tree Findings
 
@@ -670,7 +832,12 @@ TD that resolved it, and the date.
 | B-2.4 | `aligned with caveat` | AD-0008 schema authority intact; worker `MigrateAsync()` + drop+apply+verify owned by TD-0003. | 2026-04-26 |
 | B-2.5 | `aligned with caveat` | AD-0010 bootstrap CLI shipped (PR #9 + #16); operator-action half owned by TD-0002. | 2026-04-26 |
 | B-2.6 | `aligned with caveat` | AD-0015 enforced via `TF0001` (PR #14); IStringLocalizer half owned by TD-0011, analyzer release files by TD-0009. | 2026-04-26 |
-| B-2.7 | `implement` | PR #19 — opened TD-0022 with four-step migration: 3 read services + fold order reads into `IOrderService`, controller rewrite, unit tests, Roslyn `DbContext`-on-`ControllerBase` analyzer. | 2026-04-26 |
+| B-2.7 | `implement` | PR #19 — opened TD-0022 with four-step migration: 3 read services + fold order reads into `IOrderService`, controller rewrite, unit tests, Roslyn `DbContext`-on-`ControllerBase` analyzer. PR #20 extended TD-0022 to the platform-side controllers (`TenantsController`, `JobsController`); count: 6 controllers, 5 services. | 2026-04-26 |
+| B-3.1 | `clean` | PR #20 — added a TD-0023 banner to `internal-api.md`; opened TD-0023 with a five-step rewrite plan. | 2026-04-26 |
+| B-3.2 | `correct` | PR #20 — rewrote `tenant-api.md` order-submission section: idempotency key on the request body (not the `Idempotency-Key` header) per TD-0018; added "Migration status (TD-0021)" callouts to `/api/public/profile`, `/api/public/catalog`, `/api/public/session`. | 2026-04-26 |
+| B-3.3 | `clean` | PR #20 — rewrote `schema.md` "Customer Session And Cart" and "Orders And Bills" bullets to name `device_cookie_value` (TD-0017) and `idempotency_key` + the unique index over `(session_id, idempotency_key)` (TD-0018), citing the migration filenames. | 2026-04-26 |
+| B-3.4 | `aligned with caveat` | No doc-text change needed; advanced probes owned by TD-0013. | 2026-04-26 |
+| B-3.5 | `aligned` | No action required. | 2026-04-26 |
 
 ## 11. Sign-Off
 

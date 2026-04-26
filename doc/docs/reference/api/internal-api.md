@@ -1,5 +1,19 @@
 # Internal API Reference
 
+> **Status: stale, owned by [TD-0023](/doc/buildlog/tech-debt-ledger.md#triage-td-0023--internal-apimd-mixes-public-and-staff-tier-surfaces-lists-routes-that-no-longer-ship).**
+> The current document mixes customer-tier endpoints with staff-tier
+> endpoints, lists `POST /api/orders/submit` (the real route is
+> `POST /api/public/orders` per `PublicOrdersController`, PR #6,
+> TD-0015 step 3), and omits the staff endpoints that actually ship
+> (`/api/orders/{id}`, `/api/orders/session/{sessionId}`,
+> `/api/kitchen/*`, `/api/sessions/{sessionId}/close`,
+> `/api/tables/*`). Treat the customer-tier sections below as
+> superseded by
+> [`./tenant-api.md`](./tenant-api.md) and the staff-tier picture as
+> incomplete. The shipping route map is in
+> [`../architecture/runtime-surfaces.md`](../architecture/runtime-surfaces.md#tenant-host--http-endpoints).
+> The rewrite is tracked under **TD-0023**.
+
 This document is the reference for **internal** HTTP endpoints — the
 admin and staff API used by the platform admin UI and the tenant admin
 console. The public, externally addressable HTTP surface
