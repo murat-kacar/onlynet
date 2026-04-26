@@ -158,11 +158,19 @@ Menu and check reading should not require repeated QR scans.
 2. Customer presses `Submit order`.
 3. UI requests a fresh QR scan from the current table display.
 4. Backend validates and consumes that fresh QR proof.
-5. Backend verifies that the access ticket belongs to the still-open
+5. Backend verifies that the device-binding cookie on the request
+   matches the access ticket's `DeviceCookieValue` (per
+   [TD-0017](/doc/buildlog/tech-debt-ledger.md#td-0017); a different
+   browser on the same access cookie cannot submit an order).
+6. Backend verifies that the access ticket belongs to the still-open
    table session.
-6. Backend converts the server-side cart into the order and attributes it
+7. Backend checks the request's `idempotencyKey` body field against the
+   `(SessionId, IdempotencyKey)` unique index on `orders` (per
+   [TD-0018](/doc/buildlog/tech-debt-ledger.md#td-0018)); a replay
+   returns the prior result.
+8. Backend converts the server-side cart into the order and attributes it
    to the table session and the access ticket.
-7. The fresh checkout QR proof is consumed and cannot be reused.
+9. The fresh checkout QR proof is consumed and cannot be reused.
 
 Every later order submission must request another fresh QR proof.
 

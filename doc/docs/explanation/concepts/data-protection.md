@@ -32,10 +32,22 @@ determines storage, access, retention, and audit requirements.
 | **Sensitive** | Personal data within KVKK / GDPR scope | Staff email, staff name, audit log actor IP and user-agent, customer session language preference once tied to a returning customer identifier |
 | **Restricted** | Special-category personal data, payment data, or authentication secrets | Password hashes, session cookies, payment tokens (when the payment integration ships), any health or dietary data a customer voluntarily provides |
 
-Schema rule: every personal-data column carries a comment classifying
-it. The comment is generated from `[DataClass]` attributes on the
-entity properties; CI fails the build if a `Sensitive` or `Restricted`
-column has no comment in the schema dump.
+Schema rule (target shape): every personal-data column carries a
+comment classifying it. The comment is generated from `[DataClass]`
+attributes on the entity properties; CI fails the build if a
+`Sensitive` or `Restricted` column has no comment in the schema dump.
+
+> **Implementation status (TD-0007).** The `[DataClass]` attribute
+> and the schema-comment generator are not yet implemented; the
+> capability matrix tracks the row as `Target`. The corresponding
+> acceptance criterion is **AC-122**. This explainer states the
+> contract; the wiring lands under
+> [TD-0007](/doc/buildlog/tech-debt-ledger.md#td-0007).
+>
+> Until then, the schema reference
+> ([`../../reference/database/schema.md`](../../reference/database/schema.md))
+> documents which tables hold personal data so reviewers can apply
+> the classification by hand.
 
 ## Lawful Basis For Processing
 
@@ -87,18 +99,24 @@ honoured under both.
 | Right | KVKK Article | GDPR Article | TabFlow Procedure |
 | --- | --- | --- | --- |
 | Right to be informed | 10 | 13–14 | Privacy notice published per tenant; link rendered on customer ordering surface |
-| Right of access | 11(1)(a–c) | 15 | Operator runs the access export procedure (TBD how-to) and delivers the file to the requester within 30 days |
+| Right of access | 11(1)(a–c) | 15 | Operator runs the access export procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 1) and delivers the file to the requester within 30 days |
 | Right to rectification | 11(1)(d–e) | 16 | Staff edit; customer correction via operator request |
-| Right to erasure | 11(1)(e–f), 7 | 17 | Operator triggers the erasure procedure; data is hard-deleted except entries needed to satisfy a legal obligation, which are anonymised |
-| Right to restriction | 11(1)(f), 7(2) | 18 | Staff record is set to `restricted = true`; processing pauses pending review |
-| Right to data portability | n/a (no direct equivalent in KVKK) | 20 | Access export is delivered in machine-readable JSON |
+| Right to erasure | 11(1)(e–f), 7 | 17 | Operator triggers the erasure procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 2); data is hard-deleted except entries needed to satisfy a legal obligation, which are anonymised |
+| Right to restriction | 11(1)(f), 7(2) | 18 | Staff record is set to `restricted = true` per the restriction procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 3); processing pauses pending review |
+| Right to data portability | n/a (no direct equivalent in KVKK) | 20 | Access export is delivered in machine-readable JSON ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 4) |
 | Right to object | 11(1)(g) | 21 | Recorded; processing for the objection's scope ceases |
 | Right not to be subject to automated decision-making | n/a | 22 | TabFlow performs no automated individual decision-making in the current major |
 
 The procedures referenced above live as **how-to guides** in
-[`/doc/docs/how-to/`](/doc/docs/how-to/). When a procedure does not yet
-exist, the corresponding row links a tech-debt ledger entry until it
-ships.
+[`/doc/docs/how-to/`](/doc/docs/how-to/). The four DSR procedures (
+access, erasure, restriction, portability) do not yet exist; they are
+tracked under
+[TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented).
+Until the how-to guides ship, an operator who receives a DSR
+follows the lawful-basis row above and writes a postmortem-style
+record of the response under
+[`/doc/buildlog/postmortems/`](/doc/buildlog/postmortems/) so the
+first real DSR informs the procedure that lands.
 
 ## Data Locality And Transfer
 

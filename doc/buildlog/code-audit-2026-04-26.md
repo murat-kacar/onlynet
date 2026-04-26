@@ -795,7 +795,188 @@ Phase B-3 walks the seven remaining reference documents:
 
 ## 6. Phase C — Explanation Tree Findings
 
-*Pass-in-progress.*
+Phase C walks all 11 explanation documents under
+`/doc/docs/explanation/concepts/` plus the two README index files. The
+explanation tree is the home of "why" content; its findings are
+about reasoning that has drifted from the shipping behaviour or the
+constitution rather than missing reference data.
+
+### C-1 — `implementation-patterns.md` carries 4 stale code patterns
+
+- **Bucket:** `clean`.
+- **Claim:** the explainer is "common implementation patterns" — a
+  prescriptive guide that contributors copy from when adding new
+  controllers, services, or tests.
+- **Evidence:** four patterns drifted from the shipping behaviour:
+  1. **`Order.Create` signature** — listed as
+     `Order.Create(tableId, sessionId, ticketId, items, note)`. The
+     real signature is
+     `Order.Create(tableId, sessionId, ticketId, idempotencyKey, items, note)`
+     after PR #12 / TD-0018. A contributor copying the doc shape
+     calls a non-existent overload.
+  2. **Common Pitfalls list** missed the two TD-driven properties:
+     `CustomerAccessTicket.DeviceCookieValue` (TD-0017) and
+     `Order.IdempotencyKey` (TD-0018).
+  3. **Unit testing pattern** showed a `Mock<TenantDbContext>`
+     example, recommending the very pattern that
+     [`./test-taxonomy.md`](../docs/explanation/concepts/test-taxonomy.md#tier-1-unit)
+     forbids ("we do not use a mocking framework"). See C-3 for the
+     parallel divergence in csprojs.
+  4. **Controller Structure** showed the AD-0003 anti-pattern
+     (`PlatformDbContext` injected directly into the controller),
+     which the next ADR call-out and TD-0022 would flag in review.
+- **Conflict:** III.1 (documentation reflects reality), III.2 (doc
+  lands first or alongside the change). PR #12 (TD-0018) and PR #11
+  (TD-0017) shipped without refreshing this explainer.
+- **Constitution anchor:** III.1, III.2.
+- **Resolution:** PR #21 rewrote all four patterns. The
+  `Order.Create` signature now lists `idempotencyKey` as the 4th
+  positional argument. The Common Pitfalls list names
+  `DeviceCookieValue` (TD-0017) and `IdempotencyKey` (TD-0018). The
+  Unit testing example uses a hand-written `InMemoryTenantDbContext`
+  fake and links the TD-0025 caveat. The Controller Structure
+  example uses `ITenantRegistryService` per the AD-0003 trade-off
+  and links TD-0022.
+
+### C-2 — `data-protection.md` claims `[DataClass]` enforcement and lists four "TBD how-to" DSR procedures without TD links
+
+- **Bucket:** `clean`.
+- **Claim:** the explainer makes two contract-shaped claims:
+  - "every personal-data column carries a comment classifying it.
+    The comment is generated from `[DataClass]` attributes on the
+    entity properties; CI fails the build if a `Sensitive` or
+    `Restricted` column has no comment in the schema dump."
+  - The Data Subject Rights table promises "operator runs the access
+    export procedure (TBD how-to)" and similar for erasure,
+    restriction, and portability.
+- **Evidence:**
+  - **`[DataClass]`.** The capability matrix at
+    [`/doc/docs/reference/architecture/capability-matrix.md`](../docs/reference/architecture/capability-matrix.md)
+    tracks "Personal-data classification on schema" as `Target` and
+    points at TD-0007. The attribute, the schema-comment generator,
+    and the build-time check do not exist; the doc states the
+    behaviour as if it ships.
+  - **DSR procedures.** The four "TBD how-to" rows (access, erasure,
+    restriction, portability) had no TD link. A tenant operator who
+    receives a real KVKK Article 11 / GDPR Article 15 request had
+    no checklist and no ledger entry tracking the gap.
+- **Conflict:** III.1 (documentation reflects reality), II.3 (every
+  acknowledged compromise has a TD entry).
+- **Constitution anchor:** III.1, II.3.
+- **Resolution:** PR #21 (a) rewrote the `[DataClass]` paragraph
+  with an "Implementation status (TD-0007)" callout that names the
+  capability-matrix row and AC-122; (b) opened **TD-0024** and
+  rewrote each DSR row to link the TD-0024 step that owns the
+  procedure, plus added an interim instruction ("write a postmortem-
+  style record under `/doc/buildlog/postmortems/` until the
+  how-to lands") so the first real DSR informs the procedure.
+
+### C-3 — `test-taxonomy.md` says "no mocking framework" while every test csproj references NSubstitute
+
+- **Bucket:** `clean`.
+- **Claim:** the test taxonomy states "Test doubles are written by
+  hand. We do not use a mocking framework".
+- **Evidence:** every test project at `/tests/<Name>.Tests/*.csproj`
+  carries `<PackageReference Include="NSubstitute" />`:
+  `E2E.Tests`, `Tenant.Tests`, `PlatformWorker.Tests`,
+  `Platform.Tests`, `Shared.Tests`. The implementation-patterns
+  explainer (see C-1) compounds the divergence by showing a
+  `Mock<TenantDbContext>` example.
+- **Conflict:** III.1 (documentation reflects reality). Either path
+  (officially adopt NSubstitute or remove it) is fine on its own;
+  carrying both is a coin flip for any reviewer choosing what shape
+  to require.
+- **Constitution anchor:** III.1.
+- **Resolution:** PR #21 reframed the test-taxonomy paragraph as a
+  historical preference and added a TD-0025 callout. Opened
+  **TD-0025** with a two-exit payoff plan: adopt NSubstitute
+  officially (rewrite the doc, list its allowed scope) or remove it
+  from the csprojs. Until either resolves, hand-written fakes remain
+  the default for new tests.
+
+### C-4 — `threat-model.md` carries 3 stale or unsupported claims
+
+- **Bucket:** `clean`.
+- **Claim:** three mitigations in Boundary C / Boundary D promise
+  enforcement that does not yet ship:
+  - "missing policy is a build error per AD-0014" (Boundary C, T row)
+  - "analyzer flags `IQueryable.ToList()` without `Take()`"
+    (Boundary D, D row)
+  - "Backups encrypted at rest; access via deploy-time secret manager
+    only (deferred — TD when first backup ships)" (Boundary D, I row)
+- **Evidence:**
+  - **Missing-policy build error.** AD-0014 covers `.editorconfig` +
+    `Directory.Build.props`; it does not generate a build error for
+    a missing authorisation policy on a Razor route. ASP.NET Core's
+    `FallbackPolicy` rejects the request at startup, but no analyzer
+    fails the build.
+  - **`IQueryable.ToList()` analyzer.** `TabFlow.Analyzers` ships
+    only `TF0001` (English-first identifier rule, TD-0009 step 3).
+    The unbounded-query rule is a future addition; it is not on the
+    triage queue today.
+  - **Backup encryption "TD when first backup ships".** No TD
+    number was named; the deferral was a paragraph-level promise
+    not tracked in the ledger.
+- **Conflict:** III.1 (documentation reflects reality), II.3 (every
+  acknowledged compromise has a TD entry).
+- **Constitution anchor:** III.1, II.3.
+- **Resolution:** PR #21 rewrote each of the three mitigations:
+  - The missing-policy mitigation now cites AD-0005 and the
+    pending Identity-policy registration test under TD-0010 step 5
+    (analyzer-time enforcement is named as future TD-0009 follow-
+    up).
+  - The `IQueryable.ToList()` mitigation says the analyzer is not
+    yet shipped, cites TD-0009 as the analyzer baseline, and
+    explicitly says the rule is enforced in code review today.
+  - The backup-encryption mitigation now links the capability-matrix
+    "Encrypted backup with off-site copy" row (`Target`) and the
+    backup-and-restore how-to.
+
+### C-5 — `customer-session-model.md` Submit Flow did not list the TD-0017 / TD-0018 checks
+
+- **Bucket:** `aligned with caveat` → resolved.
+- **Claim:** the Submit Flow numbered list described the order
+  submission as "validate QR proof → verify ticket → convert cart →
+  consume proof", four steps.
+- **Evidence:** PR #11 (TD-0017) added the device-binding cookie
+  verification step in `OrderService.SubmitAsync`; PR #12 (TD-0018)
+  added the idempotency-key check against the unique index. Neither
+  showed up in the explainer.
+- **Conflict:** III.1, III.2.
+- **Constitution anchor:** III.1, III.2.
+- **Resolution:** PR #21 rewrote the Submit Flow as a 9-step list
+  that names the device-binding cookie check (step 5, TD-0017) and
+  the idempotency-key check (step 7, TD-0018) explicitly.
+
+### C-6 — `multi-tenancy.md`, `tenant-lifecycle.md`, `accessibility.md`, `internationalization.md`, `authorization.md`, `operational-surfaces.md`, and the two READMEs are aligned
+
+- **Bucket:** `aligned`.
+- **Evidence per document:**
+  - **`multi-tenancy.md`** — AD-0001 / AD-0003 separation is the
+    decision the doc explains; both hosts and DB contexts ship that
+    way. References to the schema reference and runtime overview
+    resolve.
+  - **`tenant-lifecycle.md`** — tenant-code shape, primary-domain
+    rules, runtime seed baseline match the platform host's
+    provisioning code; the operational playbook delegate to
+    `provision-tenant.md`.
+  - **`accessibility.md`** — WCAG 2.2 AA baseline cross-references
+    AC-110..AC-116 in `acceptance-criteria.md`; both sides match.
+  - **`internationalization.md`** — AD-0015 (English-first), the
+    `LanguageCode` field on `TenantRegistration`, and the rejection
+    error code `tenant.create.unsupported_language` (AC-121) are the
+    contract. The `IStringLocalizer` + `*.resx` half is tracked
+    under TD-0011; the doc states the contract correctly.
+  - **`authorization.md`** — `Console:ManageUsersBelowOwner` (AC-014),
+    `Platform:Read|Write|Self` policies, and the station-device
+    deferral all match the runtime-surfaces map and AD-0005.
+  - **`operational-surfaces.md`** — purely conceptual; product
+    reasoning behind the surface family. Delegate every concrete
+    fact to `runtime-surfaces.md`.
+  - **`/doc/docs/explanation/README.md`** and
+    **`/doc/docs/explanation/concepts/README.md`** — index files;
+    every listed document exists on disk.
+- **Resolution:** none required.
 
 ## 7. Phase D — How-To Tree Findings
 
@@ -838,6 +1019,12 @@ TD that resolved it, and the date.
 | B-3.3 | `clean` | PR #20 — rewrote `schema.md` "Customer Session And Cart" and "Orders And Bills" bullets to name `device_cookie_value` (TD-0017) and `idempotency_key` + the unique index over `(session_id, idempotency_key)` (TD-0018), citing the migration filenames. | 2026-04-26 |
 | B-3.4 | `aligned with caveat` | No doc-text change needed; advanced probes owned by TD-0013. | 2026-04-26 |
 | B-3.5 | `aligned` | No action required. | 2026-04-26 |
+| C-1 | `clean` | PR #21 — refreshed `implementation-patterns.md` with the shipping `Order.Create` signature, the TD-0017 / TD-0018 properties in Common Pitfalls, the hand-written-fake testing example (TD-0025 callout), and the service-layer controller example (TD-0022 callout). | 2026-04-26 |
+| C-2 | `clean` | PR #21 — added a TD-0007 callout to the `[DataClass]` paragraph in `data-protection.md`; opened TD-0024 and linked each DSR row in the Data Subject Rights table to the TD-0024 step that owns the procedure. | 2026-04-26 |
+| C-3 | `clean` | PR #21 — reframed the `test-taxonomy.md` "no mocking framework" rule as a historical preference and opened TD-0025 with a two-exit payoff plan (adopt NSubstitute officially or remove it from the five csprojs). | 2026-04-26 |
+| C-4 | `clean` | PR #21 — rewrote the three stale mitigations in `threat-model.md`: missing-policy build error (AD-0005 + TD-0010 step 5), `IQueryable.ToList()` analyzer (TD-0009 future addition), backup encryption (capability-matrix `Target` + how-to link). | 2026-04-26 |
+| C-5 | `clean` | PR #21 — rewrote `customer-session-model.md` Submit Flow as a 9-step list naming the TD-0017 device-binding cookie check (step 5) and the TD-0018 idempotency-key check (step 7). | 2026-04-26 |
+| C-6 | `aligned` | No action required (multi-tenancy, tenant-lifecycle, accessibility, internationalization, authorization, operational-surfaces, READMEs). | 2026-04-26 |
 
 ## 11. Sign-Off
 

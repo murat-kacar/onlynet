@@ -186,6 +186,59 @@ AD-0011.
 
 ### Documentation
 
+- **Phase C of the alignment pass closed (PR #21).** Six findings
+  in the explanation tree (`/doc/docs/explanation/concepts/`):
+  - **C-1 (`clean`)** — `implementation-patterns.md` carried 4 stale
+    patterns: `Order.Create` signature missed the `idempotencyKey`
+    parameter (PR #12 / TD-0018), Common Pitfalls list missed
+    `DeviceCookieValue` and `IdempotencyKey`, the Unit testing
+    example used `Mock<TenantDbContext>` (against
+    `test-taxonomy.md`'s "no mocks" rule), and the Controller
+    Structure example showed the AD-0003 anti-pattern. All four
+    rewritten with TD-0017 / TD-0018 / TD-0022 / TD-0025 callouts.
+  - **C-2 (`clean`)** — `data-protection.md` declared `[DataClass]`
+    schema-comment enforcement (the capability-matrix row is
+    `Target` per **TD-0007**) and listed "TBD how-to" for four DSR
+    procedures (access, erasure, restriction, portability) with no
+    ledger reference. Added a TD-0007 callout to the `[DataClass]`
+    paragraph; opened **TD-0024** with a five-step payoff plan
+    (four how-to guides + the table-update step) and rewrote each
+    DSR row to link the TD-0024 step that owns it.
+  - **C-3 (`clean`)** — `test-taxonomy.md` stated "we do not use a
+    mocking framework"; every test csproj
+    (`E2E.Tests`, `Tenant.Tests`, `PlatformWorker.Tests`,
+    `Platform.Tests`, `Shared.Tests`) references **NSubstitute**.
+    Reframed the doc as a historical preference; opened **TD-0025**
+    with a two-exit payoff plan (adopt NSubstitute officially or
+    remove it from the csprojs).
+  - **C-4 (`clean`)** — `threat-model.md` carried three mitigations
+    that promised enforcement that does not yet ship:
+    "missing policy is a build error per AD-0014" (AD-0014 does not
+    generate that error), "analyzer flags `IQueryable.ToList()`
+    without `Take()`" (the analyzer is not in `TabFlow.Analyzers`
+    today), and "Backups encrypted at rest ... (deferred — TD when
+    first backup ships)" with no TD number. All three rewritten
+    with the actual current state and TD links (AD-0005 +
+    TD-0010 step 5; TD-0009 future addition; capability-matrix
+    `Target` row).
+  - **C-5 (`clean`)** — `customer-session-model.md` Submit Flow
+    did not list the TD-0017 device-binding cookie check or the
+    TD-0018 idempotency-key check. Rewritten as a 9-step list
+    naming both new checks explicitly.
+  - **C-6 (`aligned`)** — `multi-tenancy.md`, `tenant-lifecycle.md`,
+    `accessibility.md`, `internationalization.md`,
+    `authorization.md`, `operational-surfaces.md`, and the two
+    READMEs (`explanation/README.md`,
+    `explanation/concepts/README.md`) confirmed aligned.
+- **Tech-debt ledger growth.**
+  [`/doc/buildlog/tech-debt-ledger.md`](./doc/buildlog/tech-debt-ledger.md):
+  - Opened **TD-0024** — Data-subject-rights operator procedures
+    (KVKK / GDPR) not yet documented (five-step plan: four how-to
+    guides at `/doc/docs/how-to/data-subject-{access,erasure,
+    restriction,portability}.md` plus the table-update step).
+  - Opened **TD-0025** — `test-taxonomy.md` says "no mocking
+    framework"; every test project references NSubstitute (two-exit
+    payoff plan: adopt or remove).
 - **Phase B-3 of the alignment pass closed (PR #20).** Five findings
   in the seven remaining reference documents (`api/internal-api.md`,
   `api/tenant-api.md`, `api/error-codes.md`, `database/schema.md`,

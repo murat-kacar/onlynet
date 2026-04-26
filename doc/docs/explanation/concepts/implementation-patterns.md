@@ -181,17 +181,27 @@ else
 
 ### Controller Structure
 
+Controller actions stay thin: parameter binding, `await`, return.
+Application services own the data access. The example below uses
+`ITenantRegistryService` rather than `PlatformDbContext` directly per
+the AD-0003 trade-off ("the internal layer boundary [host →
+application service → domain] must remain explicit in code"). The
+direct-`DbContext` shape that ships in some controllers today is the
+subject of
+[TD-0022](/doc/buildlog/tech-debt-ledger.md#triage-td-0022--read-only-api-controllers-bypass-the-application-service-layer);
+new controllers SHOULD follow the service-layer shape.
+
 ```csharp
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "Platform:Read")]
 public class TenantsController : ControllerBase
 {
-    private readonly PlatformDbContext _context;
+    private readonly ITenantRegistryService _service;
 
-    public TenantsController(PlatformDbContext context)
+    public TenantsController(ITenantRegistryService service)
     {
-        _context = context;
+        _service = service;
     }
 
     // Methods...
@@ -251,14 +261,16 @@ public async Task<ActionResult> DeleteTenant(Guid id, CancellationToken ct)
 ### 1. Property Name Confusion
 - `QrToken.Value` not `Token`
 - `CustomerAccessTicket.IsValid` not `IsInvalid`
+- `CustomerAccessTicket.DeviceCookieValue` (per TD-0017; required at issue time)
 - `Station.Name` not `Label`
 - `CartItem.ItemId` not `MenuItemId`
 - `CustomerSession.IsOpen` not `IsActive`
 - `ProvisioningJobStep.StartedAt` not `CreatedAt`
+- `Order.IdempotencyKey` (per TD-0018; required at create time)
 
 ### 2. Internal vs Public Methods
-- Use `CustomerSession.IssueTicket()` not `CustomerAccessTicket.Create()`
-- Use `Order.Create(tableId, sessionId, ticketId, items, note)` with pre-created items
+- Use `CustomerSession.IssueTicket(deviceCookieValue)` not `CustomerAccessTicket.Create()` (per TD-0017 the device-binding cookie is mandatory).
+- Use `Order.Create(tableId, sessionId, ticketId, idempotencyKey, items, note)` with pre-created items. The 4th positional argument is the idempotency key per TD-0018; the unique index over `(SessionId, IdempotencyKey)` on `orders` makes a duplicate `POST /api/public/orders` insert fail at the constraint and return the original result.
 - Don't call internal factory methods directly
 
 ### 3. DbContext in Singletons
@@ -325,13 +337,20 @@ builder.Services.AddOpenTelemetry()
 
 ### Unit Testing Services
 
+Unit tests prefer hand-written fakes over a mocking framework, per
+[`./test-taxonomy.md`](./test-taxonomy.md#tier-1-unit). The example
+below uses NSubstitute (referenced from every test project today) and
+is the **subject of [TD-0025](/doc/buildlog/tech-debt-ledger.md#triage-td-0025--test-taxonomymd-says-no-mocking-framework-every-test-project-references-nsubstitute)**:
+the taxonomy doc and the csproj references diverge, and the resolution
+(adopt NSubstitute officially or remove it) is open.
+
 ```csharp
-// Arrange
-var mockContext = new Mock<TenantDbContext>();
-var service = new CartService(mockContext.Object);
+// Arrange — hand-written fake (preferred until TD-0025 resolves)
+var fakeContext = new InMemoryTenantDbContext();
+var service = new CartService(fakeContext);
 
 // Act
-var result = await service.AddItemAsync(request);
+var result = await service.AddItemAsync(request, ct);
 
 // Assert
 Assert.NotNull(result);

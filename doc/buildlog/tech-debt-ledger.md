@@ -73,6 +73,98 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+### [TRIAGE] TD-0025 — `test-taxonomy.md` says "no mocking framework"; every test project references NSubstitute
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  C finding C-3).
+- Symptom: the test taxonomy at
+  [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md)
+  states "Test doubles are written by hand. We do not use a mocking
+  framework; hand-written fakes are easier to read in failures and
+  survive refactoring better." But every test project references
+  the **NSubstitute** mocking framework:
+    `tests/E2E.Tests/E2E.Tests.csproj`
+    `tests/Tenant.Tests/Tenant.Tests.csproj`
+    `tests/PlatformWorker.Tests/PlatformWorker.Tests.csproj`
+    `tests/Platform.Tests/Platform.Tests.csproj`
+    `tests/Shared.Tests/Shared.Tests.csproj`
+  The implementation-patterns explainer at
+  [`/doc/docs/explanation/concepts/implementation-patterns.md`](/doc/docs/explanation/concepts/implementation-patterns.md#unit-testing-services)
+  also shows a `Mock<TenantDbContext>` example, leaning into the
+  framework.
+- Risk if unpaid: the rule and the practice diverge. A reviewer who
+  takes the doc at face value rejects an NSubstitute-based PR; a
+  reviewer who reads the csproj allows one. Either resolution is
+  fine on its own, but having both in the repository is a coin flip.
+- Payoff plan (operator chooses one of two exits):
+  1. **Adopt NSubstitute officially.** Rewrite the test-taxonomy
+     "Test Doubles" paragraph to acknowledge NSubstitute as the
+     mocking framework, list its allowed scope (unit-tier service
+     boundaries, never integration-tier), and keep the
+     implementation-patterns mock example. Add a Roslyn analyzer
+     hint that flags hand-rolled fakes that could be NSubstitute
+     stubs (lower-priority).
+  2. **Remove NSubstitute.** Drop the `<PackageReference>` from all
+     five test projects and rewrite any existing call site to use a
+     hand-written fake. Update the implementation-patterns example
+     to show a hand-written fake instead.
+- Linked:
+  [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md),
+  [`/doc/docs/explanation/concepts/implementation-patterns.md`](/doc/docs/explanation/concepts/implementation-patterns.md),
+  TD-0010 (test taxonomy bootstrap),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
+
+### [TRIAGE] TD-0024 — Data-subject-rights operator procedures (KVKK / GDPR) not yet documented
+
+- Opened: 2026-04-26
+- Owner: TBD
+- Origin: code-audit-2026-04-26 alignment pass
+  ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
+  C finding C-2). Constitutional anchor: III.1 (documentation
+  reflects reality), AC-126 (breach notification within 24 hours),
+  AC-129 (recovery drill within 90 days — separate but parallel
+  pattern).
+- Symptom: the data-protection explainer at
+  [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#data-subject-rights)
+  declares concrete operator procedures for the four data-subject
+  rights it commits to (Right of access, Right to erasure, Right to
+  restriction, Right to data portability), but the "TabFlow
+  Procedure" cells reference how-to guides that do not yet exist
+  (`(TBD how-to)`). A tenant who receives a KVKK Article 11 / GDPR
+  Article 15 request today has no procedure to follow.
+- Risk if unpaid: a real DSR arrives in production and the operator
+  has no checklist. The 30-day regulatory clock starts the moment
+  the request is received; an undocumented procedure means the
+  first request becomes a fire drill.
+- Payoff plan:
+  1. (Open) `/doc/docs/how-to/data-subject-access.md` — operator
+     procedure for Right of access (KVKK 11(1)(a–c) / GDPR 15).
+     Output is a JSON export covering staff records, audit-log
+     entries, and customer-session records keyed by the data
+     subject's identifier.
+  2. (Open) `/doc/docs/how-to/data-subject-erasure.md` — operator
+     procedure for Right to erasure (KVKK 11(1)(e–f), 7 / GDPR 17).
+     Hard-deletes data except entries needed to satisfy a legal
+     obligation, which are anonymised in place.
+  3. (Open) `/doc/docs/how-to/data-subject-restriction.md` —
+     operator procedure for Right to restriction (KVKK 11(1)(f),
+     7(2) / GDPR 18). Sets `restricted = true` on the staff record
+     and pauses processing.
+  4. (Open) `/doc/docs/how-to/data-subject-portability.md` —
+     operator procedure for Right to data portability (GDPR 20;
+     KVKK has no direct equivalent but TabFlow honours it under the
+     superset rule). JSON export in the same shape as access.
+  5. (Open) Update
+     [`data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#data-subject-rights)
+     to replace each "(TBD how-to)" cell with a concrete how-to
+     link.
+- Linked: AC-126, AC-129,
+  [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md),
+  [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
+
 ### [TRIAGE] TD-0023 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
 
 - Opened: 2026-04-26

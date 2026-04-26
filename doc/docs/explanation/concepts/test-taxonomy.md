@@ -49,9 +49,22 @@ Project layout: `tests/<Project>.UnitTests/`. One test class per
 production class; test method names read as English sentences:
 `Submit_RejectsOrder_WhenCartIsEmpty`.
 
-Test doubles are written by hand. We do not use a mocking framework;
-hand-written fakes are easier to read in failures and survive
-refactoring better.
+Test doubles are written by hand. The repository has historically
+preferred hand-written fakes over a mocking framework because hand-
+written fakes are easier to read in failures and survive refactoring
+better.
+
+> **Open question (TD-0025).** Every test project today references
+> the **NSubstitute** package; the `Mock<TenantDbContext>` example in
+> [`./implementation-patterns.md`](./implementation-patterns.md#unit-testing-services)
+> leans into the framework. Either path (officially adopt NSubstitute
+> or remove it from the csprojs) is fine, but the current state — a
+> rule that says "no mocks" plus csprojs that reference one — is the
+> kind of drift constitution III.1 forbids. The resolution is tracked
+> under
+> [TD-0025](/doc/buildlog/tech-debt-ledger.md#triage-td-0025--test-taxonomymd-says-no-mocking-framework-every-test-project-references-nsubstitute).
+> Until that lands, hand-written fakes remain the default for new
+> tests.
 
 ## Tier 2: Integration
 

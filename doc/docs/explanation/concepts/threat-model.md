@@ -111,7 +111,7 @@ validate, authenticate, or authorise.
 | Threat | Mitigation |
 | --- | --- |
 | **S** Tenant context confusion (tenant A code reaching tenant B's data) | `TABFLOW_TENANT_CODE` env var resolved once at boot; every request runs against `TenantDbContext` bound to that one tenant |
-| **T** Cross-role action (cashier triggering owner-only flow) | ASP.NET Core authorization policies on every controller and Blazor route; missing policy is a build error per AD-0014 |
+| **T** Cross-role action (cashier triggering owner-only flow) | ASP.NET Core authorization policies on every controller and Blazor route. A missing policy is rejected at startup by `AddAuthorization`'s `FallbackPolicy` (see AD-0005) and surfaces in the Identity policy registration test pending under [TD-0010 step 5](/doc/buildlog/tech-debt-ledger.md#td-0010); making the missing-policy case a Roslyn-time error remains future work tracked under TD-0009 follow-up. |
 | **R** Repudiation of customer actions | Customer access tickets persist; orders carry the originating ticket ID |
 | **I** Unintended PII exposure in logs | Serilog filters strip known PII fields (email, password hash, payment fields) before sink write |
 | **D** Event-bus saturation | Bounded `Channel<T>` per topic; `event-bus:capacity` health probe degrades to `warn` at threshold |
@@ -125,8 +125,8 @@ validate, authenticate, or authorise.
 | **T** SQL injection | EF Core parameterised queries only; raw SQL requires `[SuppressMessage("SQL.RawSql.Justified")]` and an ADR snippet |
 | **T** Cross-tenant write via direct DB connection | Each tenant DB has its own role with grants only on that DB; the platform role has no grants on any tenant DB |
 | **R** Repudiation of DB writes | `platform_audit_log` and `tenant_audit_log` are append-only and capture actor email + IP + UA |
-| **I** Backup / dump leakage | Backups encrypted at rest; access via deploy-time secret manager only (deferred — TD when first backup ships) |
-| **D** Unbounded query | Every read endpoint paginates; analyzer flags `IQueryable.ToList()` without `Take()` |
+| **I** Backup / dump leakage | Backups encrypted at rest; access via deploy-time secret manager only. Implementation deferred under the capability-matrix "Encrypted backup with off-site copy" row (`Target`); the wiring lands when the first backup ships per [`/doc/docs/how-to/backup-and-restore.md`](/doc/docs/how-to/backup-and-restore.md). |
+| **D** Unbounded query | Every read endpoint paginates. The analyzer that would flag `IQueryable.ToList()` without `Take()` is not yet shipped (see [TD-0009](/doc/buildlog/tech-debt-ledger.md#td-0009) for the analyzer baseline; the unbounded-query rule is a future addition to `TabFlow.Analyzers`). Today the rule is enforced in code review. |
 | **E** Database role escalation | Roles created `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION`; verified at bootstrap and provisioning |
 
 ## Out-Of-Scope For This Baseline
