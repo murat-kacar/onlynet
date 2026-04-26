@@ -162,10 +162,10 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AD-0004, AD-0006, TD-0016, TD-0028,
   [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md)
 
-### [TRIAGE] TD-0026 — `Type=notify` supervision contract requires `UseSystemd()`; neither host calls it
+### [OPEN] TD-0026 — `Type=notify` supervision contract requires `UseSystemd()`; neither host calls it
 
 - Opened: 2026-04-26
-- Owner: TBD
+- Owner: Cascade (PR #34)
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
   D finding D-2).
@@ -208,13 +208,12 @@ ledger; orphan `TD-` references are a documentation bug.
      Both extensions are no-ops when `INVOCATION_ID` is unset, so
      `dotnet run`, the existing unit tests, and the future
      integration tier are unaffected.
-  3. (Open) Add a composition-root regression test that resolves
-     `IHostLifetime` from each Program's `IServiceProvider` and
-     asserts the runtime type is `SystemdLifetime`. The test
-     depends on the Integration-tier transactional fixture from
-     TD-0010 step 5 (so the host can be built without a live
-     PostgreSQL connection). Until then, the contract is enforced
-     by code review.
+  3. (Done in PR #34) Added composition-root regression test
+     `UseSystemdCompositionRootTests` in `tests/Shared.Tests/Infrastructure/`
+     that greps each `Program.cs` for the `UseSystemd()`/`AddSystemd()`
+     call. The test is marked as Integration tier (file system access)
+     and guards against accidental removal of the systemd lifetime
+     registration in future refactors.
   4. (Done in PR #23) Updated
      [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md#typenotify-requirement)
      to record the closure: the "Implementation status (TD-0026)"
