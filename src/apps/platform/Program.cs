@@ -218,8 +218,6 @@ finally
 }
 
 // `public partial class Program` exposes the auto-generated entry
-// point so test projects can target it via
-// `WebApplicationFactory<Program>`. Required because the E2E.Tests
-// project references both hosts; without an extern alias the two
-// auto-generated `Program` classes collide on type name (CS0433).
+// point so test projects can target the host when they need an
+// in-process ASP.NET Core factory.
 public partial class Program { }
