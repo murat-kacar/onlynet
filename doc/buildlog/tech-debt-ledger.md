@@ -1065,10 +1065,28 @@ ledger; orphan `TD-` references are a documentation bug.
      Integration step (PostgreSQL service container). E2E tier is
      intentionally excluded from the PR workflow until a browser
      bootstrap step lands.
-  4. (Open) Add a static-analysis rule (Roslyn analyzer or build
-     target) that fails any `Unit`-tiered test importing `Npgsql`,
-     `HttpClient`, `System.IO.File`, or `DateTime.Now`. Right now
-     the convention is enforced by review only.
+  4. (Done in PR #26) Authored a second first-party Roslyn analyser
+     `TabFlow.Analyzers.UnitTierTestPurityAnalyzer` (rule `TF0002`,
+     category `Testing`, default severity `Warning` — promoted to
+     a build break by `TreatWarningsAsErrors=true`). The analyser
+     fires only inside classes carrying
+     `[Trait("Category", "Unit")]` and reports any identifier
+     resolving to a forbidden type or member:
+       - **Database (banned namespace).** Anything under `Npgsql.*`.
+       - **Network.** `System.Net.Sockets.*` (every type),
+         `System.Net.Http.HttpClient` (specific).
+       - **File system.** `System.IO.File`,
+         `System.IO.Directory`, `System.IO.FileStream`.
+       - **System clock.** `System.DateTime.Now` and
+         `System.DateTimeOffset.Now` (the `Now` properties only —
+         `UtcNow` remains allowed because it is deterministic
+         across timezones, which is what unit tests need).
+     Tests that genuinely need any of those move to the
+     Integration tier; the rule is silent outside the Unit tier.
+     Released in
+     `tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md`.
+     Backed by 7 Unit-tier regression tests at
+     `tests/Analyzers.Tests/UnitTierTestPurityAnalyzerTests.cs`.
   5. (Open) Move the existing `Tenant.Tests/Services/*` tests off a
      real PostgreSQL fixture and onto a per-test transactional
      fixture so the Integration step is hermetic.

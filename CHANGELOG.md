@@ -184,6 +184,48 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Tools
+
+- **TD-0010 step 4: TF0002 Unit-tier test purity analyser
+  (PR #26).** AC-133 ("No test in the `Unit` tier MAY touch the
+  file system, the network, the system clock, or a database") is
+  now enforced by a Roslyn analyser, not by review.
+  - **Analyser.** New
+    [`/tools/analyzers/TabFlow.Analyzers/UnitTierTestPurityAnalyzer.cs`](./tools/analyzers/TabFlow.Analyzers/UnitTierTestPurityAnalyzer.cs)
+    declares rule `TF0002` (category `Testing`, default severity
+    `Warning` → build break under `TreatWarningsAsErrors=true`).
+    The analyser walks every `IdentifierName` syntax node, skips
+    `using` directives and the contextual `var` keyword, and
+    reports the diagnostic only when:
+      - the containing class carries
+        `[Trait("Category", "Unit")]`, **and**
+      - the identifier resolves to a banned target.
+    Banned targets cover all four AC-133 dimensions: database
+    (`Npgsql.*`), network (`System.Net.Sockets.*`,
+    `System.Net.Http.HttpClient`), file system (`System.IO.File`,
+    `System.IO.Directory`, `System.IO.FileStream`), and system
+    clock (`System.DateTime.Now`, `System.DateTimeOffset.Now` —
+    `UtcNow` remains allowed because it is deterministic).
+  - **Release tracking.** TF0002 declared in
+    [`/tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md`](./tools/analyzers/TabFlow.Analyzers/AnalyzerReleases.Unshipped.md);
+    RS2008 stays satisfied.
+  - **Regression suite.** New
+    [`/tests/Analyzers.Tests/UnitTierTestPurityAnalyzerTests.cs`](./tests/Analyzers.Tests/UnitTierTestPurityAnalyzerTests.cs)
+    ships 7 Unit-tier cases:
+      - allowed-types-only baseline (no diagnostic),
+      - positive cases for `DateTime.Now`, `DateTimeOffset.Now`,
+        `System.IO.File`, `HttpClient`,
+      - negative scoping case: `[Trait("Category", "Integration")]`
+        class can use the same forbidden types,
+      - negative scoping case: untagged class is silent.
+    14 of 14 tests in `Analyzers.Tests` now pass.
+  - **No regression on existing tests.** `dotnet build`: 0 errors,
+    16 pre-existing MSB4121 warnings, no TF0002 diagnostics in
+    current Unit-tier suites (`Shared.Tests`, `Analyzers.Tests`).
+  - **Capability matrix.** "Test taxonomy" row updated to record
+    that step 4 is done in PR #26; steps 5 (transactional fixture)
+    and 6 (Playwright bootstrap) remain open.
+
 ### Architecture
 
 - **TD-0027 closed + TD-0016 step 1 + 3: Blazor Web App migration
