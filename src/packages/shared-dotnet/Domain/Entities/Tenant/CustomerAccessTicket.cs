@@ -1,3 +1,5 @@
+using TabFlow.Shared.Domain.DataProtection;
+
 namespace TabFlow.Shared.Domain.Entities.Tenant;
 
 public sealed class CustomerAccessTicket
@@ -15,6 +17,7 @@ public sealed class CustomerAccessTicket
     /// matching the cookie value the browser sends back against this
     /// column. Per TD-0017.
     /// </summary>
+    [DataClass(DataClassification.Restricted)]
     public string DeviceCookieValue { get; private set; } = default!;
 
     private CustomerAccessTicket() { }

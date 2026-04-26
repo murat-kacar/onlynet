@@ -72,5 +72,10 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.HasIndex(a => a.CreatedAt);
             e.HasIndex(a => a.Action);
         });
+
+        // TD-0007 step 1: lift [DataClass] attributes on every
+        // entity property into a `DataClass: <Classification>`
+        // column comment.
+        builder.ApplyDataClassComments();
     }
 }

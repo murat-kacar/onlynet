@@ -142,5 +142,12 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasIndex(a => a.CreatedAt);
             e.HasIndex(a => a.Action);
         });
+
+        // TD-0007 step 1: lift [DataClass] attributes on every
+        // entity property into a `DataClass: <Classification>`
+        // column comment. Migration scaffolding emits a
+        // `COMMENT ON COLUMN` for each comment, so the
+        // classification reaches the live database schema.
+        builder.ApplyDataClassComments();
     }
 }

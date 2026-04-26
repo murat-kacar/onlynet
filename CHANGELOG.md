@@ -186,6 +186,58 @@ AD-0011.
 
 ### Architecture
 
+- **TD-0007 steps 1–2: `[DataClass]` attribute + schema-comment
+  generator (PR #32).** AC-122 requires every personal-data column
+  to carry a classification comment in the live schema; before
+  PR #32 the requirement was a paper contract. PR #32 ships the
+  attribute, the EF Core convention that lifts it into a column
+  comment, and a sample annotation sweep.
+  - **Attribute + enum.** New
+    [`/src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs`](./src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs)
+    (the four-value enum `Public` / `Internal` / `Sensitive` /
+    `Restricted` matching the data-protection taxonomy) and
+    [`/src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs`](./src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs)
+    (`[DataClass(DataClassification.X)]` on
+    `AttributeTargets.Property`).
+  - **EF Core convention.** New
+    [`/src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs`](./src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs)
+    `ApplyDataClassComments()` walks every entity, finds every
+    property whose CLR member carries `[DataClass]`, and calls
+    `property.SetComment("DataClass: <Classification>")`. EF Core
+    migration scaffolding lifts each comment into a
+    `COMMENT ON COLUMN` SQL statement, so the classification
+    reaches the live database. Idempotent: hand-written comments
+    that do **not** start with `DataClass:` are left alone.
+  - **DbContext wiring.** Both `PlatformDbContext.OnModelCreating`
+    and `TenantDbContext.OnModelCreating` invoke the extension at
+    the end of model creation.
+  - **Sample annotation sweep.** `TenantAuditEntry` and
+    `PlatformAuditEntry` carry `[DataClass(Sensitive)]` on
+    `ActorEmail`, `Changes`, `Ip`, `UserAgent` and
+    `[DataClass(Internal)]` on `Action`, `ResourceType`,
+    `ResourceId`. `CustomerAccessTicket.DeviceCookieValue` carries
+    `[DataClass(Restricted)]` (the session-binding secret from
+    TD-0017). The full sweep across the remaining entities lands
+    under TD-0007 step 3.
+  - **Regression suite.** New
+    [`/tests/Shared.Tests/Infrastructure/DataClassCommentTests.cs`](./tests/Shared.Tests/Infrastructure/DataClassCommentTests.cs)
+    ships 5 Unit-tier cases that resolve the design-time model
+    (`IDesignTimeModel.Model` — EF Core 10's runtime model is
+    read-optimised and drops comments) and assert the expected
+    `DataClass: <Classification>` comment per annotated property.
+    13 of 13 tests in `Shared.Tests` now pass.
+  - **Documentation.**
+    [`/doc/docs/explanation/concepts/data-protection.md`](./doc/docs/explanation/concepts/data-protection.md):
+    the "Implementation status (TD-0007)" callout records PR #32's
+    landing.
+    [`/doc/docs/reference/architecture/capability-matrix.md`](./doc/docs/reference/architecture/capability-matrix.md):
+    "Personal-data classification on schema" promoted from
+    `Target` to `In progress`.
+  - **Tech debt ledger.** TD-0007 status `[TRIAGE]` →
+    `[OPEN]`; payoff plan steps 1, 2 done in PR #32; step 3 (full
+    annotation sweep) and step 4 (release-gate column-comment
+    check) remain open.
+
 - **TD-0013 steps 2 + 4 + 5: 3 advanced health-check probes (PR #31).**
   The `health-checks.md` spec at
   [`/doc/docs/reference/architecture/health-checks.md`](./doc/docs/reference/architecture/health-checks.md)

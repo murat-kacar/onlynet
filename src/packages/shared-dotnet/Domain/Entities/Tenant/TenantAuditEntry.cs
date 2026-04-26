@@ -1,15 +1,24 @@
+using TabFlow.Shared.Domain.DataProtection;
+
 namespace TabFlow.Shared.Domain.Entities.Tenant;
 
 public sealed class TenantAuditEntry
 {
     public Guid Id { get; private set; }
     public Guid? ActorId { get; private set; }
+    [DataClass(DataClassification.Sensitive)]
     public string ActorEmail { get; private set; } = default!;
+    [DataClass(DataClassification.Internal)]
     public string Action { get; private set; } = default!;
+    [DataClass(DataClassification.Internal)]
     public string ResourceType { get; private set; } = default!;
+    [DataClass(DataClassification.Internal)]
     public string ResourceId { get; private set; } = default!;
+    [DataClass(DataClassification.Sensitive)]
     public string? Changes { get; private set; }
+    [DataClass(DataClassification.Sensitive)]
     public string? Ip { get; private set; }
+    [DataClass(DataClassification.Sensitive)]
     public string? UserAgent { get; private set; }
     public Guid CorrelationId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }

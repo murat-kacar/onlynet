@@ -1285,21 +1285,68 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AC-123, AC-124,
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md)
 
-### [TRIAGE] TD-0007 — Personal-data classification not on the schema
+### [OPEN] TD-0007 — Personal-data classification not on the schema
 
 - Opened: 2026-04-25
-- Owner: TBD
+- Owner: closed steps 1, 2 in PR #32; step 3 (full annotation sweep)
+  and step 4 (release-gate `Sensitive`/`Restricted`-must-have-comment
+  check) remain open.
 - Origin: data-protection explainer requires a `[DataClass]` attribute
   on every personal-data property and a corresponding schema comment;
-  neither the attribute nor the comment generation exists.
+  neither the attribute nor the comment generation existed before
+  PR #32.
 - Symptom: AC-122 cannot be verified.
 - Risk if unpaid: schema reviewers cannot tell whether a new column
   contains personal data; data-protection contract drifts from the
   schema.
-- Payoff plan: introduce `DataClassAttribute`, write a small EF Core
-  convention that emits the comment to the schema, add a
-  release-gate check that every `Sensitive` and `Restricted` column
-  has a comment.
+- Payoff plan:
+  1. (Done in PR #32) Authored
+     [`/src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs)
+     (the four-value enum `Public` / `Internal` / `Sensitive` /
+     `Restricted` matching the data-protection taxonomy) and
+     [`/src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs)
+     (`[DataClass(DataClassification.X)]` on
+     `AttributeTargets.Property`). Authored
+     [`/src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs`](/src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs)
+     `ApplyDataClassComments()`: walks every entity, finds every
+     property whose CLR member carries `[DataClass]`, and calls
+     `property.SetComment("DataClass: <Classification>")`. Both
+     `PlatformDbContext` and `TenantDbContext` invoke the
+     extension at the end of `OnModelCreating`. The comment is
+     idempotent: a property whose existing comment does **not**
+     start with `DataClass:` is left alone (hand-written comments
+     win).
+  2. (Done in PR #32) Sample annotation sweep on the audit-log
+     entities and the customer-tier secret column:
+     - `TabFlow.Shared.Domain.Entities.Tenant.TenantAuditEntry` —
+       `ActorEmail`, `Changes`, `Ip`, `UserAgent` are
+       **Sensitive**; `Action`, `ResourceType`, `ResourceId` are
+       **Internal**.
+     - `TabFlow.Shared.Domain.Entities.Platform.PlatformAuditEntry`
+       — same shape as `TenantAuditEntry`.
+     - `TabFlow.Shared.Domain.Entities.Tenant.CustomerAccessTicket.DeviceCookieValue`
+       is **Restricted** (the session-binding secret introduced
+       under TD-0017).
+     Backed by 5 Unit-tier regression tests at
+     `tests/Shared.Tests/Infrastructure/DataClassCommentTests.cs`
+     that assert each annotated property's design-time model
+     comment matches the expected `DataClass: <Classification>`
+     value, plus a negative case that asserts an unannotated
+     property (`CartItem.Quantity`) carries no `DataClass:`
+     comment.
+  3. (Open) Sweep the remaining personal-data and operational
+     properties on every entity in
+     `/src/packages/shared-dotnet/Domain/Entities/`. The ledger
+     comment in `data-protection.md` is the source of truth for
+     which columns are `Sensitive` vs `Restricted` vs `Internal`.
+     Each new annotation produces a one-line column-comment
+     migration on the next `dotnet ef migrations add` run.
+  4. (Open) Add a release-gate check that fails the build if any
+     `Sensitive` or `Restricted` column has **no** comment in the
+     schema dump. The check is a `dotnet ef dbcontext script`
+     post-process that greps for `COMMENT ON COLUMN` against the
+     declared property set; the dump itself is produced by the
+     CI pipeline once the migrations land.
 - Linked: AC-122,
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md)
 

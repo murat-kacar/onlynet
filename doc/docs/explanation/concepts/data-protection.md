@@ -37,10 +37,21 @@ comment classifying it. The comment is generated from `[DataClass]`
 attributes on the entity properties; CI fails the build if a
 `Sensitive` or `Restricted` column has no comment in the schema dump.
 
-> **Implementation status (TD-0007).** The `[DataClass]` attribute
-> and the schema-comment generator are not yet implemented; the
-> capability matrix tracks the row as `Target`. The corresponding
-> acceptance criterion is **AC-122**. This explainer states the
+> **Implementation status (TD-0007, PR #32).** The `[DataClass]`
+> attribute and the schema-comment generator shipped in PR #32:
+> [`DataClassification`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs)
+> enum, [`DataClassAttribute`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs)
+> on `AttributeTargets.Property`, and the
+> [`ApplyDataClassComments()`](/src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs)
+> ModelBuilder extension wired into both DbContexts. Sample
+> annotations land on the audit-log entities and on
+> `CustomerAccessTicket.DeviceCookieValue`. The corresponding
+> acceptance criterion is **AC-122**. The full annotation sweep
+> across every personal-data property (TD-0007 step 3) and the
+> release-gate "every Sensitive/Restricted column has a comment"
+> check (TD-0007 step 4) remain open.
+>
+> This explainer states the
 > contract; the wiring lands under
 > [TD-0007](/doc/buildlog/tech-debt-ledger.md#td-0007).
 >
