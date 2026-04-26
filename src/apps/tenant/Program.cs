@@ -196,6 +196,11 @@ app.MapHealthChecks("/health/ready", readinessOptions).AllowAnonymous();
 
 app.MapHub<TenantHub>("/hub/tenant");
 
+app.MapGet("/Account/Login", (HttpRequest request) =>
+    Results.Redirect($"/login{request.QueryString}")).AllowAnonymous();
+app.MapGet("/Account/AccessDenied", () =>
+    Results.Redirect("/login")).AllowAnonymous();
+
 app.MapRazorPages();
 
 // AD-0004 + TD-0027: Blazor Web App route mapping. MapRazorComponents
