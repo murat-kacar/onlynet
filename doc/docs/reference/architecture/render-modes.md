@@ -102,12 +102,12 @@ current implementation depends on `@onclick` handlers and
 assigns them Static SSR; the conversion (replace `@onclick` with
 form posts, replace JS interop with server-rendered confirmation
 pages) is tracked under
-[TD-0028](/doc/buildlog/tech-debt-ledger.md#triage-td-0028--customer-facing-razor-pages-still-interactive-server-ad-0004-mandates-static-ssr).
+[TD-0028](/doc/buildlog/tech-debt-ledger.md#td-0028).
 
 The release-gate smoke check that asserts each route renders with
 the expected interactivity marker
 (`_framework/blazor.web.js` present or absent) is
-[TD-0016 step 2](/doc/buildlog/tech-debt-ledger.md#triage-td-0016--ad-0004-mixed-render-modes-never-exercised),
+[TD-0016 step 2](/doc/buildlog/tech-debt-ledger.md#td-0016),
 blocked on TD-0010 step 6 (Playwright bootstrap for the E2E /
 Smoke tier).
 

@@ -45,13 +45,14 @@ plus:
 
 ## Procedure
 
-1. **Open a postmortem-style record** at `/doc/buildlog/dsr-NNNN.md`.
-   Record the request opening, subject identifier, restriction
-   ground, and review date.
+1. **Open a secure DSR case record** in the operator's access-controlled
+   case system. Record the request opening, subject identifier,
+   restriction ground, and review date. Repository documentation may
+   reference only the redacted request id (`dsr-NNNN`).
 
 2. **Set the restriction flag.** TabFlow's tenant schema does not
    yet ship a dedicated `restricted` column; until
-   [TD-0007](/doc/buildlog/tech-debt-ledger.md) lands the
+   [TD-0007](/doc/buildlog/tech-debt-ledger.md#td-0007) lands the
    `[DataClass]` schema rule that makes restriction a first-class
    column on every personal-data table, the operator records the
    restriction in the tenant audit log and enforces it via review
@@ -106,7 +107,7 @@ plus:
    restriction so a kitchen ticket is not pulled. Until the
    admin-console restriction view ships, the operator notifies the
    tenant manager out-of-band (email, channel) and pins the
-   notification to the postmortem in step 1.
+   notification to the secure DSR case record in step 1.
 
 5. **Confirm to the requester.** Send a confirmation that:
    - acknowledges the restriction,

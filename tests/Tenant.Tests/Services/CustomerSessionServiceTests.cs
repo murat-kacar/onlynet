@@ -13,13 +13,10 @@ public sealed class CustomerSessionServiceTests : TenantTransactionalTestBase
     public CustomerSessionServiceTests(TenantDatabaseFixture fixture) : base(fixture) { }
 
     [Fact]
-    public async Task OpenSessionAsync_FreshJoinToken_OpensSessionAndIssuesTicket()
+    public async Task OpenSessionAsync_FreshJoinToken_OpensSession_IssuesTicket_ConsumesToken()
     {
         var station = Station.Create("Table 1", $"T1-{Guid.NewGuid():N}", "#FF0000", "Table", 1);
         Db.Stations.Add(station);
-
-        var session = CustomerSession.Open(station.Id);
-        Db.CustomerSessions.Add(session);
 
         var qrToken = QrToken.CreateJoinToken(
             station.Id,
@@ -43,6 +40,30 @@ public sealed class CustomerSessionServiceTests : TenantTransactionalTestBase
         var ticket = await Db.CustomerAccessTickets.FindAsync(result.TicketId);
         ticket.Should().NotBeNull();
         ticket!.DeviceCookieValue.Should().Be(result.DeviceCookieValue);
+
+        var consumedToken = await Db.QrTokens.FindAsync(qrToken.Id);
+        consumedToken!.IsConsumed.Should().BeTrue("join QR tokens are single-use per AC-022");
+    }
+
+    [Fact]
+    public async Task OpenSessionAsync_ConsumedJoinToken_Throws()
+    {
+        var station = Station.Create("Table 1", $"T1-{Guid.NewGuid():N}", "#FF0000", "Table", 1);
+        Db.Stations.Add(station);
+
+        var qrToken = QrToken.CreateJoinToken(
+            station.Id,
+            $"join-{Guid.NewGuid():N}",
+            DateTimeOffset.UtcNow.AddHours(1));
+        Db.QrTokens.Add(qrToken);
+        await Db.SaveChangesAsync();
+
+        var service = new CustomerSessionService(Db);
+        await service.OpenSessionAsync(qrToken.Value);
+
+        var act = () => service.OpenSessionAsync(qrToken.Value);
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Invalid or expired QR token*");
     }
 
     [Fact]

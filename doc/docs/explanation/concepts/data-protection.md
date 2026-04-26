@@ -121,10 +121,11 @@ honoured under both.
 The procedures referenced above live as **how-to guides** in
 [`/doc/docs/how-to/`](/doc/docs/how-to/). The four DSR procedures
 (access, erasure, restriction, portability) ship as separate how-to
-guides under PR #28; each procedure also writes a postmortem-style
-record of the response under
-[`/doc/buildlog/postmortems/`](/doc/buildlog/postmortems/) so the
-first real DSR informs the procedure that lands.
+guides under PR #28. Each procedure writes its request evidence to the
+operator's access-controlled DSR case system or audit log, not to the
+repository. Public documentation may carry only redacted request ids and
+procedure lessons; real subject identifiers, tenant-specific payloads,
+or delivered exports never belong in any documentation tree.
 
 ## Data Locality And Transfer
 

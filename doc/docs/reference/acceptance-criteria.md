@@ -240,7 +240,7 @@ The baseline is the RTO/RPO targets in
   source MUST fail.
 - **AC-129** A recovery drill MUST be performed within every 90-day
   window. The drill record (date, measured RTO, measured RPO, any
-  procedure correction) MUST live in `/doc/buildlog/`.
+  procedure correction) MUST live in `/doc/buildlog/retrospectives/`.
 - **AC-130** Measured RTO and RPO from the most recent drill MUST
   meet the targets for every scope. A miss MUST produce a tech-debt
   ledger entry with a payoff plan before the next release.

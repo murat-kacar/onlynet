@@ -5,9 +5,9 @@ designer, reviewer — agrees to follow when working on TabFlow. It is
 deliberately short and operational. Where a rule would be unmeasurable, it
 is omitted.
 
-The constitution defines **how we decide, ship, document, verify, review,
-operate, and measure**. It does not duplicate the architecture; technical
-decisions live in
+The constitution defines **how we decide, implement, ship, document, verify,
+review, operate, and measure**. It does not duplicate the architecture;
+technical decisions live in
 [`reference/architecture/decisions.md`](./reference/architecture/decisions.md).
 
 Defined terms used below (`spike`, `tracer bullet`, `one-way door`,
@@ -149,6 +149,30 @@ This section states the rules that apply across **all** trees.
    either claimed or escalated. The ledger lives at
    [`/doc/buildlog/tech-debt-ledger.md`](/doc/buildlog/tech-debt-ledger.md).
 
+## VIII. Working Modes
+
+1. **Every work item declares its working mode.** The primary mode is one of
+   `documentation`, `implementation`, or `review`. Secondary modes are listed
+   when the same work item intentionally crosses modes. A work item can change
+   modes, but the handoff is explicit in the issue, PR, ADR, or tech-debt
+   ledger entry.
+2. **Documentation mode starts with the charter's decision test.** The
+   contributor identifies the audience, tree-of-record, and lifecycle before
+   writing. If no audience needs the information, it is not documentation.
+3. **Implementation mode starts from the governing contract.** The contributor
+   checks the relevant ADR, reference document, acceptance criterion,
+   capability-matrix row, and tech-debt entry before changing code. If no
+   governing contract exists, the contributor classifies the decision under
+   Section I before implementing.
+4. **Review mode starts with risk.** The reviewer leads with correctness,
+   security, contract drift, missing tests, missing observability, missing
+   documentation, and untracked technical debt before style or preference.
+5. **Mode output is reviewable.** Documentation mode produces a source-of-truth
+   document or a documented deletion. Implementation mode produces code plus
+   the tests, observability, and documentation required by `Done`. Review mode
+   produces actionable findings or an explicit approval against the review
+   policy.
+
 ## Scope
 
 This constitution governs **process and culture**. It does not govern:
@@ -158,6 +182,8 @@ This constitution governs **process and culture**. It does not govern:
 - Specific runtime contracts — see `reference/`.
 - Specific operational procedures — see `how-to/`.
 - Specific review checks — see [`./meta/review-policy.md`](./meta/review-policy.md).
+- Specific documentation tree boundaries — see
+  [`./meta/documentation-charter.md`](./meta/documentation-charter.md).
 
 When this document conflicts with a more specific document, the more
 specific document wins, and a follow-up PR reconciles the constitution.

@@ -17,6 +17,20 @@ motivated this request, link it.
 What should exist that does not exist today? Describe the visible
 behaviour, not the implementation.
 
+## Working Mode
+
+Primary mode expected after triage:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
+Secondary modes, if already known:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
 ## Affected Audience
 
 - [ ] Customer (diner)

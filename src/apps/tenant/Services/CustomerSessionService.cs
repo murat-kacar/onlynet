@@ -19,7 +19,7 @@ public class CustomerSessionService : ICustomerSessionService
         var qrToken = await _context.QrTokens
             .FirstOrDefaultAsync(t => t.Value == qrTokenValue, ct);
 
-        if (qrToken == null || qrToken.ExpiresAt < DateTime.UtcNow)
+        if (qrToken == null || qrToken.IsCheckoutProof || qrToken.IsConsumed || qrToken.IsExpired)
         {
             throw new InvalidOperationException("Invalid or expired QR token");
         }
@@ -29,7 +29,8 @@ public class CustomerSessionService : ICustomerSessionService
 
         if (session == null)
         {
-            throw new InvalidOperationException($"No active session found for table {qrToken.TableId}");
+            session = CustomerSession.Open(qrToken.TableId);
+            _context.CustomerSessions.Add(session);
         }
 
         // TD-0017: generate an opaque device-binding cookie value
@@ -40,6 +41,11 @@ public class CustomerSessionService : ICustomerSessionService
         var deviceCookieValue = Guid.NewGuid().ToString("N");
         var ticket = session.IssueTicket(deviceCookieValue);
         _context.CustomerAccessTickets.Add(ticket);
+
+        // AC-022: a join QR is single-use. Consume it in the same
+        // SaveChanges call that creates the access ticket so replaying
+        // the same QR value cannot attach another browser.
+        qrToken.Consume();
         await _context.SaveChangesAsync(ct);
 
         var table = await _context.Stations.FindAsync(new object[] { session.TableId }, ct);

@@ -32,7 +32,7 @@ public class OrderService : IOrderService
 
         var ticket = await _context.CustomerAccessTickets
             .FirstOrDefaultAsync(t => t.Id == request.TicketId, ct);
-        if (ticket == null || !ticket.IsValid)
+        if (ticket == null)
         {
             throw new InvalidOperationException($"Invalid ticket {request.TicketId}");
         }
@@ -47,6 +47,32 @@ public class OrderService : IOrderService
                 Encoding.UTF8.GetBytes(deviceCookieValue)))
         {
             throw new InvalidOperationException("Device cookie mismatch.");
+        }
+
+        // TD-0018: retrying the same submit with the same idempotency
+        // key should return the original result, even though the first
+        // successful submit has already consumed the checkout proof and
+        // closed the session.
+        var existingOrder = await _context.Orders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                o => o.SessionId == request.SessionId &&
+                     o.IdempotencyKey == request.IdempotencyKey,
+                ct);
+
+        if (existingOrder != null)
+        {
+            if (existingOrder.TicketId != request.TicketId || existingOrder.TableId != request.TableId)
+            {
+                throw new InvalidOperationException("Idempotency key reused with a different order request.");
+            }
+
+            return new SubmitOrderResult(existingOrder.Id, existingOrder.TotalAmount);
+        }
+
+        if (!ticket.IsValid)
+        {
+            throw new InvalidOperationException($"Invalid ticket {request.TicketId}");
         }
 
         // AC-030 (still-open half): every customer order requires a

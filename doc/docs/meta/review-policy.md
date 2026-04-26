@@ -31,6 +31,9 @@ approved only when all applicable items pass.
   a `TD-NNNN` identifier.
 - **Documentation.** Architectural changes (per constitution III.2)
   update the relevant document in the same PR.
+- **Working mode.** The PR declares its primary working mode
+  (`documentation`, `implementation`, or `review`), lists any secondary
+  modes, and produces the reviewable output required by constitution VIII.5.
 
 ### Architecture
 
@@ -115,6 +118,7 @@ longer is escalated by the author in the team channel.
   matrix row.
 - Approving a security-sensitive PR without a `security: reviewed`
   note.
+- Approving a PR whose declared working mode does not match its output.
 
 ## Related
 

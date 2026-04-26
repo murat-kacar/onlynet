@@ -73,6 +73,7 @@ ledger; orphan `TD-` references are a documentation bug.
 <!-- Newly recorded debt awaiting an owner. Resolved at the next
      release-gate review per the Tech Debt Ledger Triage section. -->
 
+<a id="td-0028"></a>
 ### [TRIAGE] TD-0028 — Customer-facing Razor pages still Interactive Server; AD-0004 mandates Static SSR
 
 - Opened: 2026-04-26
@@ -116,6 +117,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md),
   [`/doc/docs/reference/architecture/capability-matrix.md`](/doc/docs/reference/architecture/capability-matrix.md)
 
+<a id="td-0027"></a>
 ### [CLOSED] TD-0027 — Hosts use standalone Blazor Server; AD-0004 contract assumes Blazor Web App
 
 - Opened: 2026-04-26
@@ -162,6 +164,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AD-0004, AD-0006, TD-0016, TD-0028,
   [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md)
 
+<a id="td-0026"></a>
 ### [OPEN] TD-0026 — `Type=notify` supervision contract requires `UseSystemd()`; neither host calls it
 
 - Opened: 2026-04-26
@@ -224,6 +227,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#7-phase-d--how-to-tree-findings)
 
+<a id="td-0025"></a>
 ### [TRIAGE] TD-0025 — `test-taxonomy.md` says "no mocking framework"; every test project references NSubstitute
 
 - Opened: 2026-04-26
@@ -268,6 +272,7 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0010 (test taxonomy bootstrap),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
 
+<a id="td-0024"></a>
 ### [CLOSED] TD-0024 — Data-subject-rights operator procedures (KVKK / GDPR) not yet documented
 
 - Opened: 2026-04-26
@@ -331,6 +336,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
 
+<a id="td-0023"></a>
 ### [CLOSED] TD-0023 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
 
 - Opened: 2026-04-26
@@ -401,6 +407,7 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0022 (controller-to-service migration overlaps),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
 
+<a id="td-0022"></a>
 ### [CLOSED] TD-0022 — Read-only API controllers bypass the application service layer
 
 - Opened: 2026-04-26
@@ -502,6 +509,7 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0021 (the prefix migration calls the same services),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
 
+<a id="td-0021"></a>
 ### [OPEN] TD-0021 — Customer-tier HTTP endpoints not on the `/api/public/*` prefix
 
 - Opened: 2026-04-26
@@ -604,6 +612,7 @@ ledger; orphan `TD-` references are a documentation bug.
   the prefix audit),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#5-phase-b--reference-tree-findings)
 
+<a id="td-0020"></a>
 ### [TRIAGE] TD-0020 — Pre-1.0 single-author phase: review-pair and security-review rules effectively suspended
 
 - Opened: 2026-04-26
@@ -658,6 +667,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/meta/release-gate.md`](/doc/docs/meta/release-gate.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#4-phase-a--meta-tree-findings)
 
+<a id="td-0019"></a>
 ### [TRIAGE] TD-0019 — Pre-1.0 placeholder TODOs lacking tech-debt ledger entries
 
 - Opened: 2026-04-26
@@ -729,6 +739,7 @@ ledger; orphan `TD-` references are a documentation bug.
   Section II.3,
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#4-phase-a--meta-tree-findings)
 
+<a id="td-0018"></a>
 ### [TRIAGE] TD-0018 — Order idempotency key accepted on the wire but never persisted
 
 - Opened: 2026-04-25
@@ -760,14 +771,14 @@ ledger; orphan `TD-` references are a documentation bug.
      returns the original `SubmitOrderResult` instead of inserting a
      second one. The unique index is the durable guard; the lookup
      is the cheap fast-path.
-  3. (Open) Add an integration test that issues two `SubmitAsync`
+  3. (Done) Add an integration test that issues two `SubmitAsync`
      calls with the same `IdempotencyKey` and asserts a single
-     `Order` row plus a single `OrderResult`. Depends on TD-0010
-     fixtures.
+     `Order` row plus a single `OrderResult`.
 - Linked: AC-031, AC-032,
   [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs),
   [`/src/packages/shared-dotnet/Domain/Entities/Tenant/Order.cs`](/src/packages/shared-dotnet/Domain/Entities/Tenant/Order.cs)
 
+<a id="td-0017"></a>
 ### [TRIAGE] TD-0017 — Customer session device-binding not enforced (AC-030 second half)
 
 - Opened: 2026-04-25
@@ -814,6 +825,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/src/apps/tenant/Services/OrderService.cs`](/src/apps/tenant/Services/OrderService.cs),
   [`/src/apps/tenant/Services/CustomerSessionCookie.cs`](/src/apps/tenant/Services/CustomerSessionCookie.cs)
 
+<a id="td-0016"></a>
 ### [TRIAGE] TD-0016 — AD-0004 mixed render modes never exercised
 
 - Opened: 2026-04-25
@@ -869,6 +881,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AD-0004, TD-0027, TD-0028,
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#section-11-re-review-findings-2026-04-25)
 
+<a id="td-0015"></a>
 ### [TRIAGE] TD-0015 — Tenant API controllers expose every endpoint anonymously
 
 - Opened: 2026-04-25
@@ -940,6 +953,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AC-010, AC-030, AC-031, AC-043, AC-051,
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#rr-c2-tenant-api-controllers-expose-every-endpoint-anonymously)
 
+<a id="td-0014"></a>
 ### [TRIAGE] TD-0014 — `Directory.Build.props` analyzer baseline ratchet back up to `All`
 
 - Opened: 2026-04-25
@@ -993,6 +1007,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/Directory.Build.props`](/Directory.Build.props),
   [`/Directory.Packages.props`](/Directory.Packages.props)
 
+<a id="td-0013"></a>
 ### [OPEN] TD-0013 — Advanced health-check probes still missing
 
 - Opened: 2026-04-25
@@ -1064,6 +1079,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/reference/architecture/health-checks.md`](/doc/docs/reference/architecture/health-checks.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-4-no-health-endpoints-on-either-host)
 
+<a id="td-0012"></a>
 ### [TRIAGE] TD-0012 — Serilog wiring exists in source but has never been exercised
 
 - Opened: 2026-04-25
@@ -1098,6 +1114,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: [`/doc/docs/reference/architecture/capability-matrix.md`](/doc/docs/reference/architecture/capability-matrix.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#h-4-serilog-is-referenced-in-the-capability-matrix-but-absent-in-code)
 
+<a id="td-0011"></a>
 ### [TRIAGE] TD-0011 — `IStringLocalizer<T>` baseline absent
 
 - Opened: 2026-04-25
@@ -1119,6 +1136,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AD-0015, AC-119, AC-120, TD-0009,
   [`/doc/docs/explanation/concepts/internationalization.md`](/doc/docs/explanation/concepts/internationalization.md)
 
+<a id="td-0010"></a>
 ### [TRIAGE] TD-0010 — Test projects organised by project, not by tier
 
 - Opened: 2026-04-25
@@ -1203,6 +1221,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/explanation/concepts/test-taxonomy.md`](/doc/docs/explanation/concepts/test-taxonomy.md),
   [`/.github/workflows/pr.yml`](/.github/workflows/pr.yml)
 
+<a id="td-0009"></a>
 ### [TRIAGE] TD-0009 — English-first lint rule not yet enforced
 
 - Opened: 2026-04-25
@@ -1267,6 +1286,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/.editorconfig`](/.editorconfig),
   [`/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs`](/tools/analyzers/TabFlow.Analyzers/EnglishFirstIdentifierAnalyzer.cs)
 
+<a id="td-0008"></a>
 ### [TRIAGE] TD-0008 — Retention sweep jobs not implemented
 
 - Opened: 2026-04-25
@@ -1284,6 +1304,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AC-123, AC-124,
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md)
 
+<a id="td-0007"></a>
 ### [OPEN] TD-0007 — Personal-data classification not on the schema
 
 - Opened: 2026-04-25
@@ -1349,6 +1370,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AC-122,
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md)
 
+<a id="td-0006"></a>
 ### [TRIAGE] TD-0006 — Branch protection not configured on `main`
 
 - Opened: 2026-04-25
@@ -1367,6 +1389,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: [`/doc/docs/how-to/configure-branch-protection.md`](/doc/docs/how-to/configure-branch-protection.md),
   [`/doc/docs/constitution.md`](/doc/docs/constitution.md) Section V.1
 
+<a id="td-0005"></a>
 ### [TRIAGE] TD-0005 — CI workflows not yet validated by a real PR
 
 - Opened: 2026-04-25
@@ -1384,6 +1407,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AD-0013,
   [`/.github/workflows/pr.yml`](/.github/workflows/pr.yml)
 
+<a id="td-0004"></a>
 ### [TRIAGE] TD-0004 — Backup encryption pipeline not implemented
 
 - Opened: 2026-04-25
@@ -1402,6 +1426,7 @@ ledger; orphan `TD-` references are a documentation bug.
 - Linked: AC-127, AC-128,
   [`/doc/docs/how-to/backup-and-restore.md`](/doc/docs/how-to/backup-and-restore.md#encryption)
 
+<a id="td-0003"></a>
 ### [TRIAGE] TD-0003 — Tenant migrations applied via ad-hoc tooling
 
 - Opened: 2026-04-25
@@ -1453,6 +1478,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/how-to/setup-migrations.md`](/doc/docs/how-to/setup-migrations.md),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#rr-c3-tenant-initialcreate-up-body-is-empty)
 
+<a id="td-0002"></a>
 ### [TRIAGE] TD-0002 — Bootstrap admin not yet implemented
 
 - Opened: 2026-04-25
@@ -1516,6 +1542,7 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/src/apps/platform/Pages/ChangePassword.cshtml.cs`](/src/apps/platform/Pages/ChangePassword.cshtml.cs),
   [`./code-audit-2026-04-25.md`](./code-audit-2026-04-25.md#c-1-migration-seeds-the-first-platform-admin-into-aspnetusers)
 
+<a id="td-0001"></a>
 ### [TRIAGE] TD-0001 — Hand-applied platform schema instead of EF Core migration
 
 - Opened: 2026-04-25

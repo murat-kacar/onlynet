@@ -188,7 +188,7 @@ the AD-0003 trade-off ("the internal layer boundary [host →
 application service → domain] must remain explicit in code"). The
 direct-`DbContext` shape that ships in some controllers today is the
 subject of
-[TD-0022](/doc/buildlog/tech-debt-ledger.md#triage-td-0022--read-only-api-controllers-bypass-the-application-service-layer);
+[TD-0022](/doc/buildlog/tech-debt-ledger.md#td-0022);
 new controllers SHOULD follow the service-layer shape.
 
 ```csharp
@@ -270,7 +270,11 @@ public async Task<ActionResult> DeleteTenant(Guid id, CancellationToken ct)
 
 ### 2. Internal vs Public Methods
 - Use `CustomerSession.IssueTicket(deviceCookieValue)` not `CustomerAccessTicket.Create()` (per TD-0017 the device-binding cookie is mandatory).
-- Use `Order.Create(tableId, sessionId, ticketId, idempotencyKey, items, note)` with pre-created items. The 4th positional argument is the idempotency key per TD-0018; the unique index over `(SessionId, IdempotencyKey)` on `orders` makes a duplicate `POST /api/public/orders` insert fail at the constraint and return the original result.
+- Use `Order.Create(tableId, sessionId, ticketId, idempotencyKey, items, note)`
+  with pre-created items. The 4th positional argument is the idempotency key
+  per TD-0018; `OrderService.SubmitAsync` returns the original result for a
+  duplicate `(SessionId, IdempotencyKey)`, while the unique index on `orders`
+  remains the durable guard against racing inserts.
 - Don't call internal factory methods directly
 
 ### 3. DbContext in Singletons
@@ -340,7 +344,7 @@ builder.Services.AddOpenTelemetry()
 Unit tests prefer hand-written fakes over a mocking framework, per
 [`./test-taxonomy.md`](./test-taxonomy.md#tier-1-unit). The example
 below uses NSubstitute (referenced from every test project today) and
-is the **subject of [TD-0025](/doc/buildlog/tech-debt-ledger.md#triage-td-0025--test-taxonomymd-says-no-mocking-framework-every-test-project-references-nsubstitute)**:
+is the **subject of [TD-0025](/doc/buildlog/tech-debt-ledger.md#td-0025)**:
 the taxonomy doc and the csproj references diverge, and the resolution
 (adopt NSubstitute officially or remove it) is open.
 

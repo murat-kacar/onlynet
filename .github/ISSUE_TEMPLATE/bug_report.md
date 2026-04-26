@@ -15,6 +15,20 @@ assignees: []
 
 One sentence describing what is wrong.
 
+## Working Mode
+
+Primary mode expected after triage:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
+Secondary modes, if already known:
+
+- [ ] Documentation
+- [ ] Implementation
+- [ ] Review
+
 ## Affected Surface
 
 - [ ] Platform host
