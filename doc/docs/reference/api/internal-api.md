@@ -1,38 +1,72 @@
 # Internal API Reference
 
-> **Status: stale, owned by [TD-0023](/doc/buildlog/tech-debt-ledger.md#triage-td-0023--internal-apimd-mixes-public-and-staff-tier-surfaces-lists-routes-that-no-longer-ship).**
-> The current document mixes customer-tier endpoints with staff-tier
-> endpoints, lists `POST /api/orders/submit` (the real route is
-> `POST /api/public/orders` per `PublicOrdersController`, PR #6,
-> TD-0015 step 3), and omits the staff endpoints that actually ship
-> (`/api/orders/{id}`, `/api/orders/session/{sessionId}`,
-> `/api/kitchen/*`, `/api/sessions/{sessionId}/close`,
-> `/api/tables/*`). Treat the customer-tier sections below as
-> superseded by
-> [`./tenant-api.md`](./tenant-api.md) and the staff-tier picture as
-> incomplete. The shipping route map is in
-> [`../architecture/runtime-surfaces.md`](../architecture/runtime-surfaces.md#tenant-host--http-endpoints).
-> The rewrite is tracked under **TD-0023**.
-
-This document is the reference for **internal** HTTP endpoints — the
-admin and staff API used by the platform admin UI and the tenant admin
-console. The public, externally addressable HTTP surface
+This document is the reference for the **internal**, staff-tier
+HTTP surface used by the platform admin console and the tenant
+staff console. The publicly addressable HTTP surface
 (`/api/public/*`, `/health/*`, `/ws/*`) lives in
-[`./tenant-api.md`](./tenant-api.md).
+[`./tenant-api.md`](./tenant-api.md). The shipping route map is
+in
+[`../architecture/runtime-surfaces.md`](../architecture/runtime-surfaces.md#tenant-host--http-endpoints).
 
-## Platform API (platform.cafetech.uk)
+The error model is the RFC 7807 Problem Details shape documented in
+[`./error-codes.md`](./error-codes.md); per-code semantics are
+specified there.
 
-### Authentication
-All endpoints require authentication with cookie auth and appropriate policy:
-- `Platform:Read` - Read access
-- `Platform:Write` - Write access
+## Conventions
 
-### Tenants API
+- **Authentication.** Every internal endpoint authenticates via the
+  ASP.NET Core Identity cookie issued by `/login`. API callers that
+  forget the cookie receive `401 Unauthorized`; callers that lack
+  the action's policy receive `403 Forbidden`. The cookie handler
+  short-circuits the default 302 redirect for any path under
+  `/api/`, so HTTP API clients see status codes, not HTML
+  redirects.
+- **Authorisation.** Each action carries a policy on the
+  controller class (default-restrictive ordering): the controller
+  is `[Authorize(Policy = "...")]` and individual actions either
+  inherit that policy or escalate via an explicit
+  `[Authorize(Policy = "...:Write")]`. The four policies are
+  `Platform:Read`, `Platform:Write`, `Tenant:Read`, and
+  `Tenant:Write`; their definitions live in each host's
+  `Program.cs` `AddAuthorization(...)` block.
+- **Status codes.**
+  - `200 OK` — success with a response body.
+  - `201 Created` — resource created; `Location` header points at
+    the read endpoint.
+  - `204 No Content` — success without a response body.
+  - `400 Bad Request` — validation failure, RFC 7807 body.
+  - `401 Unauthorized` — no valid Identity cookie.
+  - `403 Forbidden` — authenticated but the policy gate failed.
+  - `404 Not Found` — resource missing or invisible to this
+    caller.
+- **Content type.** JSON request and response bodies are
+  `application/json`. Problem Details bodies are
+  `application/problem+json`.
+- **Internal vs public.** None of the routes below ship under the
+  `/api/public/*` prefix; that prefix is reserved for the
+  customer-tier surface in `tenant-api.md` (PR #6, TD-0015 step 3
+  for the orders shim; TD-0021 plans the rest of the migration).
 
-#### GET /api/tenants
-**Policy:** `Platform:Read`
+## Platform Host (`platform.cafetech.uk`)
 
-**Response:** `IReadOnlyList<TenantDto>`
+Two controllers, both under
+`src/apps/platform/Controllers/Api/`.
+
+### Tenants — `[Route("api/[controller]")]`, default `[Authorize(Policy = "Platform:Read")]`
+
+Source:
+[`/src/apps/platform/Controllers/Api/TenantsController.cs`](/src/apps/platform/Controllers/Api/TenantsController.cs).
+Tracked under TD-0022 step 1 for the move to a service-layer
+caller that owns the EF Core context; the route table below is
+stable across that refactor.
+
+#### `GET /api/tenants`
+
+Lists every tenant the caller can read.
+
+- **Policy.** `Platform:Read`.
+- **Response.** `200 OK`, body
+  `IReadOnlyList<TenantDto>`.
 
 ```csharp
 record TenantDto(
@@ -46,10 +80,13 @@ record TenantDto(
     string TimeZone);
 ```
 
-#### GET /api/tenants/{id:guid}
-**Policy:** `Platform:Read`
+#### `GET /api/tenants/{id:guid}`
 
-**Response:** `TenantDetailDto`
+Reads a single tenant.
+
+- **Policy.** `Platform:Read`.
+- **Responses.** `200 OK` with `TenantDetailDto`, or `404` if
+  no tenant has the supplied id.
 
 ```csharp
 record TenantDetailDto(
@@ -66,10 +103,14 @@ record TenantDetailDto(
     string? DatabaseUser);
 ```
 
-#### POST /api/tenants
-**Policy:** `Platform:Write`
+#### `POST /api/tenants`
 
-**Request:** `CreateTenantRequest`
+Creates a new tenant.
+
+- **Policy.** `Platform:Write`.
+- **Request.** `CreateTenantRequest`.
+- **Responses.** `201 Created` with `TenantDto` and a
+  `Location` header pointing at `GET /api/tenants/{id}`.
 
 ```csharp
 record CreateTenantRequest(
@@ -82,12 +123,16 @@ record CreateTenantRequest(
     string IntendedOwnerEmail);
 ```
 
-**Response:** `TenantDto` (201 Created)
+#### `PUT /api/tenants/{id:guid}`
 
-#### PUT /api/tenants/{id:guid}
-**Policy:** `Platform:Write`
+Updates the locale-shaped fields on a tenant. The
+`Code`, `DisplayName`, and `IntendedOwnerEmail` are immutable from
+this surface and require a separate admin escalation that does
+not yet ship.
 
-**Request:** `UpdateTenantRequest`
+- **Policy.** `Platform:Write`.
+- **Request.** `UpdateTenantRequest`.
+- **Response.** `204 No Content`.
 
 ```csharp
 record UpdateTenantRequest(
@@ -96,14 +141,23 @@ record UpdateTenantRequest(
     string TimeZone);
 ```
 
-**Response:** 204 No Content
+### Jobs — `[Route("api/[controller]")]`, default `[Authorize(Policy = "Platform:Read")]`
 
-### Jobs API
+Source:
+[`/src/apps/platform/Controllers/Api/JobsController.cs`](/src/apps/platform/Controllers/Api/JobsController.cs).
+This controller is read-only today; the create path lands as
+part of the platform worker bring-up (`tenant.create` jobs are
+written by `TenantsController.POST`, not by direct caller).
 
-#### GET /api/jobs
-**Policy:** `Platform:Read`
+#### `GET /api/jobs`
 
-**Response:** `IReadOnlyList<JobDto>`
+Lists every job. The list is unsorted; the admin console sorts
+client-side. Pagination is not yet wired; the platform job table
+is small (one row per provisioning attempt) so the unsorted
+`IReadOnlyList` is sufficient until volume forces a sort key.
+
+- **Policy.** `Platform:Read`.
+- **Response.** `200 OK`, body `IReadOnlyList<JobDto>`.
 
 ```csharp
 record JobDto(
@@ -116,10 +170,13 @@ record JobDto(
     DateTimeOffset UpdatedAt);
 ```
 
-#### GET /api/jobs/{id:guid}
-**Policy:** `Platform:Read`
+#### `GET /api/jobs/{id:guid}`
 
-**Response:** `JobDetailDto`
+Reads a single job and the step list that records its progress.
+
+- **Policy.** `Platform:Read`.
+- **Responses.** `200 OK` with `JobDetailDto`, or `404` if
+  no job has the supplied id.
 
 ```csharp
 record JobDetailDto(
@@ -139,199 +196,148 @@ record JobStepDto(
     Guid Id,
     string Name,
     string Status,
-    DateTimeOffset StartedAt); // Note: StartedAt, not CreatedAt
+    DateTimeOffset StartedAt);
 ```
 
-## Tenant API (tenant.cafetech.uk)
+## Tenant Host (`*.cafetech.uk` / per-tenant subdomain)
 
-### Authentication
-All endpoints require authentication with cookie auth and appropriate policy:
-- `Tenant:Read` - Read access
-- `Tenant:Write` - Write access
+Five staff-tier controllers under
+`src/apps/tenant/Controllers/Api/`. Customer-tier
+(`PublicOrdersController`, customer-anonymous actions on
+`SessionsController` and `CartController`, anonymous reads on
+`MenuController`) is documented in
+[`./tenant-api.md`](./tenant-api.md) and is **not** repeated here.
 
-### Sessions API
+### Orders — `[Route("api/[controller]")]`, default `[Authorize(Policy = "Tenant:Read")]`
 
-#### POST /api/sessions/open
-**Policy:** None (public for QR token scanning)
+Source:
+[`/src/apps/tenant/Controllers/Api/OrdersController.cs`](/src/apps/tenant/Controllers/Api/OrdersController.cs).
+The customer-facing submit action is **not** here; it lives at
+`POST /api/public/orders` on `PublicOrdersController` (PR #6,
+TD-0015 step 3). This controller carries the staff read paths
+only.
 
-**Request:** `OpenSessionRequest`
+#### `GET /api/orders/{id:guid}`
+
+Reads a single order plus its line items.
+
+- **Policy.** `Tenant:Read`.
+- **Responses.** `200 OK` with `OrderDetailDto`, or `404` if
+  no order has the supplied id.
+
+The DTO shape follows `Order` and `OrderItem`; consumers should
+prefer the `[generated]` DTOs in
+`src/apps/tenant/Models/Api/Orders.cs` rather than
+hand-rolled equivalents.
+
+#### `GET /api/orders/session/{sessionId:guid}`
+
+Lists every order placed under a customer session — used by the
+staff console's per-table history.
+
+- **Policy.** `Tenant:Read`.
+- **Response.** `200 OK`, body `IReadOnlyList<OrderSummaryDto>`.
+
+### Kitchen — `[Route("api/[controller]")]`, no class-level policy
+
+Source:
+[`/src/apps/tenant/Controllers/Api/KitchenController.cs`](/src/apps/tenant/Controllers/Api/KitchenController.cs).
+Each action carries its own policy (`Tenant:Read` for the read
+path, `Tenant:Write` for the status-change path) so the route
+table cannot accidentally inherit the wrong default.
+
+#### `GET /api/kitchen/orders`
+
+Lists every order that the station displays should currently see —
+typically `Submitted` and `Preparing`, ordered by submission
+time.
+
+- **Policy.** `Tenant:Read`.
+- **Response.** `200 OK`, body `IReadOnlyList<KitchenOrderDto>`.
+
+#### `PUT /api/kitchen/items/{itemId:guid}/status`
+
+Advances an order item along the station state machine
+(`Submitted` → `Preparing` → `Ready` → `Served`).
+
+- **Policy.** `Tenant:Write`.
+- **Request.** `UpdateItemStatusRequest`.
+- **Response.** `204 No Content` on success; `400` (RFC 7807)
+  with `code = "order_item_state_invalid"` if the requested
+  transition is not allowed from the item's current state.
 
 ```csharp
-record OpenSessionRequest(string QrTokenValue);
+record UpdateItemStatusRequest(string Status);
 ```
 
-**Response:** `OpenSessionResult`
+### Tables — `[Route("api/[controller]")]`, default `[Authorize(Policy = "Tenant:Read")]`
 
-```csharp
-record OpenSessionResult(Guid SessionId, Guid TicketId, string TableLabel);
-```
+Source:
+[`/src/apps/tenant/Controllers/Api/TablesController.cs`](/src/apps/tenant/Controllers/Api/TablesController.cs).
+Read-only; table writes (rename, status flip, remove) ship later
+as part of the staff console catalog work.
 
-**Notes:**
-- Validates QR token against `QrToken.Value`
-- Finds active session by table ID
-- Issues access ticket using `CustomerSession.IssueTicket()`
+#### `GET /api/tables`
 
-#### GET /api/sessions/{ticketId:guid}
-**Policy:** None
+Lists every table with its current customer-session attachment.
 
-**Response:** `CustomerSessionState?` (404 if not found)
+- **Policy.** `Tenant:Read`.
+- **Response.** `200 OK`, body `IReadOnlyList<TableDto>`.
 
-```csharp
-record CustomerSessionState(
-    Guid SessionId,
-    Guid TicketId,
-    string TableLabel,
-    IReadOnlyList<CartItemSummary> CartItems);
+#### `GET /api/tables/{id:guid}`
 
-record CartItemSummary(
-    Guid ItemId,
-    string ItemName,
-    int Quantity,
-    decimal UnitPrice,
-    string? Note);
-```
+Reads a single table.
 
-#### POST /api/sessions/{sessionId:guid}/close
-**Policy:** None
+- **Policy.** `Tenant:Read`.
+- **Responses.** `200 OK` with `TableDetailDto`, or `404` if
+  no table has the supplied id.
 
-**Response:** 204 No Content
+### Sessions — staff-tier slice
 
-### Cart API
+Source:
+[`/src/apps/tenant/Controllers/Api/SessionsController.cs`](/src/apps/tenant/Controllers/Api/SessionsController.cs).
+This controller hosts both customer-tier and staff-tier actions on
+the same route. The customer-tier actions are documented in
+[`./tenant-api.md`](./tenant-api.md) (and are slated to move to a
+`/api/public/*` shim under TD-0021 step 2). The staff-tier slice
+is the close action below.
 
-#### POST /api/cart
-**Policy:** None
+#### `POST /api/sessions/{sessionId:guid}/close`
 
-**Request:** `AddCartItemRequest`
+Closes a customer session that the staff console wants to mark as
+done — typically after the bill is settled.
 
-```csharp
-record AddCartItemRequest(
-    Guid SessionId,
-    Guid MenuItemId,
-    int Quantity,
-    string? Note = null);
-```
+- **Policy.** `Tenant:Write`.
+- **Response.** `204 No Content` on success; `404` if the
+  session id does not exist or the session is already closed.
 
-**Response:** `CartItemDto`
+The class-level `[Authorize(Policy = "Tenant:Read")]` plus the
+action-level `[Authorize(Policy = "Tenant:Write")]` rely on the
+default-restrictive ordering in `Program.cs`'s
+`AddAuthorization(...)` (per AC-043). The action policy escalates
+the requirement; without that ordering, the analyser warning
+ASP0026 surfaces and the build breaks.
 
-```csharp
-record CartItemDto(
-    Guid Id,
-    Guid MenuItemId,
-    string MenuItemName,
-    int Quantity,
-    decimal UnitPrice,
-    string? Note);
-```
+## Migration Notes
 
-#### DELETE /api/cart/{id:guid}
-**Policy:** None
-
-**Response:** 204 No Content
-
-#### PUT /api/cart/{id:guid}/quantity
-**Policy:** None
-
-**Request:** `UpdateQuantityRequest`
-
-```csharp
-record UpdateQuantityRequest(int Quantity);
-```
-
-**Response:** 204 No Content
-
-#### GET /api/cart/session/{sessionId:guid}
-**Policy:** None
-
-**Response:** `IReadOnlyList<CartItemDto>`
-
-### Orders API
-
-#### POST /api/orders/submit
-**Policy:** None
-
-**Request:** `SubmitOrderRequest`
-
-```csharp
-record SubmitOrderRequest(
-    Guid SessionId,
-    Guid TicketId,
-    Guid TableId,
-    string CheckoutProofToken,
-    string IdempotencyKey,
-    string? Note);
-```
-
-**Response:** `SubmitOrderResult`
-
-```csharp
-record SubmitOrderResult(Guid OrderId, decimal TotalAmount);
-```
-
-**Notes:**
-- Validates checkout proof token against `QrToken.Value` and `IsCheckoutProof`
-- Validates session is open
-- Creates order with items from cart
-- Closes session after submission
-
-## WebSocket Endpoints
-
-### Tenant WebSocket
-
-#### WS /ws/tables/{tableNumber:int}
-**Purpose:** ESP32 device connection for table
-
-**Protocol:** WebSocket
-
-**Implementation:** `TableWebSocketHandler`
-
-**Notes:**
-- Accepts WebSocket connections from ESP32 devices
-- Handles incoming messages from devices
-- Long-lived connection (timeout: 86400s)
-- Currently has placeholder message processing
-
-## Common Patterns
-
-### Blazor HttpClient Usage
-```csharp
-@inject HttpClient Http
-
-// GET
-var items = await Http.GetFromJsonAsync<List<TenantDto>>("/api/tenants");
-
-// POST
-var result = await Http.PostAsJsonAsync("/api/cart", request);
-
-// DELETE
-await Http.DeleteAsync($"/api/cart/{id}");
-
-// PUT
-await Http.PutAsJsonAsync($"/api/cart/{id}/quantity", request);
-```
-
-### Authorization in Controllers
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-[Authorize(Policy = "Platform:Read")] // or Platform:Write, Tenant:Read, Tenant:Write
-public class TenantsController : ControllerBase
-{
-    // ...
-}
-```
-
-### Authorization in Blazor
-```razor
-@page "/tenants"
-@attribute [Authorize(Policy = "Platform:Read")]
-```
-
-### Error Handling
-Controllers return standard HTTP status codes:
-- 200 OK - Success with response body
-- 201 Created - Resource created
-- 204 No Content - Success without response body
-- 400 Bad Request - Invalid input
-- 404 Not Found - Resource not found
-- 401 Unauthorized - Not authenticated
-- 403 Forbidden - Authorized but insufficient permissions
+- **TD-0021 (open).** Four customer-tier surfaces still ship from
+  staff-tier controllers under `/api/menu`, `/api/cart`,
+  `/api/sessions/open`, and `/api/sessions/{ticketId}`. Per
+  AD-0003, the public surface belongs under `/api/public/*`. The
+  payoff plan in
+  [TD-0021](/doc/buildlog/tech-debt-ledger.md) introduces shim
+  controllers at `/api/public/*` that delegate into the existing
+  service layer; once the shims ship, this document and
+  `tenant-api.md` are the only references that change.
+- **TD-0022 (open).** Six controllers
+  (`TenantsController`, `JobsController`, `KitchenController`,
+  `OrdersController`, `TablesController`, `SessionsController`)
+  still hold an EF Core `DbContext` directly. The payoff plan
+  introduces a thin service per controller that owns the
+  context; the route table here is stable across that refactor.
+- **TD-0015 step 6 (open).** The class-level vs action-level
+  policy ordering on `SessionsController` and (post-TD-0021) on
+  the customer-tier shims is the point that an integration test
+  must exercise: `401` on a missing cookie, `403` on a present
+  cookie that lacks the policy. The fixture for that test depends
+  on TD-0010 step 5.

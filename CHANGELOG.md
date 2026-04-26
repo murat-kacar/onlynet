@@ -184,6 +184,44 @@ AD-0011.
   Closes audit re-review finding RR-C2 in source (partial); closes
   the routing half of RR-H2.
 
+### Documentation
+
+- **TD-0023 closed: internal-api.md rewrite (PR #27).** The
+  staff-tier HTTP reference at
+  [`/doc/docs/reference/api/internal-api.md`](./doc/docs/reference/api/internal-api.md)
+  was written before the customer / staff tier split (TD-0015) and
+  before `/api/public/orders` shipped in PR #6; the document mixed
+  customer- and staff-tier endpoints, listed `POST /api/orders/submit`
+  (a route that no longer ships), and omitted the staff endpoints
+  that actually serve the admin console. PR #27 replaces the
+  document end-to-end:
+  - **Customer-tier removed.** `Sessions` (open / get-by-ticket),
+    `Cart`, and the customer half of `Orders` no longer appear here;
+    those surfaces are documented exclusively in
+    [`tenant-api.md`](./doc/docs/reference/api/tenant-api.md), which
+    `internal-api.md` cites at the top of the file as the home of
+    the public surface.
+  - **Stale routes dropped.** `POST /api/orders/submit` is gone; the
+    public submit lives at `POST /api/public/orders`
+    (`PublicOrdersController`, PR #6, TD-0015 step 3) and is covered
+    in `tenant-api.md`.
+  - **Staff endpoints added.** Two platform controllers
+    (`Tenants`, `Jobs`) and five tenant controllers
+    (`Orders` read-only, `Kitchen` with per-action `Tenant:Read` /
+    `Tenant:Write` policies, `Tables` read-only, the staff-tier
+    `POST /api/sessions/{id}/close` action) now have route, policy,
+    request, response, and source-file citations.
+  - **Conventions surfaced.** New top-level Conventions section
+    documents the cookie-auth contract, the four authorisation
+    policies, the JSON / Problem Details content types, and the
+    status-code vocabulary. New Migration Notes section points at
+    TD-0015 step 6 (integration test for the 401/403 split),
+    TD-0021 (`/api/public/*` shim migration), and TD-0022
+    (controller-to-service refactor).
+  - **Tech debt ledger.** TD-0023 status `[TRIAGE]` →
+    `[CLOSED]`; resolution block names every structural change
+    PR #27 made.
+
 ### Tools
 
 - **TD-0010 step 4: TF0002 Unit-tier test purity analyser

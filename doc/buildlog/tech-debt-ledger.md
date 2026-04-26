@@ -317,10 +317,11 @@ ledger; orphan `TD-` references are a documentation bug.
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
 
-### [TRIAGE] TD-0023 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
+### [CLOSED] TD-0023 — `internal-api.md` mixes public and staff-tier surfaces; lists routes that no longer ship
 
 - Opened: 2026-04-26
-- Owner: TBD
+- Closed: 2026-04-26
+- Owner: closed in PR #27 by single-author pre-1.0 (TD-0020).
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
   B-3 finding B-3.1).
@@ -352,26 +353,33 @@ ledger; orphan `TD-` references are a documentation bug.
   drift this large means the answer is wrong. A future PR adding a
   staff endpoint copies the dominant `Policy: None` pattern and
   re-creates the AC-010 / AC-043 violation that TD-0015 closed.
-- Payoff plan:
-  1. (Open) Mark the document as TD-0023 owned via a banner at the
-     top, pointing readers at this entry until the rewrite lands.
-     (Done in this pass.)
-  2. (Open) Move the customer-tier sections (Sessions, Cart, the
-     customer Orders endpoint) to
-     [`tenant-api.md`](/doc/docs/reference/api/tenant-api.md) under
-     the Public Endpoints heading, deduplicated against the routes
-     already documented there.
-  3. (Open) Replace the stale `POST /api/orders/submit` entry with
-     the actual `POST /api/public/orders` contract (cite AC-030,
-     AC-031, AC-035, AC-036).
-  4. (Open) Add a staff-tier section for the actually shipping
-     internal endpoints with their `[Authorize]` policy, request /
-     response shapes, and citation back to
-     [`runtime-surfaces.md`](/doc/docs/reference/architecture/runtime-surfaces.md#tenant-host--http-endpoints).
-  5. (Open) Add a closing note that admin and staff Razor surfaces
-     interact with the domain through Blazor + DI rather than HTTP
-     (AD-0003); the documented HTTP surfaces are the exception, not
-     the norm.
+- Resolution (PR #27): replaced the entire document at
+  [`/doc/docs/reference/api/internal-api.md`](/doc/docs/reference/api/internal-api.md)
+  with a staff-tier-only reference. The new document:
+  1. Drops every customer-tier endpoint. Customer-tier surfaces
+     (`/menu`, `/cart`, `/sessions/open`, `/sessions/{ticketId}`,
+     `/api/public/orders`) are now documented exclusively in
+     [`tenant-api.md`](/doc/docs/reference/api/tenant-api.md) and
+     `internal-api.md` defers to it for the public surface.
+  2. Removes the stale `POST /api/orders/submit` entry. The public
+     order submit lives at `POST /api/public/orders` per
+     `PublicOrdersController` (PR #6, TD-0015 step 3) and is
+     covered in `tenant-api.md`.
+  3. Adds the staff-tier sections that the previous draft omitted:
+     `Tenants`, `Jobs` on the platform host;
+     `Orders` (read-only — `GET {id}`, `GET session/{sessionId}`),
+     `Kitchen` (`GET orders`, `PUT items/{id}/status` with
+     `Tenant:Read` / `Tenant:Write` per-action policies),
+     `Tables` (`GET`, `GET {id}`), and the `Sessions` close action
+     (`POST {sessionId}/close` with `Tenant:Write`).
+  4. Names every action's `[Authorize]` policy explicitly and
+     calls out the default-restrictive ordering on
+     `SessionsController` per AC-043.
+  5. Adds a Conventions section (auth, status codes, content
+     types, internal vs public) and a Migration Notes section
+     that points at TD-0015 step 6 (integration test for the
+     401/403 split), TD-0021 (`/api/public/*` shim
+     migration), and TD-0022 (controller-to-service refactor).
 - Linked: AD-0003,
   [`/doc/docs/reference/api/internal-api.md`](/doc/docs/reference/api/internal-api.md),
   [`/doc/docs/reference/api/tenant-api.md`](/doc/docs/reference/api/tenant-api.md),
