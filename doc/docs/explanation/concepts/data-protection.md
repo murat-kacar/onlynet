@@ -99,21 +99,18 @@ honoured under both.
 | Right | KVKK Article | GDPR Article | TabFlow Procedure |
 | --- | --- | --- | --- |
 | Right to be informed | 10 | 13–14 | Privacy notice published per tenant; link rendered on customer ordering surface |
-| Right of access | 11(1)(a–c) | 15 | Operator runs the access export procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 1) and delivers the file to the requester within 30 days |
+| Right of access | 11(1)(a–c) | 15 | Operator runs [`/doc/docs/how-to/data-subject-access.md`](/doc/docs/how-to/data-subject-access.md) and delivers the JSON export to the requester within 30 days |
 | Right to rectification | 11(1)(d–e) | 16 | Staff edit; customer correction via operator request |
-| Right to erasure | 11(1)(e–f), 7 | 17 | Operator triggers the erasure procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 2); data is hard-deleted except entries needed to satisfy a legal obligation, which are anonymised |
-| Right to restriction | 11(1)(f), 7(2) | 18 | Staff record is set to `restricted = true` per the restriction procedure ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 3); processing pauses pending review |
-| Right to data portability | n/a (no direct equivalent in KVKK) | 20 | Access export is delivered in machine-readable JSON ([TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented) step 4) |
+| Right to erasure | 11(1)(e–f), 7 | 17 | Operator runs [`/doc/docs/how-to/data-subject-erasure.md`](/doc/docs/how-to/data-subject-erasure.md); data is hard-deleted except entries needed to satisfy a legal obligation, which are anonymised in place |
+| Right to restriction | 11(1)(f), 7(2) | 18 | Operator runs [`/doc/docs/how-to/data-subject-restriction.md`](/doc/docs/how-to/data-subject-restriction.md); processing pauses pending the time-bound review the procedure schedules |
+| Right to data portability | n/a (no direct equivalent in KVKK) | 20 | Operator runs [`/doc/docs/how-to/data-subject-portability.md`](/doc/docs/how-to/data-subject-portability.md); the export is the access export filtered to consent / contract scope |
 | Right to object | 11(1)(g) | 21 | Recorded; processing for the objection's scope ceases |
 | Right not to be subject to automated decision-making | n/a | 22 | TabFlow performs no automated individual decision-making in the current major |
 
 The procedures referenced above live as **how-to guides** in
-[`/doc/docs/how-to/`](/doc/docs/how-to/). The four DSR procedures (
-access, erasure, restriction, portability) do not yet exist; they are
-tracked under
-[TD-0024](/doc/buildlog/tech-debt-ledger.md#triage-td-0024--data-subject-rights-operator-procedures-kvkk--gdpr-not-yet-documented).
-Until the how-to guides ship, an operator who receives a DSR
-follows the lawful-basis row above and writes a postmortem-style
+[`/doc/docs/how-to/`](/doc/docs/how-to/). The four DSR procedures
+(access, erasure, restriction, portability) ship as separate how-to
+guides under PR #28; each procedure also writes a postmortem-style
 record of the response under
 [`/doc/buildlog/postmortems/`](/doc/buildlog/postmortems/) so the
 first real DSR informs the procedure that lands.

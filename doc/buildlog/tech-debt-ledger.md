@@ -269,10 +269,11 @@ ledger; orphan `TD-` references are a documentation bug.
   TD-0010 (test taxonomy bootstrap),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)
 
-### [TRIAGE] TD-0024 — Data-subject-rights operator procedures (KVKK / GDPR) not yet documented
+### [CLOSED] TD-0024 — Data-subject-rights operator procedures (KVKK / GDPR) not yet documented
 
 - Opened: 2026-04-26
-- Owner: TBD
+- Closed: 2026-04-26
+- Owner: closed in PR #28 by single-author pre-1.0 (TD-0020).
 - Origin: code-audit-2026-04-26 alignment pass
   ([`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md), Phase
   C finding C-2). Constitutional anchor: III.1 (documentation
@@ -291,28 +292,42 @@ ledger; orphan `TD-` references are a documentation bug.
   has no checklist. The 30-day regulatory clock starts the moment
   the request is received; an undocumented procedure means the
   first request becomes a fire drill.
-- Payoff plan:
-  1. (Open) `/doc/docs/how-to/data-subject-access.md` — operator
-     procedure for Right of access (KVKK 11(1)(a–c) / GDPR 15).
-     Output is a JSON export covering staff records, audit-log
-     entries, and customer-session records keyed by the data
-     subject's identifier.
-  2. (Open) `/doc/docs/how-to/data-subject-erasure.md` — operator
-     procedure for Right to erasure (KVKK 11(1)(e–f), 7 / GDPR 17).
-     Hard-deletes data except entries needed to satisfy a legal
-     obligation, which are anonymised in place.
-  3. (Open) `/doc/docs/how-to/data-subject-restriction.md` —
-     operator procedure for Right to restriction (KVKK 11(1)(f),
-     7(2) / GDPR 18). Sets `restricted = true` on the staff record
-     and pauses processing.
-  4. (Open) `/doc/docs/how-to/data-subject-portability.md` —
-     operator procedure for Right to data portability (GDPR 20;
-     KVKK has no direct equivalent but TabFlow honours it under the
-     superset rule). JSON export in the same shape as access.
-  5. (Open) Update
+- Resolution (PR #28): the four how-to guides shipped, each with
+  identity-verification, dry-run, hard transaction, audit-row, and
+  delivery sections; the explainer's Data Subject Rights table no
+  longer carries `(TD-0024 step N)` parentheticals.
+  1. (Done in PR #28)
+     [`/doc/docs/how-to/data-subject-access.md`](/doc/docs/how-to/data-subject-access.md)
+     — operator procedure for the Right of access. Output: a JSON
+     export with one top-level key per source table plus an
+     `omitted` array naming redacted (table, column) tuples and the
+     legal basis. Audit row written with
+     `action = 'dsr.access.exported'`.
+  2. (Done in PR #28)
+     [`/doc/docs/how-to/data-subject-erasure.md`](/doc/docs/how-to/data-subject-erasure.md)
+     — operator procedure for the Right to erasure. Hard-delete
+     for in-scope rows; anonymisation in place for orders kept
+     under the 6-year accounting retention. Audit row written with
+     `action = 'dsr.erasure.completed'`.
+  3. (Done in PR #28)
+     [`/doc/docs/how-to/data-subject-restriction.md`](/doc/docs/how-to/data-subject-restriction.md)
+     — operator procedure for the Right to restriction. Records
+     the restriction in the audit log, suspends operational paths
+     (Identity lockout for staff; session close for customer
+     sessions), schedules a review. The dedicated `restricted`
+     column on every personal-data table waits on TD-0007.
+  4. (Done in PR #28)
+     [`/doc/docs/how-to/data-subject-portability.md`](/doc/docs/how-to/data-subject-portability.md)
+     — operator procedure for the Right to data portability.
+     Same shape as the access export filtered to consent / contract
+     scope; default JSON, optional CSV-in-ZIP. Audit row written
+     with `action = 'dsr.portability.delivered'`.
+  5. (Done in PR #28)
      [`data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#data-subject-rights)
-     to replace each "(TBD how-to)" cell with a concrete how-to
-     link.
+     updated: every "TabFlow Procedure" cell that previously named
+     `(TD-0024 step N)` now links the matching how-to guide; the
+     prose paragraph below the table records that the procedures
+     shipped in PR #28.
 - Linked: AC-126, AC-129,
   [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md),
   [`./code-audit-2026-04-26.md`](./code-audit-2026-04-26.md#6-phase-c--explanation-tree-findings)

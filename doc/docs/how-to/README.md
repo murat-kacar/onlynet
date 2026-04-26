@@ -18,3 +18,7 @@ Current how-to guides:
 - [`./restart-tenant.md`](./restart-tenant.md)
 - [`./rotate-secrets.md`](./rotate-secrets.md)
 - [`./backup-and-restore.md`](./backup-and-restore.md)
+- [`./data-subject-access.md`](./data-subject-access.md)
+- [`./data-subject-erasure.md`](./data-subject-erasure.md)
+- [`./data-subject-restriction.md`](./data-subject-restriction.md)
+- [`./data-subject-portability.md`](./data-subject-portability.md)

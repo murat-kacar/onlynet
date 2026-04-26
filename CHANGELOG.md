@@ -186,6 +186,45 @@ AD-0011.
 
 ### Documentation
 
+- **TD-0024 closed: four DSR operator procedures (PR #28).** The
+  data-protection explainer's Data Subject Rights table at
+  [`/doc/docs/explanation/concepts/data-protection.md`](./doc/docs/explanation/concepts/data-protection.md#data-subject-rights)
+  named four operator procedures (Right of access, Right to
+  erasure, Right to restriction, Right to data portability) but
+  pointed at how-to guides that did not exist. PR #28 ships the
+  four guides and updates the table to link them.
+  - **New how-to guides under
+    [`/doc/docs/how-to/`](./doc/docs/how-to/):**
+    - `data-subject-access.md` — Right of access (KVKK 11(1)(a–c)
+      / GDPR 15). JSON export with per-table top-level keys and
+      an `omitted` array naming redacted (table, column) tuples
+      and the legal basis. Audit action
+      `dsr.access.exported`.
+    - `data-subject-erasure.md` — Right to erasure (KVKK 7 /
+      GDPR 17). Hard-delete in scope; anonymisation in place for
+      orders kept under the 6-year accounting retention. Audit
+      action `dsr.erasure.completed`.
+    - `data-subject-restriction.md` — Right to restriction
+      (KVKK 7(2) / GDPR 18). Records the restriction in the
+      audit log, suspends operational paths (Identity lockout for
+      staff; session close for customer sessions), schedules a
+      review on a concrete review date. Audit action
+      `dsr.restriction.applied` + `dsr.restriction.lifted`.
+    - `data-subject-portability.md` — Right to data portability
+      (GDPR 20; honoured under the superset rule even where KVKK
+      has no direct equivalent). Same shape as the access
+      export, filtered to consent / contract scope. Audit action
+      `dsr.portability.delivered`.
+  - **Explainer updated.** The four "TabFlow Procedure" cells
+    that previously read `(TD-0024 step N)` now link the matching
+    how-to guide. The paragraph below the table records that the
+    procedures shipped in PR #28.
+  - **How-to index updated.**
+    [`/doc/docs/how-to/README.md`](./doc/docs/how-to/README.md)
+    lists the four new guides.
+  - **Tech debt ledger.** TD-0024 status `[TRIAGE]` →
+    `[CLOSED]`; resolution block names every step.
+
 - **TD-0023 closed: internal-api.md rewrite (PR #27).** The
   staff-tier HTTP reference at
   [`/doc/docs/reference/api/internal-api.md`](./doc/docs/reference/api/internal-api.md)
