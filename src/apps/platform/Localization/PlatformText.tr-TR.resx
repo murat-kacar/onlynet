@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>TabFlow Platform</value></data>
+  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Platform</value></data>
+  <data name="BrandCopy" xml:space="preserve"><value>Tenant yaşam döngüsü, provisioning akışı ve kontrol düzlemi görünürlüğü için çok kiracılı yönetim paneli.</value></data>
+  <data name="NavOverview" xml:space="preserve"><value>Genel Bakış</value></data>
+  <data name="NavTenants" xml:space="preserve"><value>Tenantlar</value></data>
+  <data name="NavJobs" xml:space="preserve"><value>İşler</value></data>
+  <data name="NavAudit" xml:space="preserve"><value>Denetim</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="SidebarFootnote" xml:space="preserve"><value>Platform arayüzü artık identity ve provisioning okuma yüzeyleriyle aynı host üzerinde canlı.</value></data>
+  <data name="ShellEyebrow" xml:space="preserve"><value>Kontrol Düzlemi</value></data>
+  <data name="ShellTitle" xml:space="preserve"><value>Yönetim Konsolu</value></data>
+  <data name="OverviewEyebrow" xml:space="preserve"><value>Genel Bakış</value></data>
+  <data name="DashboardTitle" xml:space="preserve"><value>Platform Panosu</value></data>
+  <data name="DashboardHero" xml:space="preserve"><value>Tenant hacmi, provisioning baskısı ve en yeni kontrol düzlemi değişiklikleri için tarama odaklı görünüm.</value></data>
+  <data name="LoadingPlatformData" xml:space="preserve"><value>Platform verisi yükleniyor</value></data>
+  <data name="LoadingPlatformDataCopy" xml:space="preserve"><value>Tenant kayıtları ve provisioning kuyruğu getiriliyor.</value></data>
+  <data name="MetricTenants" xml:space="preserve"><value>Tenantlar</value></data>
+  <data name="MetricOpenJobs" xml:space="preserve"><value>Açık İşler</value></data>
+  <data name="MetricRegions" xml:space="preserve"><value>Bölgeler</value></data>
+  <data name="MetricNewestTenant" xml:space="preserve"><value>En Yeni Tenant</value></data>
+  <data name="MetricNewestTenantCopy" xml:space="preserve"><value>Geçerli veri setindeki en son oluşturulmuş kayıt.</value></data>
+  <data name="ProvisioningEyebrow" xml:space="preserve"><value>Provisioning</value></data>
+  <data name="QueueSnapshot" xml:space="preserve"><value>Kuyruk Özeti</value></data>
+  <data name="AllJobs" xml:space="preserve"><value>Tüm işler</value></data>
+  <data name="NoProvisioningJobsYet" xml:space="preserve"><value>Henüz provisioning işi yok</value></data>
+  <data name="NoProvisioningJobsYetCopy" xml:space="preserve"><value>Yeni tenant oluşturma işlemleri burada kuyruk aktivitesi olarak görünecek.</value></data>
+  <data name="RegistryEyebrow" xml:space="preserve"><value>Kayıt</value></data>
+  <data name="RecentTenants" xml:space="preserve"><value>Son Tenantlar</value></data>
+  <data name="Registry" xml:space="preserve"><value>Kayıt</value></data>
+  <data name="NoTenantsYet" xml:space="preserve"><value>Henüz tenant yok</value></data>
+  <data name="NoTenantsYetCopy" xml:space="preserve"><value>Kayıt ve provisioning akışını başlatmak için ilk tenantı oluştur.</value></data>
+  <data name="AttentionEyebrow" xml:space="preserve"><value>Dikkat</value></data>
+  <data name="WhatNeedsEyes" xml:space="preserve"><value>İzlenmesi Gerekenler</value></data>
+  <data name="FailedJobs" xml:space="preserve"><value>Başarısız İşler</value></data>
+  <data name="FailedJobsCopy" xml:space="preserve"><value>Operatör müdahalesi gerektiren kuyruk kayıtları.</value></data>
+  <data name="PendingTenants" xml:space="preserve"><value>Bekleyen Tenantlar</value></data>
+  <data name="PendingTenantsCopy" xml:space="preserve"><value>Provisioning sürecinde olan veya henüz aktif olmayan tenantlar.</value></data>
+  <data name="DashboardLoadError" xml:space="preserve"><value>Pano yüklenemedi: {0}</value></data>
+  <data name="DashboardActiveProvisioning" xml:space="preserve"><value>{0} aktif, {1} provisioning aşamasında</value></data>
+  <data name="DashboardFailedClaimed" xml:space="preserve"><value>{0} başarısız, {1} sahiplenilmiş</value></data>
+  <data name="DashboardCurrenciesLanguages" xml:space="preserve"><value>{0} para birimi, {1} dil</value></data>
+  <data name="RecentJobForTenant" xml:space="preserve"><value>{1} için {0}</value></data>
+  <data name="JustNow" xml:space="preserve"><value>az önce</value></data>
+  <data name="MinutesAgo" xml:space="preserve"><value>{0} dk önce</value></data>
+  <data name="HoursAgo" xml:space="preserve"><value>{0} sa önce</value></data>
+  <data name="DaysAgo" xml:space="preserve"><value>{0} gün önce</value></data>
+  <data name="None" xml:space="preserve"><value>Yok</value></data>
+  <data name="TenantsPageTitle" xml:space="preserve"><value>Tenantlar</value></data>
+  <data name="TenantsHero" xml:space="preserve"><value>Tenant kayıtlarında arama yap, rollout durumunu kontrol et ve bölgesel yapılandırma kaydına hızlıca geç.</value></data>
+  <data name="CreateTenant" xml:space="preserve"><value>Tenant Oluştur</value></data>
+  <data name="LoadingTenantRegistry" xml:space="preserve"><value>Tenant kayıtları yükleniyor</value></data>
+  <data name="LoadingTenantRegistryCopy" xml:space="preserve"><value>Güncel tenant listesi platform API'den getiriliyor.</value></data>
+  <data name="MetricVisibleTenants" xml:space="preserve"><value>Görünen Tenantlar</value></data>
+  <data name="VisibleTenantsPageCopy" xml:space="preserve"><value>bu sayfada {0} kayıt gösteriliyor</value></data>
+  <data name="MetricActive" xml:space="preserve"><value>Aktif</value></data>
+  <data name="ActiveTenantsCopy" xml:space="preserve"><value>Sağlıklı runtime kayıtları</value></data>
+  <data name="MetricProvisioning" xml:space="preserve"><value>Provisioning</value></data>
+  <data name="ProvisioningTenantsCopy" xml:space="preserve"><value>Rollout takibi gerekiyor</value></data>
+  <data name="SearchTenants" xml:space="preserve"><value>Tenant ara</value></data>
+  <data name="SearchTenantsPlaceholder" xml:space="preserve"><value>Kod, alan adı, görünen ad</value></data>
+  <data name="FilterAll" xml:space="preserve"><value>Tümü</value></data>
+  <data name="NeedsAttention" xml:space="preserve"><value>İlgi gerektiriyor</value></data>
+  <data name="NoTenantsMatch" xml:space="preserve"><value>Bu görünümde eşleşen tenant yok</value></data>
+  <data name="NoTenantsMatchCopy" xml:space="preserve"><value>Arama terimini temizlemeyi veya durum filtresini değiştirmeyi dene.</value></data>
+  <data name="ClearFilters" xml:space="preserve"><value>Filtreleri Temizle</value></data>
+  <data name="TableTenant" xml:space="preserve"><value>Tenant</value></data>
+  <data name="TableStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="TableLocale" xml:space="preserve"><value>Bölgesel Ayar</value></data>
+  <data name="TableDomain" xml:space="preserve"><value>Alan Adı</value></data>
+  <data name="Inspect" xml:space="preserve"><value>İncele</value></data>
+  <data name="Open" xml:space="preserve"><value>Aç</value></data>
+  <data name="Selection" xml:space="preserve"><value>Seçim</value></data>
+  <data name="NoTenantSelected" xml:space="preserve"><value>Seçili tenant yok</value></data>
+  <data name="NoTenantSelectedCopy" xml:space="preserve"><value>Kayıt özetini görmek için bir satır seç.</value></data>
+  <data name="TenantCode" xml:space="preserve"><value>Tenant Kodu</value></data>
+  <data name="PrimaryDomain" xml:space="preserve"><value>Birincil Alan Adı</value></data>
+  <data name="Language" xml:space="preserve"><value>Dil</value></data>
+  <data name="Currency" xml:space="preserve"><value>Para Birimi</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>Saat Dilimi</value></data>
+  <data name="OperatorNotes" xml:space="preserve"><value>Operatör Notları</value></data>
+  <data name="OpenFullRecord" xml:space="preserve"><value>Tam Kaydı Aç</value></data>
+  <data name="EditSettings" xml:space="preserve"><value>Ayarları Düzenle</value></data>
+  <data name="CreateAnother" xml:space="preserve"><value>Yeni Oluştur</value></data>
+  <data name="MatchingTenantsSummary" xml:space="preserve"><value>{1} kayıt içinden {0} tenant eşleşti</value></data>
+  <data name="ShowingResults" xml:space="preserve"><value>{2} kaydın {0}-{1} arası gösteriliyor</value></data>
+  <data name="ShowingZeroResults" xml:space="preserve"><value>0 sonuç gösteriliyor</value></data>
+  <data name="PageOf" xml:space="preserve"><value>Sayfa {0} / {1}</value></data>
+  <data name="Previous" xml:space="preserve"><value>Önceki</value></data>
+  <data name="Next" xml:space="preserve"><value>Sonraki</value></data>
+  <data name="TenantActiveNote" xml:space="preserve"><value>Bu tenant aktif olarak işaretli ve atanmış runtime yüzeyinden erişilebilir olmalı.</value></data>
+  <data name="TenantNotActiveNote" xml:space="preserve"><value>Bu tenant henüz aktif değil; provisioning ilerleyişi veya rollout engelleriyle birlikte kontrol edilmeli.</value></data>
+  <data name="TenantRegistryLoadError" xml:space="preserve"><value>Tenant kayıtları yüklenemedi: {0}</value></data>
+  <data name="CreateTenantDialogTitle" xml:space="preserve"><value>Tenant Oluştur</value></data>
+  <data name="EditTenantDialogTitle" xml:space="preserve"><value>Tenant Düzenle</value></data>
+  <data name="TenantDetailTitle" xml:space="preserve"><value>Tenant Detayı</value></data>
+  <data name="TenantRecordEyebrow" xml:space="preserve"><value>Tenant Kaydı</value></data>
+  <data name="TenantDetailFallbackTitle" xml:space="preserve"><value>Tenant Detayı</value></data>
+  <data name="TenantDetailHero" xml:space="preserve"><value>Kayıt durumu, bölgesel ayarlar, sahip bilgisi ve provisioning aktivitesi tek yerde.</value></data>
+  <data name="Back" xml:space="preserve"><value>Geri</value></data>
+  <data name="TenantNotFound" xml:space="preserve"><value>Tenant bulunamadı</value></data>
+  <data name="TenantNotFoundCopy" xml:space="preserve"><value>İstenen tenant kaydı yok veya artık erişilemiyor.</value></data>
+  <data name="CurrentRegistryState" xml:space="preserve"><value>Geçerli kayıt durumu</value></data>
+  <data name="Jobs" xml:space="preserve"><value>İşler</value></data>
+  <data name="JobsMetricCopy" xml:space="preserve"><value>{0} başarısız · {1} açık</value></data>
+  <data name="IdentityEyebrow" xml:space="preserve"><value>Kimlik</value></data>
+  <data name="RegistrySummary" xml:space="preserve"><value>Kayıt Özeti</value></data>
+  <data name="OwnerEmail" xml:space="preserve"><value>Sahip E-postası</value></data>
+  <data name="Database" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="DatabaseUser" xml:space="preserve"><value>VT Kullanıcısı</value></data>
+  <data name="Pending" xml:space="preserve"><value>Bekliyor</value></data>
+  <data name="RelatedJobs" xml:space="preserve"><value>İlgili İşler</value></data>
+  <data name="Queue" xml:space="preserve"><value>Kuyruk</value></data>
+  <data name="NoJobsForTenant" xml:space="preserve"><value>Bu tenant için iş yok</value></data>
+  <data name="NoJobsForTenantCopy" xml:space="preserve"><value>Provisioning aktiviteleri kayıt oldukça burada görünecek.</value></data>
+  <data name="TenantDetailLoadError" xml:space="preserve"><value>Tenant detayı yüklenemedi: {0}</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="AccountEyebrow" xml:space="preserve"><value>Hesap</value></data>
+  <data name="SettingsHero" xml:space="preserve"><value>Güvenlik, operatör tercihleri ve konsol deneyimini şekillendiren küçük kontrol noktaları.</value></data>
+  <data name="MetricAccount" xml:space="preserve"><value>Hesap</value></data>
+  <data name="CurrentPlatformIdentity" xml:space="preserve"><value>Geçerli platform kimliği</value></data>
+  <data name="MetricUiLanguage" xml:space="preserve"><value>Arayüz Dili</value></data>
+  <data name="StoredForBrowser" xml:space="preserve"><value>Bu tarayıcı için saklanır</value></data>
+  <data name="StoredForAccount" xml:space="preserve"><value>Bu hesapta saklanır</value></data>
+  <data name="Security" xml:space="preserve"><value>Güvenlik</value></data>
+  <data name="Preferences" xml:space="preserve"><value>Tercihler</value></data>
+  <data name="PasswordRotation" xml:space="preserve"><value>Parola Değişimi</value></data>
+  <data name="Required" xml:space="preserve"><value>Zorunlu</value></data>
+  <data name="CurrentPassword" xml:space="preserve"><value>Mevcut Parola</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>Yeni Parola</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>Yeni Parola Tekrar</value></data>
+  <data name="Updating" xml:space="preserve"><value>Güncelleniyor...</value></data>
+  <data name="UpdatePassword" xml:space="preserve"><value>Parolayı Güncelle</value></data>
+  <data name="Status" xml:space="preserve"><value>Durum</value></data>
+  <data name="SecurityNotes" xml:space="preserve"><value>Güvenlik Notları</value></data>
+  <data name="PasswordPolicy" xml:space="preserve"><value>Parola Politikası</value></data>
+  <data name="PasswordPolicyCopy" xml:space="preserve"><value>Ön tanımlı parolaları hemen döndür, sonra bu yüzeyi gönüllü değişimler ve olay müdahalesi için kullan.</value></data>
+  <data name="SessionBehavior" xml:space="preserve"><value>Oturum Davranışı</value></data>
+  <data name="SessionBehaviorCopy" xml:space="preserve"><value>Başarılı parola değişimi mevcut oturumu yeniler ve hesaptaki zorunlu parola değişim claim'ini temizler.</value></data>
+  <data name="OperatorDefaults" xml:space="preserve"><value>Operatör Varsayılanları</value></data>
+  <data name="Density" xml:space="preserve"><value>Yoğunluk</value></data>
+  <data name="OperatorTimeZone" xml:space="preserve"><value>Operatör Saat Dilimi</value></data>
+  <data name="EnglishUk" xml:space="preserve"><value>İngilizce (BK)</value></data>
+  <data name="Turkish" xml:space="preserve"><value>Türkçe</value></data>
+  <data name="Compact" xml:space="preserve"><value>Kompakt</value></data>
+  <data name="Comfortable" xml:space="preserve"><value>Rahat</value></data>
+  <data name="Saving" xml:space="preserve"><value>Kaydediliyor...</value></data>
+  <data name="SavePreferences" xml:space="preserve"><value>Tercihleri Kaydet</value></data>
+  <data name="Preview" xml:space="preserve"><value>Önizleme</value></data>
+  <data name="SessionDefaults" xml:space="preserve"><value>Oturum Varsayılanları</value></data>
+  <data name="TimeZonePreview" xml:space="preserve"><value>Saat Dilimi Önizlemesi</value></data>
+  <data name="Scope" xml:space="preserve"><value>Kapsam</value></data>
+  <data name="SettingsScopeCopy" xml:space="preserve"><value>Bu tercihler operatör hesabında saklanır ve yönetim konsolunu tarayıcılar ile oturumlar arasında aynı şekilde taşır.</value></data>
+  <data name="SettingsLoadError" xml:space="preserve"><value>Ayarlar yüklenemedi: {0}</value></data>
+  <data name="AccountMissingError" xml:space="preserve"><value>Geçerli hesap yüklenemedi.</value></data>
+  <data name="PasswordMismatchError" xml:space="preserve"><value>Yeni parola ile doğrulama aynı değil.</value></data>
+  <data name="PasswordUpdatedSuccess" xml:space="preserve"><value>Parola güncellendi. Oturumunuz yenilendi.</value></data>
+  <data name="PasswordChangeFailed" xml:space="preserve"><value>Parola değişimi başarısız oldu: {0}</value></data>
+  <data name="PreferencesSavedSuccess" xml:space="preserve"><value>Tercihler bu hesap için kaydedildi.</value></data>
+  <data name="PreferencesSaveFailed" xml:space="preserve"><value>Tercihler kaydedilemedi: {0}</value></data>
+  <data name="Input" xml:space="preserve"><value>Girdi</value></data>
+  <data name="TenantRegistration" xml:space="preserve"><value>Tenant Kaydı</value></data>
+  <data name="RegionalSettings" xml:space="preserve"><value>Bölgesel Ayarlar</value></data>
+  <data name="DisplayName" xml:space="preserve"><value>Görünen Ad</value></data>
+  <data name="PreviewRegistration" xml:space="preserve"><value>Kayıt Önizlemesi</value></data>
+  <data name="PreviewUpdate" xml:space="preserve"><value>Güncelleme Önizlemesi</value></data>
+  <data name="Locale" xml:space="preserve"><value>Bölgesel Ayar</value></data>
+  <data name="Owner" xml:space="preserve"><value>Sahip</value></data>
+  <data name="SaveChanges" xml:space="preserve"><value>Değişiklikleri Kaydet</value></data>
+  <data name="Creating" xml:space="preserve"><value>Oluşturuluyor...</value></data>
+  <data name="SavingChanges" xml:space="preserve"><value>Kaydediliyor...</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="EditorLoadError" xml:space="preserve"><value>Düzenleyici yüklenemedi: {0}</value></data>
+  <data name="TenantEditLoadMissing" xml:space="preserve"><value>Düzenleme için tenant detayı yüklenemedi.</value></data>
+  <data name="TenantUpdateMissing" xml:space="preserve"><value>Tenant artık mevcut olmadığı için güncellenemedi.</value></data>
+  <data name="TenantUpdatedSuccess" xml:space="preserve"><value>Tenant ayarları güncellendi.</value></data>
+  <data name="TenantCreatedSuccess" xml:space="preserve"><value>{0} oluşturuldu.</value></data>
+  <data name="TenantUpdateFailed" xml:space="preserve"><value>Tenant ayarları güncellenemedi: {0}</value></data>
+  <data name="TenantCreateFailed" xml:space="preserve"><value>Tenant oluşturulamadı: {0}</value></data>
+  <data name="JobsPageTitle" xml:space="preserve"><value>Provisioning İşleri</value></data>
+  <data name="OperationsEyebrow" xml:space="preserve"><value>Operasyon</value></data>
+  <data name="JobsHero" xml:space="preserve"><value>Kuyruk sağlığı, hatalar, sahiplenmeler ve son tenant provisioning aktiviteleri.</value></data>
+  <data name="LoadingQueue" xml:space="preserve"><value>Kuyruk yükleniyor</value></data>
+  <data name="LoadingQueueCopy" xml:space="preserve"><value>Provisioning aktiviteleri platform deposundan getiriliyor.</value></data>
+  <data name="OpenInQueueCopy" xml:space="preserve"><value>kuyrukta {0} açık iş var</value></data>
+  <data name="NeedAttentionCopy" xml:space="preserve"><value>Doğrudan operatör ilgisi gerekiyor</value></data>
+  <data name="Claimed" xml:space="preserve"><value>Sahiplenilmiş</value></data>
+  <data name="ClaimedCopy" xml:space="preserve"><value>Şu anda bir çalışan tarafından alınmış</value></data>
+  <data name="SearchJobs" xml:space="preserve"><value>İş ara</value></data>
+  <data name="SearchJobsPlaceholder" xml:space="preserve"><value>Tip, çalışan, tenant id</value></data>
+  <data name="FilterOpen" xml:space="preserve"><value>Açık</value></data>
+  <data name="NoJobsInView" xml:space="preserve"><value>Bu görünümde iş yok</value></data>
+  <data name="NoJobsInViewCopy" xml:space="preserve"><value>Aramayı temizlemeyi veya durum filtresini değiştirmeyi dene.</value></data>
+  <data name="TableJob" xml:space="preserve"><value>İş</value></data>
+  <data name="TableClaimedBy" xml:space="preserve"><value>Sahiplenen</value></data>
+  <data name="TableUpdated" xml:space="preserve"><value>Güncellendi</value></data>
+  <data name="Unclaimed" xml:space="preserve"><value>Sahipsiz</value></data>
+  <data name="LoadingJobDetail" xml:space="preserve"><value>İş detayı yükleniyor</value></data>
+  <data name="LoadingJobDetailCopy" xml:space="preserve"><value>Adım seviyesindeki yürütme verisi provisioning deposundan getiriliyor.</value></data>
+  <data name="NoJobSelected" xml:space="preserve"><value>Seçili iş yok</value></data>
+  <data name="NoJobSelectedCopy" xml:space="preserve"><value>Payload, sonuç ve adım ilerleyişini görmek için bir satır seç.</value></data>
+  <data name="JobId" xml:space="preserve"><value>İş Kimliği</value></data>
+  <data name="ExecutionSteps" xml:space="preserve"><value>Yürütme Adımları</value></data>
+  <data name="StepCount" xml:space="preserve"><value>{0} adım</value></data>
+  <data name="NoStepsRecorded" xml:space="preserve"><value>Bu iş için henüz adım kaydı yok.</value></data>
+  <data name="FailureDetail" xml:space="preserve"><value>Hata Detayı</value></data>
+  <data name="Result" xml:space="preserve"><value>Sonuç</value></data>
+  <data name="Payload" xml:space="preserve"><value>Payload</value></data>
+  <data name="OpenTenant" xml:space="preserve"><value>Tenantı Aç</value></data>
+  <data name="MatchingJobsSummary" xml:space="preserve"><value>{1} kuyruk kaydından {0} iş eşleşti</value></data>
+  <data name="JobDetailLoadError" xml:space="preserve"><value>İş detayı yüklenemedi: {0}</value></data>
+  <data name="JobsLoadError" xml:space="preserve"><value>İşler yüklenemedi: {0}</value></data>
+  <data name="AuditPageTitle" xml:space="preserve"><value>Platform Denetim Kaydı</value></data>
+  <data name="ComplianceEyebrow" xml:space="preserve"><value>Uyumluluk</value></data>
+  <data name="AuditHero" xml:space="preserve"><value>Operatör incelemesi için gruplanmış son platform güvenlik ve provisioning olayları.</value></data>
+  <data name="Entries" xml:space="preserve"><value>Kayıtlar</value></data>
+  <data name="EntriesVisibleCopy" xml:space="preserve"><value>Geçerli filtrede görünür</value></data>
+  <data name="Actors" xml:space="preserve"><value>Aktörler</value></data>
+  <data name="ActorsCopy" xml:space="preserve"><value>Benzersiz operatör kimlikleri</value></data>
+  <data name="Actions" xml:space="preserve"><value>Eylemler</value></data>
+  <data name="ActionsCopy" xml:space="preserve"><value>Geçerli eylem sözlüğü</value></data>
+  <data name="SearchAudit" xml:space="preserve"><value>Denetimde ara</value></data>
+  <data name="SearchAuditPlaceholder" xml:space="preserve"><value>Aktör, eylem, kaynak</value></data>
+  <data name="Auth" xml:space="preserve"><value>Kimlik</value></data>
+  <data name="NoAuditEntriesYet" xml:space="preserve"><value>Henüz denetim kaydı yok</value></data>
+  <data name="NoAuditEntriesYetCopy" xml:space="preserve"><value>Bootstrap, giriş ve sonraki tenant değişiklikleri log doldukça burada görünecek.</value></data>
+  <data name="TableWhen" xml:space="preserve"><value>Zaman</value></data>
+  <data name="TableActor" xml:space="preserve"><value>Aktör</value></data>
+  <data name="TableAction" xml:space="preserve"><value>Eylem</value></data>
+  <data name="TableResource" xml:space="preserve"><value>Kaynak</value></data>
+  <data name="TableIp" xml:space="preserve"><value>IP</value></data>
+  <data name="NoEventSelected" xml:space="preserve"><value>Seçili olay yok</value></data>
+  <data name="NoEventSelectedCopy" xml:space="preserve"><value>Tam denetim bağlamını görmek için bir satır seç.</value></data>
+  <data name="ResourceType" xml:space="preserve"><value>Kaynak Türü</value></data>
+  <data name="ResourceId" xml:space="preserve"><value>Kaynak Kimliği</value></data>
+  <data name="MatchingAuditSummary" xml:space="preserve"><value>{1} denetim kaydından {0} kayıt eşleşti</value></data>
+  <data name="AuthTone" xml:space="preserve"><value>Kimlik</value></data>
+  <data name="TenantTone" xml:space="preserve"><value>Tenant</value></data>
+  <data name="PlatformTone" xml:space="preserve"><value>Platform</value></data>
+  <data name="AuthEntryCopy" xml:space="preserve"><value>Bu olay platform kimlik doğrulama yüzeyine aittir ve giriş veya kimlik bilgisi aktiviteleriyle birlikte incelenmelidir.</value></data>
+  <data name="TenantEntryCopy" xml:space="preserve"><value>Bu olay tenant yaşam döngüsünü yansıtır ve ilgili kayıt değişikliği veya provisioning işiyle örtüşmelidir.</value></data>
+  <data name="PlatformEntryCopy" xml:space="preserve"><value>Bu olay platform denetim yüzeyi tarafından kaydedildi ve paylaşılan kontrol akışlarında operatör etkinliğini yeniden kurmak için kullanılabilir.</value></data>
+  <data name="AuditLoadError" xml:space="preserve"><value>Denetim kaydı yüklenemedi: {0}</value></data>
+  <data name="StatusActive" xml:space="preserve"><value>Aktif</value></data>
+  <data name="StatusCompleted" xml:space="preserve"><value>Tamamlandı</value></data>
+  <data name="StatusFailed" xml:space="preserve"><value>Başarısız</value></data>
+  <data name="StatusClaimed" xml:space="preserve"><value>Sahiplenildi</value></data>
+  <data name="StatusRunning" xml:space="preserve"><value>Çalışıyor</value></data>
+  <data name="StatusProvisioning" xml:space="preserve"><value>Provisioning</value></data>
+  <data name="StatusNeutral" xml:space="preserve"><value>Bekliyor</value></data>
+</root>

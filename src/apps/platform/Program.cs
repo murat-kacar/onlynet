@@ -52,6 +52,8 @@ try
 
 builder.Services.AddDbContext<PlatformDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PlatformDb")));
+builder.Services.AddDbContextFactory<PlatformDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PlatformDb")));
 
 builder.Services.AddScoped<IPlatformAuditService, PlatformAuditService>();
 builder.Services.AddScoped<IPlatformAuditReadService, PlatformAuditReadService>();
@@ -59,6 +61,7 @@ builder.Services.AddScoped<IPlatformAuditReadService, PlatformAuditReadService>(
 // reads which used to live inline in the API controllers.
 builder.Services.AddScoped<ITenantRegistryService, TenantRegistryService>();
 builder.Services.AddScoped<IProvisioningJobReadService, ProvisioningJobReadService>();
+builder.Services.AddScoped<PlatformUserPreferenceService>();
 
 builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<PlatformDbContext>()
@@ -173,7 +176,7 @@ var localizationOptions = new RequestLocalizationOptions
 
 localizationOptions.RequestCultureProviders = new List<IRequestCultureProvider>
 {
-    new CookieRequestCultureProvider(),
+    new PlatformUserPreferenceCultureProvider(),
     new AcceptLanguageHeaderRequestCultureProvider(),
 };
 

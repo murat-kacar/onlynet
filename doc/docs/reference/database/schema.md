@@ -87,6 +87,20 @@ Roles:
 - `admin`
 - `viewer`
 
+### Platform User Preferences
+
+Owns:
+
+- one row per platform operator account
+- UI language (`language_code`)
+- operator time zone (`time_zone`)
+- UI density (`density`)
+- lifecycle timestamps (`created_at`, `updated_at`)
+
+The authentication cookie is not a preference store. These settings live
+in the platform database so a platform operator sees the same console
+language and ergonomics across browsers and sessions.
+
 ### Tenant Registry
 
 Owns:

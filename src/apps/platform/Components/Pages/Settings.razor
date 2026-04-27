@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject UserManager<IdentityUser<Guid>> UserManager
 @inject SignInManager<IdentityUser<Guid>> SignInManager
-@inject IJSRuntime JSRuntime
+@inject PlatformUserPreferenceService PreferenceService
 
 <PageTitle>@L["SettingsTitle"]</PageTitle>
 
@@ -33,7 +33,7 @@ else
         <article class="metric-card">
             <p class="metric-label">@L["MetricUiLanguage"]</p>
             <p class="metric-value metric-value-sm">@PreferenceModel.Language</p>
-            <p class="metric-footnote">@L["StoredForBrowser"]</p>
+            <p class="metric-footnote">@L["StoredForAccount"]</p>
         </article>
         <article class="metric-card">
             <p class="metric-label">@L["TimeZone"]</p>
@@ -222,7 +222,6 @@ else
     [SupplyParameterFromQuery(Name = "saved")]
     public int? Saved { get; set; }
 
-    private bool _preferencesLoaded;
     private bool IsSavingPassword;
     private bool IsSavingPreferences;
     private bool MustRotatePassword;
@@ -251,29 +250,12 @@ else
 
             var user = await UserManager.GetUserAsync(principal);
             DisplayEmail = user?.Email ?? principal.Identity?.Name ?? "Operator";
+            PreferenceModel = await LoadPreferenceModelAsync(principal);
         }
         catch (Exception ex)
         {
             LoadError = L["SettingsLoadError", ex.Message];
         }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender || _preferencesLoaded)
-        {
-            return;
-        }
-
-        var stored = await JSRuntime.InvokeAsync<UserPreferenceInput?>("tabflowSettings.load");
-        if (stored is not null)
-        {
-            PreferenceModel = stored;
-            await JSRuntime.InvokeVoidAsync("tabflowSettings.apply", PreferenceModel);
-            await InvokeAsync(StateHasChanged);
-        }
-
-        _preferencesLoaded = true;
     }
 
     private void SelectTab(string tab)
@@ -345,14 +327,22 @@ else
         try
         {
             var languageChanged = !string.Equals(CultureInfo.CurrentUICulture.Name, PreferenceModel.Language, StringComparison.OrdinalIgnoreCase);
-            await JSRuntime.InvokeVoidAsync("tabflowSettings.save", PreferenceModel);
-            await JSRuntime.InvokeVoidAsync("tabflowSettings.apply", PreferenceModel);
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            await PreferenceService.SaveForPrincipalAsync(authState.User, new PlatformUserPreferenceModel(
+                PreferenceModel.Language,
+                PreferenceModel.TimeZone,
+                PreferenceModel.Density));
+
             PreferenceSuccess = L["PreferencesSavedSuccess"];
 
             if (languageChanged)
             {
                 NavigationManager.NavigateTo("/settings?tab=preferences&saved=1", forceLoad: true);
             }
+        }
+        catch (Exception ex)
+        {
+            LoadError = L["PreferencesSaveFailed", ex.Message];
         }
         finally
         {
@@ -371,6 +361,18 @@ else
             "Europe/Istanbul" => DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(3)).ToString("HH:mm 'UTC+3'"),
             "America/New_York" => DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-4)).ToString("HH:mm 'UTC-4'"),
             _ => DateTimeOffset.UtcNow.ToString("HH:mm 'UTC'"),
+        };
+    }
+
+    private async Task<UserPreferenceInput> LoadPreferenceModelAsync(ClaimsPrincipal principal)
+    {
+        var preference = await PreferenceService.GetForPrincipalAsync(principal);
+
+        return new UserPreferenceInput
+        {
+            Language = preference.LanguageCode,
+            TimeZone = preference.TimeZone,
+            Density = preference.Density,
         };
     }
 

@@ -9,6 +9,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<TenantRegistration> Tenants => Set<TenantRegistration>();
+    public DbSet<PlatformUserPreference> PlatformUserPreferences => Set<PlatformUserPreference>();
     public DbSet<ProvisioningJob> ProvisioningJobs => Set<ProvisioningJob>();
     public DbSet<ProvisioningJobStep> ProvisioningJobSteps => Set<ProvisioningJobStep>();
     public DbSet<PlatformAuditEntry> AuditLog => Set<PlatformAuditEntry>();
@@ -34,6 +35,15 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(t => t.DatabaseName).HasMaxLength(63);
             e.Property(t => t.DatabaseUser).HasMaxLength(63);
             e.Property(t => t.DatabasePassword).HasMaxLength(100);
+        });
+
+        builder.Entity<PlatformUserPreference>(e =>
+        {
+            e.ToTable("platform_user_preferences");
+            e.HasKey(p => p.UserId);
+            e.Property(p => p.LanguageCode).HasMaxLength(10).IsRequired();
+            e.Property(p => p.TimeZone).HasMaxLength(100).IsRequired();
+            e.Property(p => p.Density).HasMaxLength(20).IsRequired();
         });
 
         builder.Entity<ProvisioningJob>(e =>

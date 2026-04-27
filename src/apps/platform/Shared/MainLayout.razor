@@ -1,8 +1,10 @@
 @inherits LayoutComponentBase
 @namespace TabFlow.Platform.Shared
 @inject IStringLocalizer<PlatformText> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PlatformUserPreferenceService PreferenceService
 
-<div class="platform-shell">
+<div class="platform-shell" data-ui-density="@ShellDensity">
     <aside class="shell-sidebar">
         <div class="brand-block">
             <p class="eyebrow">@L["BrandEyebrow"]</p>
@@ -46,3 +48,24 @@
         </main>
     </div>
 </div>
+
+@code {
+    private string ShellDensity { get; set; } = PlatformUserPreferenceService.DefaultDensity;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var preference = await PreferenceService.GetForPrincipalAsync(authState.User);
+                ShellDensity = preference.Density;
+            }
+        }
+        catch
+        {
+            ShellDensity = PlatformUserPreferenceService.DefaultDensity;
+        }
+    }
+}

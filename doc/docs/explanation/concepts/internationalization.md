@@ -3,8 +3,8 @@
 This document explains how TabFlow handles language and locale across
 its surfaces. It is the single source of truth for the **English-first**
 principle, the supported languages, the `LanguageCode` field on tenant
-registration, and how staff and customer surfaces choose a language at
-runtime.
+registration, how operator settings persist, and how staff and customer
+surfaces choose a language at runtime.
 
 ## English-First Principle
 
@@ -38,8 +38,8 @@ presentation layer:
 
 | Language | Code | Status |
 | --- | --- | --- |
-| English | `en` | **Default.** First class. The neutral language for every `*.resx` resource and the only language for internal contracts. |
-| Turkish | `tr` | First class. Primary market language. Complete translation set required to ship. |
+| English | `en-GB` | **Default.** First class. The neutral language for every `*.resx` resource and the only language for internal contracts. |
+| Turkish | `tr-TR` | First class. Primary market language. Complete translation set required to ship. |
 
 Additional languages are added per-tenant on demand. A new language
 ships only when:
@@ -63,7 +63,7 @@ Each tenant carries a `LanguageCode` on its registration:
 - Stored on `TenantRegistration.LanguageCode`
   (`@/opt/onlynet/src/packages/shared-dotnet/Domain/Entities/Platform/TenantRegistration.cs`).
 - Set at provisioning time from the `tenant.create` job payload; if
-  omitted, defaults to `en`.
+  omitted, defaults to `en-GB`.
 - Validated against the supported language list above; an unsupported
   code rejects the job with `tenant.create.unsupported_language`.
 
@@ -81,9 +81,23 @@ data remain language-neutral (see "How Strings Are Stored" below).
 
 ### Per-User Language Override
 
-Staff users (`owner`, `manager`, `cashier`) MAY override the tenant
-default in their profile. The override is stored in the per-tenant
-`AspNetUsers` extension and respected on every request.
+Authenticated operators MAY override the surface default in their
+profile. This applies to:
+
+- platform operators (`owner`, `admin`, `viewer`) on the platform host;
+- tenant staff (`owner`, `manager`, `cashier`) on tenant hosts.
+
+The override is stored in the database and respected on every request.
+The source of truth is:
+
+- platform host: `platform_user_preferences`
+- tenant host: tenant-local user preference storage attached to the
+  Identity user record or its host-local extension
+
+Browser storage (`localStorage`, IndexedDB) and non-auth cookies are
+**not** preference stores in TabFlow. They may cache ephemeral UI state
+inside one live page session, but any setting that survives navigation,
+sign-out, or device change MUST live in the database.
 
 Customers do not have an account; their language is chosen by, in
 priority order:
@@ -100,7 +114,7 @@ Some surfaces have their own constraint:
 
 | Surface | Language Source |
 | --- | --- |
-| Platform admin console | Always English. The platform is operated by TabFlow staff, not tenant staff. |
+| Platform admin console | Platform operator preference → default `en-GB`. |
 | Tenant staff console | Tenant default, overridable per user. |
 | Customer ordering | Customer choice → header → tenant default. |
 | Station board | Tenant default. Stations are usually fixed to one device with one operator. |
@@ -109,8 +123,30 @@ Some surfaces have their own constraint:
 | OpenAPI / API reference | English only. |
 | Documentation | English only (this tree). |
 
-The "always English" choices are deliberate: machine-readable contracts
-and operator surfaces benefit from a single canonical language.
+The English-only choices are deliberate for machine-readable contracts.
+Operator-facing surfaces may localize at render time, but their storage
+and protocol contracts remain English-first.
+
+## Operator Settings Persistence
+
+Operator settings are account-backed, not browser-backed.
+
+Required rule set:
+
+- language, time zone, and UI density are persisted in the database;
+- the authentication cookie proves identity only;
+- preference resolution happens server-side on each request;
+- sign-in on a second browser MUST reproduce the same settings;
+- clearing browser storage MUST NOT reset operator preferences.
+
+For the platform host, the baseline record shape is:
+
+- `UserId`
+- `LanguageCode`
+- `TimeZone`
+- `Density`
+- `CreatedAt`
+- `UpdatedAt`
 
 ## How Strings Are Stored
 
@@ -167,8 +203,9 @@ deliberate non-goal of the current major.
 | Phone number format | Tenant `RegionalSettings.CountryCode` (ISO 3166). |
 
 Storage is always normalised: UTC for time, ISO codes for currency and
-country. Display is per-tenant. A change to a tenant's regional
-settings affects display only; stored data is unaffected.
+country. Display is culture-aware at render time. A change to a tenant's
+regional settings or an operator's personal settings affects display
+only; stored business data is unaffected.
 
 ## Adding A Language
 
@@ -203,7 +240,8 @@ These return as separate ADRs when a tenant requires them.
 - [`../../reference/architecture/decisions.md`](../../reference/architecture/decisions.md)
   AD-0007 — PostgreSQL collation defaults
 - [`../../reference/database/schema.md`](../../reference/database/schema.md)
-  — `TenantRegistration.LanguageCode`, `customer_sessions.language_code`
+  — `TenantRegistration.LanguageCode`, `platform_user_preferences`,
+  `customer_sessions.language_code`
 - [`../../reference/api/error-codes.md`](../../reference/api/error-codes.md)
   — `messageKey` field convention
 - [`./data-protection.md`](./data-protection.md) — language preference
