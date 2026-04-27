@@ -1,0 +1,61 @@
+@page "/order-complete/{OrderId:guid}"
+@inject IStringLocalizer<TenantText> L
+
+<PageTitle>@L["OrderCompleteTitle"]</PageTitle>
+
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">@L["OrderCompleteEyebrow"]</p>
+        <h1>@L["OrderCompleteTitle"]</h1>
+        <p class="hero-copy">@L["OrderCompleteHero"]</p>
+    </div>
+</section>
+
+<section class="detail-layout">
+    <article class="panel detail-panel">
+        <div class="kv-grid">
+            <div class="kv-item">
+                <span class="kv-label">@L["TableCode"]</span>
+                <span class="kv-value">@Table</span>
+            </div>
+            <div class="kv-item">
+                <span class="kv-label">@L["TableTotal"]</span>
+                <span class="kv-value">@TotalValue.ToString("C")</span>
+            </div>
+            <div class="kv-item form-span-2">
+                <span class="kv-label">@L["OrderReference"]</span>
+                <span class="kv-value">#@OrderId.ToString()[..8]</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="panel detail-panel">
+        <div class="detail-stack">
+            <section class="detail-section">
+                <p class="detail-title">@L["OrderCompleteNextStepTitle"]</p>
+                <p class="detail-copy">@L["OrderCompleteNextStepCopy"]</p>
+            </section>
+
+            <div class="form-actions">
+                <a class="btn btn-secondary" href="/scan-qr">@L["NavScanQr"]</a>
+                <a class="btn btn-primary" href="/menu">@L["NavMenu"]</a>
+            </div>
+        </div>
+    </article>
+</section>
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "total")]
+    public string? Total { get; set; }
+
+    [SupplyParameterFromQuery(Name = "table")]
+    public string? Table { get; set; }
+
+    private decimal TotalValue =>
+        decimal.TryParse(Total, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : 0m;
+}

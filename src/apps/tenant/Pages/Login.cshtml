@@ -1,17 +1,58 @@
 @page "/login"
 @model LoginModel
-@{ ViewData["Title"] = "Login"; }
+@using TabFlow.Tenant.Localization
+@inject Microsoft.Extensions.Localization.IStringLocalizer<TenantText> L
+@{
+    ViewData["Title"] = L["TenantLoginTitle"];
+}
 
-<h1>Tenant Login</h1>
+<main class="auth-shell auth-shell-wide">
+    <section class="auth-hero-card">
+        <p class="eyebrow">@L["BrandEyebrow"]</p>
+        <h1>@L["TenantLoginTitle"]</h1>
+        <p class="hero-copy">@L["TenantLoginHero"]</p>
 
-<form method="post">
-    <div>
-        <label>Email</label>
-        <input type="email" name="email" required />
-    </div>
-    <div>
-        <label>Password</label>
-        <input type="password" name="password" required />
-    </div>
-    <button type="submit">Login</button>
-</form>
+        <div class="auth-metrics">
+            <article class="metric-card">
+                <p class="metric-label">@L["NavTables"]</p>
+                <p class="metric-value metric-value-sm">@L["TenantLoginMetricTables"]</p>
+                <p class="metric-footnote">@L["TenantLoginMetricTablesCopy"]</p>
+            </article>
+            <article class="metric-card">
+                <p class="metric-label">@L["NavKitchen"]</p>
+                <p class="metric-value metric-value-sm">@L["TenantLoginMetricKitchen"]</p>
+                <p class="metric-footnote">@L["TenantLoginMetricKitchenCopy"]</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="auth-form-card">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">@L["Security"]</p>
+                <h2>@L["TenantLoginFormTitle"]</h2>
+            </div>
+            <span class="status-pill success">demo1.cafetech.uk</span>
+        </div>
+
+        <form method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="Email">@L["EmailAddress"]</label>
+                <input asp-for="Email" type="email" class="form-control" autocomplete="username" required />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">@L["Password"]</label>
+                <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" required />
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">@L["TenantLoginSubmit"]</button>
+            </div>
+        </form>
+    </section>
+</main>

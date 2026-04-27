@@ -4,8 +4,11 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<TenantText> L
 @inject CustomerSessionBrowserStore CustomerSessionStore
+@inject DialogService DialogService
+@using System.Globalization
 
 <PageTitle>@L["CartTitle"]</PageTitle>
+<RadzenComponents />
 
 <section class="page-hero">
     <div>
@@ -68,8 +71,8 @@ else
         </table>
 
         <div class="cart-summary">
-            <p>@L["TableTotal"]: @Total.ToString("C")</p>
-            <button class="btn btn-primary" @onclick="SubmitOrder">@L["PlaceOrder"]</button>
+            <p>@TableLabel · @L["TableTotal"]: @Total.ToString("C")</p>
+            <button class="btn btn-primary" @onclick="OpenCheckoutAsync">@L["PlaceOrder"]</button>
         </div>
     </section>
 }
@@ -78,22 +81,60 @@ else
     private List<CartItemDto>? CartItems = [];
     private decimal Total;
     private Guid? CurrentSessionId;
+    private Guid? CurrentTicketId;
+    private Guid? CurrentTableId;
     private string TableLabel = string.Empty;
     private bool HasSession;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadSessionAsync();
+    }
+
+    private async Task LoadSessionAsync()
+    {
         var snapshot = await CustomerSessionStore.GetSnapshotAsync();
-        var sessionId = snapshot.SessionId;
-        var tableLabel = snapshot.TableLabel;
 
-        if (!string.IsNullOrEmpty(sessionId))
+        if (Guid.TryParse(snapshot.SessionId, out var sessionId))
         {
-            CurrentSessionId = Guid.Parse(sessionId);
-            TableLabel = tableLabel ?? string.Empty;
+            CurrentSessionId = sessionId;
             HasSession = true;
+        }
 
-            CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/public/cart/session/{CurrentSessionId}");
+        if (Guid.TryParse(snapshot.TicketId, out var ticketId))
+        {
+            CurrentTicketId = ticketId;
+        }
+
+        if (Guid.TryParse(snapshot.TableId, out var tableId))
+        {
+            CurrentTableId = tableId;
+        }
+
+        TableLabel = snapshot.TableLabel ?? string.Empty;
+
+        if (CurrentTicketId is not null && (CurrentTableId is null || string.IsNullOrWhiteSpace(TableLabel)))
+        {
+            var sessionState = await Http.GetFromJsonAsync<CustomerSessionStateDto>($"/api/public/session/{CurrentTicketId}");
+            if (sessionState is not null)
+            {
+                CurrentSessionId = sessionState.SessionId;
+                CurrentTicketId = sessionState.TicketId;
+                CurrentTableId = sessionState.TableId;
+                TableLabel = sessionState.TableLabel;
+                HasSession = true;
+
+                await CustomerSessionStore.SetSnapshotAsync(
+                    sessionState.SessionId,
+                    sessionState.TicketId,
+                    sessionState.TableId,
+                    sessionState.TableLabel);
+            }
+        }
+
+        if (CurrentSessionId is not null)
+        {
+            CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/public/cart/session/{CurrentSessionId.Value}");
             Total = CartItems?.Sum(ci => ci.UnitPrice * ci.Quantity) ?? 0;
         }
     }
@@ -101,41 +142,44 @@ else
     private async Task RemoveItem(Guid id)
     {
         await Http.DeleteAsync($"/api/public/cart/{id}");
-        await OnInitializedAsync();
+        await LoadSessionAsync();
     }
 
-    private async Task SubmitOrder()
+    private async Task OpenCheckoutAsync()
     {
-        if (CurrentSessionId is null)
+        if (CurrentSessionId is null || CurrentTicketId is null || CurrentTableId is null)
         {
             NavigationManager.NavigateTo("/scan-qr");
             return;
         }
 
-        var snapshot = await CustomerSessionStore.GetSnapshotAsync();
-        var ticketId = snapshot.TicketId;
-        if (string.IsNullOrEmpty(ticketId))
-        {
-            NavigationManager.NavigateTo("/scan-qr");
-            return;
-        }
+        var result = await DialogService.OpenSideAsync<CheckoutPanel>(
+            L["CheckoutDrawerTitle"],
+            new Dictionary<string, object?>
+            {
+                [nameof(CheckoutPanel.SessionId)] = CurrentSessionId.Value,
+                [nameof(CheckoutPanel.TicketId)] = CurrentTicketId.Value,
+                [nameof(CheckoutPanel.TableId)] = CurrentTableId.Value,
+                [nameof(CheckoutPanel.TableLabel)] = TableLabel,
+                [nameof(CheckoutPanel.TotalAmount)] = Total,
+            },
+            new SideDialogOptions
+            {
+                Position = DialogPosition.Right,
+                Width = "460px",
+                ShowMask = true
+            });
 
-        var request = new SubmitOrderRequest(
-            CurrentSessionId.Value,
-            Guid.Parse(ticketId),
-            Guid.Empty,
-            "checkout-proof-token",
-            Guid.NewGuid().ToString(),
-            null);
-
-        var result = await Http.PostAsJsonAsync("/api/public/orders", request);
-        if (result.IsSuccessStatusCode)
+        if (result is CheckoutPanel.SubmitOrderResult orderResult)
         {
             await CustomerSessionStore.ClearAsync();
-            NavigationManager.NavigateTo("/menu");
+            var total = Uri.EscapeDataString(orderResult.TotalAmount.ToString(CultureInfo.InvariantCulture));
+            var table = Uri.EscapeDataString(TableLabel);
+            NavigationManager.NavigateTo($"/order-complete/{orderResult.OrderId}?total={total}&table={table}");
         }
     }
 
     private record CartItemDto(Guid Id, Guid MenuItemId, string MenuItemName, int Quantity, decimal UnitPrice, string? Note);
-    private record SubmitOrderRequest(Guid SessionId, Guid TicketId, Guid TableId, string CheckoutProofToken, string IdempotencyKey, string? Note);
+    private record CustomerSessionStateDto(Guid SessionId, Guid TicketId, Guid TableId, string TableLabel, IReadOnlyList<CartItemSummaryDto> CartItems);
+    private record CartItemSummaryDto(Guid ItemId, string ItemName, int Quantity, decimal UnitPrice, string? Note);
 }

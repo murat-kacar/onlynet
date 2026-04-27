@@ -62,7 +62,7 @@ public sealed class PublicSessionController : ControllerBase
 
         // The response body intentionally omits DeviceCookieValue: it
         // travels via the Set-Cookie header only.
-        return Ok(new OpenSessionResponse(result.SessionId, result.TicketId, result.TableLabel));
+        return Ok(new OpenSessionResponse(result.SessionId, result.TicketId, result.TableId, result.TableLabel));
     }
 
     [HttpGet("{ticketId:guid}")]

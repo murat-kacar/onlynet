@@ -1,0 +1,115 @@
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IStringLocalizer<TenantText> L
+
+<div class="drawer-stack">
+    <div class="drawer-kv">
+        <span class="kv-label">@L["TableCode"]</span>
+        <span class="kv-value">@TableLabel</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["TableTotal"]</span>
+        <span class="kv-value">@TotalAmount.ToString("C")</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["CheckoutProof"]</span>
+        <span class="kv-value">@L["CheckoutProofPrompt"]</span>
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+
+    <EditForm Model="@Model" OnValidSubmit="SubmitAsync">
+        <div class="form-grid">
+            <div class="form-group form-span-2">
+                <label>@L["CheckoutProof"]</label>
+                <InputText @bind-Value="Model.CheckoutProofToken" class="form-control" />
+            </div>
+            <div class="form-group form-span-2">
+                <label>@L["OrderNote"]</label>
+                <InputTextArea @bind-Value="Model.Note" class="form-control" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" disabled="@IsSubmitting" @onclick="Cancel">@L["Cancel"]</button>
+            <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+                @(IsSubmitting ? L["SubmittingOrder"] : L["SubmitOrder"])
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid SessionId { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid TicketId { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid TableId { get; set; }
+
+    [Parameter, EditorRequired]
+    public string TableLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public decimal TotalAmount { get; set; }
+
+    private readonly CheckoutInput Model = new();
+    private string? ErrorMessage;
+    private bool IsSubmitting;
+
+    private async Task SubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Model.CheckoutProofToken))
+        {
+            ErrorMessage = L["CheckoutProofRequired"];
+            return;
+        }
+
+        IsSubmitting = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var request = new SubmitOrderRequest(
+                SessionId,
+                TicketId,
+                TableId,
+                Model.CheckoutProofToken.Trim(),
+                Guid.NewGuid().ToString(),
+                string.IsNullOrWhiteSpace(Model.Note) ? null : Model.Note.Trim());
+
+            var response = await Http.PostAsJsonAsync("/api/public/orders", request);
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<SubmitOrderResult>();
+            DialogService.Close(result);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+
+    private sealed class CheckoutInput
+    {
+        public string CheckoutProofToken { get; set; } = string.Empty;
+        public string? Note { get; set; }
+    }
+
+    private sealed record SubmitOrderRequest(Guid SessionId, Guid TicketId, Guid TableId, string CheckoutProofToken, string IdempotencyKey, string? Note);
+    public sealed record SubmitOrderResult(Guid OrderId, decimal TotalAmount);
+}

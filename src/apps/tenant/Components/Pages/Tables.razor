@@ -38,16 +38,22 @@ else
             <article class="entity-card">
                 <div class="entity-card-top">
                     <div>
-                        <p class="eyebrow">@(table.IsActive ? L["Active"] : L["Inactive"])</p>
+                        <p class="eyebrow">@(table.HasOpenSession ? L["SessionLive"] : (table.IsActive ? L["Active"] : L["Inactive"]))</p>
                         <h3>@table.Name</h3>
                     </div>
-                    <span class="status-pill @(table.IsActive ? "success" : "neutral")">@(table.IsActive ? L["Active"] : L["Inactive"])</span>
+                    <span class="status-pill @(table.HasOpenSession ? "warning" : (table.IsActive ? "success" : "neutral"))">
+                        @(table.HasOpenSession ? L["SessionLive"] : (table.IsActive ? L["Active"] : L["Inactive"]))
+                    </span>
                 </div>
 
                 <div class="kv-grid compact-kv">
                     <div class="kv-item">
                         <span class="kv-label">@L["TableCode"]</span>
                         <span class="kv-value">@table.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["OpenSessionState"]</span>
+                        <span class="kv-value">@(table.HasOpenSession ? L["Live"] : L["Inactive"])</span>
                     </div>
                 </div>
 
@@ -71,35 +77,37 @@ else
 
     private async Task OpenInspectorAsync(Guid tableId)
     {
-        var detail = await Http.GetFromJsonAsync<TableDetailDto>($"/api/tables/{tableId}");
-        if (detail is null)
+        var workspace = await Http.GetFromJsonAsync<TableWorkspaceDto>($"/api/tables/{tableId}/workspace");
+        if (workspace is null)
         {
             return;
         }
 
         await DialogService.OpenSideAsync(
-            L["TableDrawerTitle"],
+            $"{L["TableDrawerTitle"]} · {workspace.Name}",
             typeof(TableInspectorPanel),
             new Dictionary<string, object?>
             {
-                [nameof(TableInspectorPanel.Detail)] = new TableInspectorPanel.TableDetailDto(
-                    detail.Id,
-                    detail.Name,
-                    detail.Code,
-                    detail.Color,
-                    detail.Type,
-                    detail.IsActive,
-                    detail.SortOrder,
-                    detail.HasOpenSession)
+                [nameof(TableInspectorPanel.Workspace)] = workspace,
+                [nameof(TableInspectorPanel.ReloadRequested)] = EventCallback.Factory.Create(this, ReloadAsync)
             },
             new SideDialogOptions
             {
                 Position = DialogPosition.Right,
-                Width = "420px",
+                Width = "480px",
                 ShowMask = true
             });
     }
 
-    private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder);
-    private record TableDetailDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession);
+    private async Task ReloadAsync()
+    {
+        TableList = await Http.GetFromJsonAsync<List<TableDto>>("/api/tables");
+        StateHasChanged();
+    }
+
+    private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder, bool HasOpenSession);
+    private record TableWorkspaceDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession, TableSessionWorkspaceDto? Session);
+    private record TableSessionWorkspaceDto(Guid SessionId, Guid TableId, DateTimeOffset OpenedAt, int TicketCount, IReadOnlyList<TableCartItemDto> CartItems, IReadOnlyList<TableSessionOrderDto> Orders);
+    private record TableCartItemDto(Guid Id, string ItemName, int Quantity, decimal UnitPrice, string? Note);
+    private record TableSessionOrderDto(Guid Id, decimal TotalAmount, DateTimeOffset SubmittedAt, int ItemCount);
 }

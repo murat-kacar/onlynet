@@ -55,7 +55,7 @@ public class SessionsController : ControllerBase
         // travels via the Set-Cookie header only. A client that needs
         // the binding does not need to read it (the cookie is sent
         // automatically with every same-origin request).
-        return Ok(new OpenSessionResponse(result.SessionId, result.TicketId, result.TableLabel));
+        return Ok(new OpenSessionResponse(result.SessionId, result.TicketId, result.TableId, result.TableLabel));
     }
 
     [HttpGet("{ticketId:guid}")]
@@ -88,4 +88,4 @@ public record OpenSessionRequest(string QrTokenValue);
 /// cookie by the controller and intentionally omitted from the
 /// response body so it never reaches the JS document context.
 /// </summary>
-public record OpenSessionResponse(Guid SessionId, Guid TicketId, string TableLabel);
+public record OpenSessionResponse(Guid SessionId, Guid TicketId, Guid TableId, string TableLabel);

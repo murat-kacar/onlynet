@@ -120,4 +120,45 @@
   <data name="LoadingOrderCopy" xml:space="preserve"><value>Sipariş detayı tenant API'den getiriliyor.</value></data>
   <data name="OrderMissing" xml:space="preserve"><value>Sipariş yüklenemedi.</value></data>
   <data name="OrderMissingCopy" xml:space="preserve"><value>Sipariş kimliğini kontrol edin veya menüye dönüp yeni bir akış başlatın.</value></data>
+  <data name="SessionLive" xml:space="preserve"><value>Canlı Oturum</value></data>
+  <data name="Live" xml:space="preserve"><value>Canlı</value></data>
+  <data name="TableWorkspaceNoSessionCopy" xml:space="preserve"><value>Bu masa için şu anda açık bir müşteri oturumu yok.</value></data>
+  <data name="SessionSummary" xml:space="preserve"><value>Oturum Özeti</value></data>
+  <data name="OpenedAt" xml:space="preserve"><value>Açılış</value></data>
+  <data name="LinkedGuests" xml:space="preserve"><value>Bağlı Misafir</value></data>
+  <data name="Generating" xml:space="preserve"><value>Üretiliyor...</value></data>
+  <data name="IssueCheckoutProof" xml:space="preserve"><value>Ödeme Kanıtı Üret</value></data>
+  <data name="Closing" xml:space="preserve"><value>Kapatılıyor...</value></data>
+  <data name="CloseSession" xml:space="preserve"><value>Oturumu Kapat</value></data>
+  <data name="CheckoutProof" xml:space="preserve"><value>Ödeme Kanıtı</value></data>
+  <data name="ExpiresAt" xml:space="preserve"><value>Bitiş</value></data>
+  <data name="CheckoutProofCopy" xml:space="preserve"><value>Müşteri siparişini tek seferde tamamlamak için bu tokenı masa tarafındaki ödeme adımında kullan.</value></data>
+  <data name="CartPreview" xml:space="preserve"><value>Sepet Önizleme</value></data>
+  <data name="TableWorkspaceCartEmpty" xml:space="preserve"><value>Bu oturum için henüz sepet satırı eklenmedi.</value></data>
+  <data name="SubmittedOrders" xml:space="preserve"><value>Gönderilmiş Siparişler</value></data>
+  <data name="TableWorkspaceOrdersEmpty" xml:space="preserve"><value>Bu oturumdan henüz sipariş gönderilmedi.</value></data>
+  <data name="ViewOrder" xml:space="preserve"><value>Siparişi Gör</value></data>
+  <data name="CheckoutDrawerTitle" xml:space="preserve"><value>Siparişi Tamamla</value></data>
+  <data name="CheckoutProofPrompt" xml:space="preserve"><value>Bu masa için yeni üretilen kanıt tokenını gir.</value></data>
+  <data name="OrderNote" xml:space="preserve"><value>Sipariş Notu</value></data>
+  <data name="SubmittingOrder" xml:space="preserve"><value>Gönderiliyor...</value></data>
+  <data name="SubmitOrder" xml:space="preserve"><value>Siparişi Gönder</value></data>
+  <data name="CheckoutProofRequired" xml:space="preserve"><value>Ödeme kanıtı tokenı zorunlu.</value></data>
+  <data name="OrderCompleteTitle" xml:space="preserve"><value>Sipariş Gönderildi</value></data>
+  <data name="OrderCompleteEyebrow" xml:space="preserve"><value>Onay</value></data>
+  <data name="OrderCompleteHero" xml:space="preserve"><value>Masa siparişi mutfak akışına iletildi ve oturum kapatıldı.</value></data>
+  <data name="OrderReference" xml:space="preserve"><value>Sipariş Referansı</value></data>
+  <data name="OrderCompleteNextStepTitle" xml:space="preserve"><value>Sıradaki adım</value></data>
+  <data name="OrderCompleteNextStepCopy" xml:space="preserve"><value>Personel siparişi servis konsolunda takip edebilir; müşteri yeni sipariş için yeni bir oturum başlatabilir.</value></data>
+  <data name="TenantLoginTitle" xml:space="preserve"><value>Servis Konsolu Girişi</value></data>
+  <data name="TenantLoginHero" xml:space="preserve"><value>Kat görünürlüğü, mutfak koordinasyonu ve oturum farkında sipariş yönetimi için operatör erişimi.</value></data>
+  <data name="TenantLoginMetricTables" xml:space="preserve"><value>Masa Çalışma Alanı</value></data>
+  <data name="TenantLoginMetricTablesCopy" xml:space="preserve"><value>Canlı masa oturumlarını incele, ödeme kanıtı üret ve ekran değiştirmeden müdahale et.</value></data>
+  <data name="TenantLoginMetricKitchen" xml:space="preserve"><value>Mutfak Akışı</value></data>
+  <data name="TenantLoginMetricKitchenCopy" xml:space="preserve"><value>Gönderilmiş siparişleri takip et ve ürün durumlarını kompakt operasyon yüzeyi içinde güncelle.</value></data>
+  <data name="TenantLoginFormTitle" xml:space="preserve"><value>Devam etmek için giriş yap</value></data>
+  <data name="EmailAddress" xml:space="preserve"><value>E-posta Adresi</value></data>
+  <data name="Password" xml:space="preserve"><value>Parola</value></data>
+  <data name="TenantLoginSubmit" xml:space="preserve"><value>Giriş Yap</value></data>
+  <data name="InvalidLoginAttempt" xml:space="preserve"><value>Giriş denemesi başarısız.</value></data>
 </root>

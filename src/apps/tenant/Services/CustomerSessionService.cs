@@ -51,7 +51,7 @@ public class CustomerSessionService : ICustomerSessionService
         var table = await _context.Stations.FindAsync(new object[] { session.TableId }, ct);
         var tableLabel = table?.Name ?? $"Table {session.TableId}";
 
-        return new OpenSessionResult(session.Id, ticket.Id, tableLabel, deviceCookieValue);
+        return new OpenSessionResult(session.Id, ticket.Id, session.TableId, tableLabel, deviceCookieValue);
     }
 
     public async Task<CustomerSessionState?> GetSessionStateAsync(Guid ticketId, CancellationToken ct = default)
@@ -79,7 +79,7 @@ public class CustomerSessionService : ICustomerSessionService
             .Select(x => new CartItemSummary(x.ci.ItemId, x.mi.Name, x.ci.Quantity, x.mi.Price, x.ci.Note))
             .ToListAsync(ct);
 
-        return new CustomerSessionState(session.Id, ticket.Id, tableLabel, cartItems);
+        return new CustomerSessionState(session.Id, ticket.Id, session.TableId, tableLabel, cartItems);
     }
 
     public async Task CloseSessionAsync(Guid sessionId, CancellationToken ct = default)
@@ -93,5 +93,25 @@ public class CustomerSessionService : ICustomerSessionService
         session.Close();
         _context.CustomerSessions.Update(session);
         await _context.SaveChangesAsync(ct);
+    }
+
+    public async Task<CheckoutProofDto> IssueCheckoutProofAsync(Guid tableId, CancellationToken ct = default)
+    {
+        var hasOpenSession = await _context.CustomerSessions
+            .AnyAsync(session => session.TableId == tableId && session.IsOpen, ct);
+
+        if (!hasOpenSession)
+        {
+            throw new InvalidOperationException("An open session is required before issuing checkout proof.");
+        }
+
+        var tokenValue = $"checkout-{Guid.NewGuid():N}"[..21];
+        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(10);
+        var token = QrToken.CreateCheckoutProof(tableId, tokenValue, expiresAt);
+
+        _context.QrTokens.Add(token);
+        await _context.SaveChangesAsync(ct);
+
+        return new CheckoutProofDto(token.Value, tableId, token.ExpiresAt);
     }
 }

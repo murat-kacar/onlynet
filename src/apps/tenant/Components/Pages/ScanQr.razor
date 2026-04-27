@@ -69,6 +69,7 @@
                 await CustomerSessionStore.SetSnapshotAsync(
                     sessionResult.SessionId,
                     sessionResult.TicketId,
+                    sessionResult.TableId,
                     sessionResult.TableLabel);
                 NavigationManager.NavigateTo("/menu");
             }
@@ -79,5 +80,5 @@
         }
     }
 
-    private record OpenSessionResult(Guid SessionId, Guid TicketId, string TableLabel);
+    private record OpenSessionResult(Guid SessionId, Guid TicketId, Guid TableId, string TableLabel);
 }

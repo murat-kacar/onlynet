@@ -1,31 +1,176 @@
+@using TabFlow.Shared.Application.Services
+@inject HttpClient Http
+@inject DialogService DialogService
 @inject IStringLocalizer<TenantText> L
 
 <div class="drawer-stack">
     <div class="drawer-kv">
-        <span class="kv-label">Name</span>
-        <span class="kv-value">@Detail.Name</span>
-    </div>
-    <div class="drawer-kv">
         <span class="kv-label">@L["TableCode"]</span>
-        <span class="kv-value">@Detail.Code</span>
+        <span class="kv-value">@Workspace.Code</span>
     </div>
     <div class="drawer-kv">
         <span class="kv-label">@L["StationType"]</span>
-        <span class="kv-value">@Detail.Type</span>
-    </div>
-    <div class="drawer-kv">
-        <span class="kv-label">@L["SortOrder"]</span>
-        <span class="kv-value">@Detail.SortOrder</span>
+        <span class="kv-value">@Workspace.Type</span>
     </div>
     <div class="drawer-kv">
         <span class="kv-label">@L["OpenSessionState"]</span>
-        <span class="kv-value">@(Detail.HasOpenSession ? L["Active"] : L["Inactive"])</span>
+        <span class="kv-value">@(Workspace.HasOpenSession ? L["SessionLive"] : L["NoActiveSession"])</span>
     </div>
+
+    @if (ActionError is not null)
+    {
+        <div class="alert alert-danger">@ActionError</div>
+    }
+
+    @if (Workspace.Session is null)
+    {
+        <section class="empty-state">
+            <h3>@L["NoActiveSession"]</h3>
+            <p>@L["TableWorkspaceNoSessionCopy"]</p>
+        </section>
+    }
+    else
+    {
+        <section class="detail-section">
+            <p class="detail-title">@L["SessionSummary"]</p>
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <span class="kv-label">@L["OpenedAt"]</span>
+                    <span class="kv-value">@Workspace.Session.OpenedAt.LocalDateTime.ToString("g")</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">@L["LinkedGuests"]</span>
+                    <span class="kv-value">@Workspace.Session.TicketCount</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" disabled="@IsBusy" @onclick="IssueCheckoutProofAsync">
+                @(IsBusy ? L["Generating"] : L["IssueCheckoutProof"])
+            </button>
+            <button type="button" class="btn btn-danger" disabled="@IsBusy" @onclick="CloseSessionAsync">
+                @(IsBusy ? L["Closing"] : L["CloseSession"])
+            </button>
+        </div>
+
+        @if (CheckoutProof is not null)
+        {
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["CheckoutProof"]</p>
+                        <h3>@CheckoutProof.TokenValue</h3>
+                    </div>
+                    <span class="status-pill warning">@L["ExpiresAt"] @CheckoutProof.ExpiresAt.LocalDateTime.ToString("t")</span>
+                </div>
+                <p class="detail-copy">@L["CheckoutProofCopy"]</p>
+            </section>
+        }
+
+        <section class="detail-section">
+            <p class="detail-title">@L["CartPreview"]</p>
+            @if (Workspace.Session.CartItems.Count == 0)
+            {
+                <p class="detail-copy">@L["TableWorkspaceCartEmpty"]</p>
+            }
+            else
+            {
+                @foreach (var item in Workspace.Session.CartItems)
+                {
+                    <div class="drawer-item-row">
+                        <div class="drawer-item-copy">
+                            <strong>@item.ItemName x@item.Quantity</strong>
+                            <span class="kv-label">@item.UnitPrice.ToString("C")</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Note))
+                            {
+                                <span class="kv-label">@item.Note</span>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="detail-section">
+            <p class="detail-title">@L["SubmittedOrders"]</p>
+            @if (Workspace.Session.Orders.Count == 0)
+            {
+                <p class="detail-copy">@L["TableWorkspaceOrdersEmpty"]</p>
+            }
+            else
+            {
+                @foreach (var order in Workspace.Session.Orders)
+                {
+                    <div class="drawer-item-row">
+                        <div class="drawer-item-copy">
+                            <strong>#@order.Id.ToString()[..8]</strong>
+                            <span class="kv-label">@order.SubmittedAt.LocalDateTime.ToString("g")</span>
+                            <span class="kv-label">@order.ItemCount @L["TableItem"] · @order.TotalAmount.ToString("C")</span>
+                        </div>
+                        <div class="drawer-item-actions">
+                            <a class="btn btn-secondary btn-sm" href="/order/@order.Id">@L["ViewOrder"]</a>
+                        </div>
+                    </div>
+                }
+            }
+        </section>
+    }
 </div>
 
 @code {
     [Parameter, EditorRequired]
-    public TableDetailDto Detail { get; set; } = default!;
+    public TableWorkspaceDto Workspace { get; set; } = default!;
 
-    public sealed record TableDetailDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession);
+    [Parameter]
+    public EventCallback ReloadRequested { get; set; }
+
+    private CheckoutProofDto? CheckoutProof;
+    private string? ActionError;
+    private bool IsBusy;
+
+    private async Task IssueCheckoutProofAsync()
+    {
+        await RunActionAsync(async () =>
+        {
+            var response = await Http.PostAsJsonAsync($"/api/tables/{Workspace.Id}/checkout-proof", new { });
+            response.EnsureSuccessStatusCode();
+            CheckoutProof = await response.Content.ReadFromJsonAsync<CheckoutProofDto>();
+        });
+    }
+
+    private async Task CloseSessionAsync()
+    {
+        if (Workspace.Session is null)
+        {
+            return;
+        }
+
+        await RunActionAsync(async () =>
+        {
+            var response = await Http.PostAsync($"/api/sessions/{Workspace.Session.SessionId}/close", null);
+            response.EnsureSuccessStatusCode();
+            DialogService.Close(true);
+        });
+    }
+
+    private async Task RunActionAsync(Func<Task> operation)
+    {
+        IsBusy = true;
+        ActionError = null;
+
+        try
+        {
+            await operation();
+            await ReloadRequested.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ActionError = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 }

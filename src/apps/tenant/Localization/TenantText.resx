@@ -120,4 +120,45 @@
   <data name="LoadingOrderCopy" xml:space="preserve"><value>Order detail is being fetched from the tenant API.</value></data>
   <data name="OrderMissing" xml:space="preserve"><value>Order could not be loaded.</value></data>
   <data name="OrderMissingCopy" xml:space="preserve"><value>Check the order id or return to the menu and open a fresh customer flow.</value></data>
+  <data name="SessionLive" xml:space="preserve"><value>Live Session</value></data>
+  <data name="Live" xml:space="preserve"><value>Live</value></data>
+  <data name="TableWorkspaceNoSessionCopy" xml:space="preserve"><value>This table does not currently have an open customer session.</value></data>
+  <data name="SessionSummary" xml:space="preserve"><value>Session Summary</value></data>
+  <data name="OpenedAt" xml:space="preserve"><value>Opened</value></data>
+  <data name="LinkedGuests" xml:space="preserve"><value>Linked Guests</value></data>
+  <data name="Generating" xml:space="preserve"><value>Generating...</value></data>
+  <data name="IssueCheckoutProof" xml:space="preserve"><value>Issue Checkout Proof</value></data>
+  <data name="Closing" xml:space="preserve"><value>Closing...</value></data>
+  <data name="CloseSession" xml:space="preserve"><value>Close Session</value></data>
+  <data name="CheckoutProof" xml:space="preserve"><value>Checkout Proof</value></data>
+  <data name="ExpiresAt" xml:space="preserve"><value>Expires</value></data>
+  <data name="CheckoutProofCopy" xml:space="preserve"><value>Use this token at the table-side checkout step to complete the customer order once.</value></data>
+  <data name="CartPreview" xml:space="preserve"><value>Cart Preview</value></data>
+  <data name="TableWorkspaceCartEmpty" xml:space="preserve"><value>No cart lines have been added for this session yet.</value></data>
+  <data name="SubmittedOrders" xml:space="preserve"><value>Submitted Orders</value></data>
+  <data name="TableWorkspaceOrdersEmpty" xml:space="preserve"><value>No orders have been submitted from this session yet.</value></data>
+  <data name="ViewOrder" xml:space="preserve"><value>View Order</value></data>
+  <data name="CheckoutDrawerTitle" xml:space="preserve"><value>Complete Order</value></data>
+  <data name="CheckoutProofPrompt" xml:space="preserve"><value>Enter the fresh proof token issued for this table.</value></data>
+  <data name="OrderNote" xml:space="preserve"><value>Order Note</value></data>
+  <data name="SubmittingOrder" xml:space="preserve"><value>Submitting...</value></data>
+  <data name="SubmitOrder" xml:space="preserve"><value>Submit Order</value></data>
+  <data name="CheckoutProofRequired" xml:space="preserve"><value>Checkout proof token is required.</value></data>
+  <data name="OrderCompleteTitle" xml:space="preserve"><value>Order Submitted</value></data>
+  <data name="OrderCompleteEyebrow" xml:space="preserve"><value>Confirmation</value></data>
+  <data name="OrderCompleteHero" xml:space="preserve"><value>The table order has been handed to the kitchen flow and the session is now closed.</value></data>
+  <data name="OrderReference" xml:space="preserve"><value>Order Reference</value></data>
+  <data name="OrderCompleteNextStepTitle" xml:space="preserve"><value>What happens next</value></data>
+  <data name="OrderCompleteNextStepCopy" xml:space="preserve"><value>Staff can track the order in the service console while the customer can start a fresh session for a new order.</value></data>
+  <data name="TenantLoginTitle" xml:space="preserve"><value>Service Console Login</value></data>
+  <data name="TenantLoginHero" xml:space="preserve"><value>Operator access for floor visibility, kitchen coordination, and session-aware order handling.</value></data>
+  <data name="TenantLoginMetricTables" xml:space="preserve"><value>Table Workspace</value></data>
+  <data name="TenantLoginMetricTablesCopy" xml:space="preserve"><value>Inspect live table sessions, issue checkout proof, and intervene without changing screens.</value></data>
+  <data name="TenantLoginMetricKitchen" xml:space="preserve"><value>Kitchen Flow</value></data>
+  <data name="TenantLoginMetricKitchenCopy" xml:space="preserve"><value>Track submitted orders and update item states inside a compact operational surface.</value></data>
+  <data name="TenantLoginFormTitle" xml:space="preserve"><value>Sign in to continue</value></data>
+  <data name="EmailAddress" xml:space="preserve"><value>Email Address</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="TenantLoginSubmit" xml:space="preserve"><value>Sign In</value></data>
+  <data name="InvalidLoginAttempt" xml:space="preserve"><value>Invalid login attempt.</value></data>
 </root>

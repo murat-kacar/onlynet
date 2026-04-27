@@ -3,16 +3,20 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
+using TabFlow.Tenant.Localization;
 
 namespace TabFlow.Tenant.Pages;
 
 public class LoginModel : PageModel
 {
     private readonly SignInManager<IdentityUser<Guid>> _signInManager;
+    private readonly IStringLocalizer<TenantText> _localizer;
 
-    public LoginModel(SignInManager<IdentityUser<Guid>> signInManager)
+    public LoginModel(SignInManager<IdentityUser<Guid>> signInManager, IStringLocalizer<TenantText> localizer)
     {
         _signInManager = signInManager;
+        _localizer = localizer;
     }
 
     [BindProperty]
@@ -21,15 +25,18 @@ public class LoginModel : PageModel
     [BindProperty]
     public string Password { get; set; } = string.Empty;
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
         var result = await _signInManager.PasswordSignInAsync(Email, Password, false, false);
         if (result.Succeeded)
         {
-            return LocalRedirect("/tables");
+            return LocalRedirect(string.IsNullOrWhiteSpace(ReturnUrl) ? "/tables" : ReturnUrl);
         }
 
-        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+        ModelState.AddModelError(string.Empty, _localizer["InvalidLoginAttempt"]);
         return Page();
     }
 }

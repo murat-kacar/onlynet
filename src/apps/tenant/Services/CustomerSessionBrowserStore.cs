@@ -11,7 +11,7 @@ public sealed class CustomerSessionBrowserStore : IAsyncDisposable
         _moduleTask = new(() =>
             jsRuntime.InvokeAsync<IJSObjectReference>(
                 "import",
-                "/js/customerSessionStorage.js").AsTask());
+                "/js/customerSessionStorage.js?v=20260427-1").AsTask());
     }
 
     public async Task<CustomerSessionSnapshot> GetSnapshotAsync()
@@ -20,12 +20,16 @@ public sealed class CustomerSessionBrowserStore : IAsyncDisposable
         return await module.InvokeAsync<CustomerSessionSnapshot>("getCustomerSessionSnapshot");
     }
 
-    public async Task SetSnapshotAsync(Guid sessionId, Guid ticketId, string tableLabel)
+    public async Task SetSnapshotAsync(Guid sessionId, Guid ticketId, Guid tableId, string tableLabel)
     {
         var module = await _moduleTask.Value;
         await module.InvokeVoidAsync(
             "setCustomerSessionSnapshot",
-            new CustomerSessionPayload(sessionId.ToString(), ticketId.ToString(), tableLabel));
+            new CustomerSessionPayload(
+                sessionId.ToString(),
+                ticketId.ToString(),
+                tableId.ToString(),
+                tableLabel));
     }
 
     public async Task ClearAsync()
@@ -45,7 +49,7 @@ public sealed class CustomerSessionBrowserStore : IAsyncDisposable
         await module.DisposeAsync();
     }
 
-    public sealed record CustomerSessionSnapshot(string? SessionId, string? TicketId, string? TableLabel);
+    public sealed record CustomerSessionSnapshot(string? SessionId, string? TicketId, string? TableId, string? TableLabel);
 
-    private sealed record CustomerSessionPayload(string SessionId, string TicketId, string TableLabel);
+    private sealed record CustomerSessionPayload(string SessionId, string TicketId, string TableId, string TableLabel);
 }

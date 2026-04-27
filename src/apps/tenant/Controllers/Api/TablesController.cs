@@ -13,10 +13,12 @@ namespace TabFlow.Tenant.Controllers.Api;
 public sealed class TablesController : ControllerBase
 {
     private readonly ITableReadService _service;
+    private readonly ICustomerSessionService _customerSessionService;
 
-    public TablesController(ITableReadService service)
+    public TablesController(ITableReadService service, ICustomerSessionService customerSessionService)
     {
         _service = service;
+        _customerSessionService = customerSessionService;
     }
 
     [HttpGet]
@@ -31,5 +33,20 @@ public sealed class TablesController : ControllerBase
     {
         var table = await _service.GetTableAsync(id, ct);
         return table is null ? NotFound() : Ok(table);
+    }
+
+    [HttpGet("{id:guid}/workspace")]
+    public async Task<ActionResult<TableWorkspaceDto>> GetWorkspace(Guid id, CancellationToken ct)
+    {
+        var workspace = await _service.GetTableWorkspaceAsync(id, ct);
+        return workspace is null ? NotFound() : Ok(workspace);
+    }
+
+    [HttpPost("{id:guid}/checkout-proof")]
+    [Authorize(Policy = "Tenant:Write")]
+    public async Task<ActionResult<CheckoutProofDto>> IssueCheckoutProof(Guid id, CancellationToken ct)
+    {
+        var proof = await _customerSessionService.IssueCheckoutProofAsync(id, ct);
+        return Ok(proof);
     }
 }

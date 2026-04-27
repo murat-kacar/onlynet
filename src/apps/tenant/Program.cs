@@ -58,6 +58,7 @@ builder.Services.AddSingleton<IEventBus, InProcessEventBus>();
 builder.Services.AddScoped<ICustomerSessionService, CustomerSessionService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ITableReadService, TableReadService>();
 builder.Services.AddHostedService<EventSubscriptionService>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<SignalRService>();

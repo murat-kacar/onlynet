@@ -49,19 +49,44 @@ main {
     padding: 40px 0;
 }
 
+.auth-shell-wide {
+    width: min(1080px, calc(100% - 32px));
+    grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+    gap: 24px;
+    align-items: center;
+}
+
 .auth-shell h1 {
     margin: 0 0 20px;
     font-size: 28px;
     font-weight: 700;
 }
 
-.auth-shell form {
-    width: 100%;
-    padding: 28px;
+.auth-hero-card,
+.auth-form-card {
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--panel);
     box-shadow: var(--shadow);
+}
+
+.auth-hero-card {
+    padding: 28px;
+}
+
+.auth-form-card {
+    padding: 24px 28px 28px;
+}
+
+.auth-shell form {
+    width: 100%;
+}
+
+.auth-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 24px;
 }
 
 .auth-shell form > div,
@@ -529,6 +554,11 @@ h4 {
     flex-wrap: wrap;
 }
 
+.drawer-item-copy {
+    display: grid;
+    gap: 4px;
+}
+
 [data-ui-density="comfortable"] .panel,
 [data-ui-density="comfortable"] .metric-card,
 [data-ui-density="comfortable"] .entity-card {
@@ -542,7 +572,8 @@ h4 {
 
 @media (max-width: 980px) {
     .tenant-shell,
-    .detail-layout {
+    .detail-layout,
+    .auth-shell-wide {
         grid-template-columns: 1fr;
     }
 
@@ -555,5 +586,9 @@ h4 {
     .tenant-content {
         padding-left: 20px;
         padding-right: 20px;
+    }
+
+    .auth-metrics {
+        grid-template-columns: 1fr;
     }
 }
