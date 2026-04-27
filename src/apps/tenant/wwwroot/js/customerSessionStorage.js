@@ -5,7 +5,7 @@ export function getCustomerSessionSnapshot() {
     return {
         sessionId: window.localStorage.getItem(sessionIdKey),
         ticketId: window.localStorage.getItem(ticketIdKey),
-        tableLabel: window.localStorage.getItem(tableLabelKey)
+        tableLabel: window.localStorage.getItem(tableLabelKey),
     };
 }
 export function setCustomerSessionSnapshot(payload) {
