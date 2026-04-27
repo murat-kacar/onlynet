@@ -1,56 +1,135 @@
 @page "/tenants"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
-@inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject ITenantRegistryService TenantRegistryService
 
 <PageTitle>Tenants</PageTitle>
 
-<h1>Tenants</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Registry</p>
+        <h1>Tenants</h1>
+        <p class="hero-copy">Search the tenant registry, check rollout status, and jump straight into a regional configuration record.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+    </div>
+</section>
 
-<div class="toolbar">
-    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
-</div>
-
-@if (TenantList == null)
+@if (LoadError is not null)
 {
-    <p>Loading...</p>
+    <div class="alert alert-danger">@LoadError</div>
+}
+else if (TenantList == null)
+{
+    <section class="empty-state">
+        <h3>Loading tenant registry</h3>
+        <p>The current tenant list is being fetched from the platform API.</p>
+    </section>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Display Name</th>
-                <th>Status</th>
-                <th>Domain</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var tenant in TenantList)
-            {
-                <tr>
-                    <td>@tenant.Code</td>
-                    <td>@tenant.DisplayName</td>
-                    <td>@tenant.Status</td>
-                    <td>@tenant.PrimaryDomain</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => NavigateToDetail(tenant.Id)">View</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <section class="stats-grid compact-stats">
+        <article class="metric-card">
+            <p class="metric-label">Visible Tenants</p>
+            <p class="metric-value">@FilteredTenants.Count</p>
+            <p class="metric-footnote">@TenantList.Count total in registry</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Active</p>
+            <p class="metric-value">@TenantList.Count(t => IsStatus(t.Status, "active"))</p>
+            <p class="metric-footnote">Healthy runtime records</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Provisioning</p>
+            <p class="metric-value">@TenantList.Count(t => !IsStatus(t.Status, "active"))</p>
+            <p class="metric-footnote">Need rollout follow-up</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="registry-toolbar">
+            <div class="search-field">
+                <label for="tenant-search">Search tenants</label>
+                <InputText id="tenant-search" @bind-Value="SearchTerm" class="form-control" placeholder="Code, domain, display name" />
+            </div>
+
+            <div class="filter-group">
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>All</button>
+                <button type="button" class="@FilterButtonClass("active")" @onclick='() => SetStatusFilter("active")'>Active</button>
+                <button type="button" class="@FilterButtonClass("other")" @onclick='() => SetStatusFilter("other")'>Needs attention</button>
+            </div>
+        </div>
+
+        @if (FilteredTenants.Count == 0)
+        {
+            <div class="empty-state compact-empty">
+                <h4>No tenants match this view</h4>
+                <p>Try clearing the search term or switching the status filter.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table class="table tenants-table">
+                    <thead>
+                        <tr>
+                            <th>Tenant</th>
+                            <th>Status</th>
+                            <th>Locale</th>
+                            <th>Domain</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tenant in FilteredTenants)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="tenant-cell">
+                                        <p class="list-title">@tenant.DisplayName</p>
+                                        <p class="list-subtitle">@tenant.Code</p>
+                                    </div>
+                                </td>
+                                <td><span class="@StatusClass(tenant.Status)">@tenant.Status</span></td>
+                                <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
+                                <td>@tenant.PrimaryDomain</td>
+                                <td class="actions-cell">
+                                    <button class="btn btn-sm btn-secondary" @onclick="() => NavigateToDetail(tenant.Id)">Open</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 }
 
 @code {
     private List<TenantDto>? TenantList;
+    private string SearchTerm { get; set; } = string.Empty;
+    private string StatusFilter { get; set; } = "all";
+    private string? LoadError;
+
+    private IReadOnlyList<TenantDto> FilteredTenants =>
+        (TenantList ?? [])
+            .Where(MatchesSearch)
+            .Where(MatchesFilter)
+            .OrderBy(t => t.DisplayName)
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
-        TenantList = await Http.GetFromJsonAsync<List<TenantDto>>("/api/tenants");
+        try
+        {
+            TenantList = (await TenantRegistryService.GetTenantsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Tenant registry failed to load: {ex.Message}";
+        }
     }
 
     private void NavigateToDetail(Guid id)
@@ -58,13 +137,52 @@ else
         NavigationManager.NavigateTo($"/tenants/{id}");
     }
 
-    private record TenantDto(
-        Guid Id,
-        string Code,
-        string DisplayName,
-        string Status,
-        string PrimaryDomain,
-        string LanguageCode,
-        string CurrencyCode,
-        string TimeZone);
+    private bool MatchesSearch(TenantDto tenant)
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            return true;
+        }
+
+        return tenant.Code.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               tenant.DisplayName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               tenant.PrimaryDomain.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool MatchesFilter(TenantDto tenant)
+    {
+        return StatusFilter switch
+        {
+            "active" => IsStatus(tenant.Status, "active"),
+            "other" => !IsStatus(tenant.Status, "active"),
+            _ => true,
+        };
+    }
+
+    private void SetStatusFilter(string filter) => StatusFilter = filter;
+
+    private string FilterButtonClass(string filter) =>
+        StatusFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static bool IsStatus(string? value, string expected) =>
+        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+
+    private static string StatusClass(string status)
+    {
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill danger";
+        }
+        if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+        return "status-pill neutral";
+    }
 }

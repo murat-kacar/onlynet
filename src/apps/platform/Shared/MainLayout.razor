@@ -1,8 +1,51 @@
 @inherits LayoutComponentBase
 @namespace TabFlow.Platform.Shared
 
-<div class="page">
-    <main>
-        @Body
-    </main>
+<div class="platform-shell">
+    <aside class="shell-sidebar">
+        <div class="brand-block">
+            <p class="eyebrow">CafeTech Platform</p>
+            <h1>TabFlow</h1>
+            <p class="brand-copy">Tenant lifecycle, provisioning flow, and control-plane visibility.</p>
+        </div>
+
+        <nav class="shell-nav" aria-label="Platform">
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
+                Overview
+            </NavLink>
+            <NavLink href="/tenants" class="nav-link">
+                Tenants
+            </NavLink>
+            <NavLink href="/tenants/new" class="nav-link">
+                Create Tenant
+            </NavLink>
+            <NavLink href="/jobs" class="nav-link">
+                Jobs
+            </NavLink>
+            <NavLink href="/audit" class="nav-link">
+                Audit
+            </NavLink>
+        </nav>
+
+        <div class="sidebar-footnote">
+            <p>Platform UI is now live on the same host as identity and provisioning read surfaces.</p>
+        </div>
+    </aside>
+
+    <div class="shell-main">
+        <header class="shell-header">
+            <div>
+                <p class="eyebrow">Control Plane</p>
+                <h2>Platform Console</h2>
+            </div>
+            <div class="header-actions">
+                <a href="/tenants/new" class="btn btn-primary">New Tenant</a>
+                <a href="/change-password" class="btn btn-secondary">Password</a>
+            </div>
+        </header>
+
+        <main class="shell-content">
+            @Body
+        </main>
+    </div>
 </div>

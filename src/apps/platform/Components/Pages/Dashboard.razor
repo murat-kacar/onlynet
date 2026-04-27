@@ -1,30 +1,229 @@
 @page "/"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject NavigationManager NavigationManager
+@inject ITenantRegistryService TenantRegistryService
+@inject IProvisioningJobReadService ProvisioningJobReadService
 
 <PageTitle>Platform Dashboard</PageTitle>
 
-<h1>Platform Dashboard</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Overview</p>
+        <h1>Platform Dashboard</h1>
+        <p class="hero-copy">One screen for tenant volume, provisioning pressure, and the newest control-plane changes.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/tenants" class="btn btn-secondary">Browse Tenants</a>
+        <a href="/jobs" class="btn btn-primary">Open Jobs</a>
+    </div>
+</section>
 
-<div class="dashboard-grid">
-    <div class="card">
-        <h3>Tenants</h3>
-        <p class="stat">@TenantCount</p>
-    </div>
-    <div class="card">
-        <h3>Active Jobs</h3>
-        <p class="stat">@ActiveJobCount</p>
-    </div>
-</div>
+@if (LoadError is not null)
+{
+    <div class="alert alert-danger">@LoadError</div>
+}
+else if (Tenants is null || Jobs is null)
+{
+    <section class="empty-state">
+        <h3>Loading platform data</h3>
+        <p>Tenant registry and provisioning queue are being fetched.</p>
+    </section>
+}
+else
+{
+    <section class="stats-grid">
+        <article class="metric-card">
+            <p class="metric-label">Tenants</p>
+            <p class="metric-value">@Tenants.Count</p>
+            <p class="metric-footnote">@ActiveTenantCount active, @ProvisioningTenantCount provisioning</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Open Jobs</p>
+            <p class="metric-value">@OpenJobCount</p>
+            <p class="metric-footnote">@FailedJobCount failed, @ClaimedJobCount claimed</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Regions</p>
+            <p class="metric-value">@DistinctTimeZones</p>
+            <p class="metric-footnote">@DistinctCurrencies currencies, @DistinctLanguages languages</p>
+        </article>
+        <article class="metric-card accent-card">
+            <p class="metric-label">Newest Tenant</p>
+            <p class="metric-value metric-value-sm">@NewestTenantLabel</p>
+            <p class="metric-footnote">Most recently created registry row in the current data set.</p>
+        </article>
+    </section>
+
+    <section class="dashboard-grid platform-dashboard-grid">
+        <article class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Provisioning</p>
+                    <h3>Queue Snapshot</h3>
+                </div>
+                <a href="/jobs" class="text-link">All jobs</a>
+            </div>
+
+            @if (RecentJobs.Count == 0)
+            {
+                <div class="empty-state compact-empty">
+                    <h4>No provisioning jobs yet</h4>
+                    <p>New tenant creation will surface queue activity here.</p>
+                </div>
+            }
+            else
+            {
+                <div class="stack-list">
+                    @foreach (var job in RecentJobs)
+                    {
+                        <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo("/jobs")'>
+                            <div>
+                                <p class="list-title">@job.Type</p>
+                                <p class="list-subtitle">@ShortId(job.Id) for @ResolveTenant(job.TenantId)</p>
+                            </div>
+                            <div class="list-meta">
+                                <span class="@StatusClass(job.Status)">@job.Status</span>
+                                <span>@RelativeTime(job.UpdatedAt)</span>
+                            </div>
+                        </button>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Registry</p>
+                    <h3>Recent Tenants</h3>
+                </div>
+                <a href="/tenants" class="text-link">Registry</a>
+            </div>
+
+            @if (RecentTenants.Count == 0)
+            {
+                <div class="empty-state compact-empty">
+                    <h4>No tenants yet</h4>
+                    <p>Create the first tenant to initialize the registry and provisioning flow.</p>
+                </div>
+            }
+            else
+            {
+                <div class="stack-list">
+                    @foreach (var tenant in RecentTenants)
+                    {
+                        <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo($"/tenants/{tenant.Id}")'>
+                            <div>
+                                <p class="list-title">@tenant.DisplayName</p>
+                                <p class="list-subtitle">@tenant.PrimaryDomain</p>
+                            </div>
+                            <div class="list-meta">
+                                <span class="@StatusClass(tenant.Status)">@tenant.Status</span>
+                                <span>@tenant.CurrencyCode · @tenant.LanguageCode</span>
+                            </div>
+                        </button>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Attention</p>
+                    <h3>What Needs Eyes</h3>
+                </div>
+            </div>
+
+            <div class="attention-grid">
+                <div class="attention-card">
+                    <p class="attention-label">Failed Jobs</p>
+                    <p class="attention-value">@FailedJobCount</p>
+                    <p class="attention-copy">Queue items requiring operator intervention.</p>
+                </div>
+                <div class="attention-card">
+                    <p class="attention-label">Pending Tenants</p>
+                    <p class="attention-value">@ProvisioningTenantCount</p>
+                    <p class="attention-copy">Tenants still in provisioning or not yet active.</p>
+                </div>
+            </div>
+        </article>
+    </section>
+}
 
 @code {
-    private int TenantCount = 0;
-    private int ActiveJobCount = 0;
+    private List<TenantDto>? Tenants;
+    private List<JobDto>? Jobs;
+    private string? LoadError;
 
     protected override async Task OnInitializedAsync()
     {
-        // TODO(TD-0019): Load from database
-        TenantCount = 0;
-        ActiveJobCount = 0;
+        try
+        {
+            Tenants = (await TenantRegistryService.GetTenantsAsync()).ToList();
+            Jobs = (await ProvisioningJobReadService.GetJobsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Dashboard failed to load: {ex.Message}";
+        }
+    }
+
+    private int ActiveTenantCount => Tenants?.Count(t => IsStatus(t.Status, "active")) ?? 0;
+    private int ProvisioningTenantCount => Tenants?.Count(t => !IsStatus(t.Status, "active")) ?? 0;
+    private int OpenJobCount => Jobs?.Count(j => !IsStatus(j.Status, "completed")) ?? 0;
+    private int FailedJobCount => Jobs?.Count(j => IsStatus(j.Status, "failed")) ?? 0;
+    private int ClaimedJobCount => Jobs?.Count(j => !string.IsNullOrWhiteSpace(j.ClaimedBy)) ?? 0;
+    private int DistinctTimeZones => Tenants?.Select(t => t.TimeZone).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
+    private int DistinctCurrencies => Tenants?.Select(t => t.CurrencyCode).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
+    private int DistinctLanguages => Tenants?.Select(t => t.LanguageCode).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
+    private string NewestTenantLabel => RecentTenants.FirstOrDefault()?.DisplayName ?? "None";
+    private IReadOnlyList<TenantDto> RecentTenants => (Tenants ?? []).Take(5).ToList();
+    private IReadOnlyList<JobDto> RecentJobs => (Jobs ?? []).Take(5).ToList();
+
+    private static bool IsStatus(string? value, string expected) =>
+        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+
+    private string ResolveTenant(Guid tenantId) =>
+        Tenants?.FirstOrDefault(t => t.Id == tenantId)?.DisplayName ?? ShortId(tenantId);
+
+    private static string ShortId(Guid id) => id.ToString("N")[..8];
+
+    private static string RelativeTime(DateTimeOffset value)
+    {
+        var delta = DateTimeOffset.UtcNow - value.ToUniversalTime();
+        if (delta.TotalMinutes < 1)
+        {
+            return "just now";
+        }
+        if (delta.TotalHours < 1)
+        {
+            return $"{Math.Max(1, (int)delta.TotalMinutes)}m ago";
+        }
+        if (delta.TotalDays < 1)
+        {
+            return $"{Math.Max(1, (int)delta.TotalHours)}h ago";
+        }
+        return $"{Math.Max(1, (int)delta.TotalDays)}d ago";
+    }
+
+    private static string StatusClass(string status)
+    {
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill danger";
+        }
+        if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+        return "status-pill neutral";
     }
 }
