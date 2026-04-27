@@ -258,6 +258,17 @@ h4 {
     gap: 16px;
 }
 
+[data-ui-density="comfortable"] .table th,
+[data-ui-density="comfortable"] .table td {
+    padding: 16px;
+}
+
+[data-ui-density="comfortable"] .panel,
+[data-ui-density="comfortable"] .metric-card,
+[data-ui-density="comfortable"] .detail-card {
+    padding: 22px;
+}
+
 .platform-shell {
     min-height: 100vh;
     display: grid;
@@ -641,6 +652,27 @@ h4 {
 .filter-chip.active {
     border-color: transparent;
     background: var(--primary);
+    color: #ffffff;
+}
+
+.tab-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tab-chip {
+    min-height: var(--control-height);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--muted);
+    padding: 0 16px;
+}
+
+.tab-chip.active {
+    border-color: transparent;
+    background: var(--sidebar);
     color: #ffffff;
 }
 

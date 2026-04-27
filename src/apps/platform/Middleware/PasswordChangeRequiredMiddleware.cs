@@ -49,6 +49,7 @@ public sealed class PasswordChangeRequiredMiddleware
     private static readonly PathString[] ExemptPaths =
     [
         new("/change-password"),
+        new("/settings"),
         new("/login"),
         new("/logout"),
         new("/_blazor"),
@@ -75,7 +76,7 @@ public sealed class PasswordChangeRequiredMiddleware
             HasMustChangePasswordClaim(user) &&
             !IsExempt(context.Request.Path))
         {
-            context.Response.Redirect("/change-password");
+            context.Response.Redirect("/settings?tab=security");
             return;
         }
 

@@ -10,6 +10,11 @@ namespace TabFlow.Platform.Pages;
 [Authorize]
 public class ChangePasswordModel : PageModel
 {
+    public IActionResult OnGet()
+    {
+        return LocalRedirect("/settings?tab=security");
+    }
+
     private readonly UserManager<IdentityUser<Guid>> _userManager;
     private readonly SignInManager<IdentityUser<Guid>> _signInManager;
 
