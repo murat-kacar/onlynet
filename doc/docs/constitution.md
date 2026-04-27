@@ -92,6 +92,11 @@ This section states the rules that apply across **all** trees.
 3. **Code style follows the framework.** ASP.NET Core, EF Core, and
    Blazor have idiomatic patterns; we use them. Custom abstractions
    need a justification an ADR can carry.
+4. **Browser-side custom logic is TypeScript-first.** When TabFlow
+   needs custom browser code beyond framework-provided scripts,
+   contributors write it in TypeScript by default. Small, trivial
+   snippets may remain JavaScript, but new non-trivial browser logic
+   does not start as ad hoc plain JS.
 
 ## V. Review
 

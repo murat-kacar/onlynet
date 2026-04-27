@@ -137,6 +137,13 @@ Tradeoffs:
 
 - [`./system-overview.md`](./system-overview.md)
 
+### Implementation Note
+
+When custom browser-side logic is required, TabFlow prefers TypeScript over
+plain JavaScript. Blazor remains the default UI programming model; TypeScript
+is the default for non-trivial interop, browser API integration, and custom
+client helpers that live beside it.
+
 ---
 
 ## AD-0003 One Host Process Per Side
