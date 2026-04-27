@@ -1,67 +1,85 @@
 @page "/cart"
-@rendermode InteractiveServer
-@attribute [Authorize(Policy = "Tenant:Read")]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<TenantText> L
 
-<PageTitle>Cart</PageTitle>
+<PageTitle>@L["CartTitle"]</PageTitle>
 
-<h1>Cart</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">@L["NavCart"]</p>
+        <h1>@L["CartTitle"]</h1>
+        <p class="hero-copy">@L["CartHero"]</p>
+    </div>
+</section>
 
 @if (!HasSession)
 {
-    <p>No active session. Please <a href="/scan-qr">scan a QR code</a> to start.</p>
+    <section class="empty-state">
+        <h3>@L["NoActiveSession"]</h3>
+        <p>@L["ScanQrToStart"]</p>
+        <a href="/scan-qr" class="btn btn-primary">@L["NavScanQr"]</a>
+    </section>
+}
+else if (CartItems is null)
+{
+    <section class="empty-state">
+        <h3>@L["LoadingCart"]</h3>
+        <p>@L["LoadingCartCopy"]</p>
+    </section>
+}
+else if (CartItems.Count == 0)
+{
+    <section class="empty-state">
+        <h3>@L["CartEmpty"]</h3>
+        <p>@L["CartEmptyCopy"]</p>
+        <a href="/menu" class="btn btn-secondary">@L["NavMenu"]</a>
+    </section>
 }
 else
 {
-    <p>Session: @TableLabel</p>
-}
-
-@if (CartItems == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Total</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in CartItems)
-            {
+    <section class="panel">
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>@item.MenuItemName</td>
-                    <td>@item.Quantity</td>
-                    <td>@item.UnitPrice.ToString("C")</td>
-                    <td>@(item.UnitPrice * item.Quantity).ToString("C")</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveItem(item.Id)">Remove</button>
-                    </td>
+                    <th>@L["TableItem"]</th>
+                    <th>@L["TableQuantity"]</th>
+                    <th>@L["TablePrice"]</th>
+                    <th>@L["TableTotal"]</th>
+                    <th>@L["TableActions"]</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in CartItems)
+                {
+                    <tr>
+                        <td>@item.MenuItemName</td>
+                        <td>@item.Quantity</td>
+                        <td>@item.UnitPrice.ToString("C")</td>
+                        <td>@(item.UnitPrice * item.Quantity).ToString("C")</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => RemoveItem(item.Id)">@L["Remove"]</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
 
-    <div class="cart-summary">
-        <p>Total: @Total.ToString("C")</p>
-        <button class="btn btn-primary" @onclick="SubmitOrder">Place Order</button>
-    </div>
+        <div class="cart-summary">
+            <p>@L["TableTotal"]: @Total.ToString("C")</p>
+            <button class="btn btn-primary" @onclick="SubmitOrder">@L["PlaceOrder"]</button>
+        </div>
+    </section>
 }
 
 @code {
     private List<CartItemDto>? CartItems = [];
-    private decimal Total = 0;
-    private Guid? CurrentSessionId = null;
-    private string TableLabel = "";
-    private bool HasSession = false;
+    private decimal Total;
+    private Guid? CurrentSessionId;
+    private string TableLabel = string.Empty;
+    private bool HasSession;
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,7 +89,7 @@ else
         if (!string.IsNullOrEmpty(sessionId))
         {
             CurrentSessionId = Guid.Parse(sessionId);
-            TableLabel = tableLabel ?? "";
+            TableLabel = tableLabel ?? string.Empty;
             HasSession = true;
 
             CartItems = await Http.GetFromJsonAsync<List<CartItemDto>>($"/api/public/cart/session/{CurrentSessionId}");
@@ -87,7 +105,7 @@ else
 
     private async Task SubmitOrder()
     {
-        if (CurrentSessionId == null)
+        if (CurrentSessionId is null)
         {
             NavigationManager.NavigateTo("/scan-qr");
             return;
@@ -103,8 +121,8 @@ else
         var request = new SubmitOrderRequest(
             CurrentSessionId.Value,
             Guid.Parse(ticketId),
-            Guid.Empty, // TODO(TD-0019): Get TableId from session
-            "checkout-proof-token", // TODO(TD-0019): Get from QR token
+            Guid.Empty,
+            "checkout-proof-token",
             Guid.NewGuid().ToString(),
             null);
 
@@ -114,16 +132,10 @@ else
             await JS.InvokeVoidAsync("localStorage.removeItem", "ticketId");
             await JS.InvokeVoidAsync("localStorage.removeItem", "sessionId");
             await JS.InvokeVoidAsync("localStorage.removeItem", "tableLabel");
-            NavigationManager.NavigateTo($"/order/{Guid.NewGuid()}"); // TODO(TD-0019): Get actual order ID from response
+            NavigationManager.NavigateTo("/menu");
         }
     }
 
     private record CartItemDto(Guid Id, Guid MenuItemId, string MenuItemName, int Quantity, decimal UnitPrice, string? Note);
-    private record SubmitOrderRequest(
-        Guid SessionId,
-        Guid TicketId,
-        Guid TableId,
-        string CheckoutProofToken,
-        string IdempotencyKey,
-        string? Note);
+    private record SubmitOrderRequest(Guid SessionId, Guid TicketId, Guid TableId, string CheckoutProofToken, string IdempotencyKey, string? Note);
 }

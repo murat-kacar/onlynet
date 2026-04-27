@@ -1,28 +1,64 @@
 @page "/tables"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize(Policy = "Tenant:Read")]
 @inject HttpClient Http
+@inject IStringLocalizer<TenantText> L
+@inject DialogService DialogService
 
-<PageTitle>Tables</PageTitle>
+<PageTitle>@L["TablesTitle"]</PageTitle>
+<RadzenComponents />
 
-<h1>Tables</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">@L["NavTables"]</p>
+        <h1>@L["TablesTitle"]</h1>
+        <p class="hero-copy">@L["TablesHero"]</p>
+    </div>
+</section>
 
-@if (TableList == null)
+@if (TableList is null)
 {
-    <p>Loading...</p>
+    <section class="empty-state">
+        <h3>@L["LoadingTables"]</h3>
+        <p>@L["LoadingTablesCopy"]</p>
+    </section>
+}
+else if (TableList.Count == 0)
+{
+    <section class="empty-state">
+        <h3>@L["NoTables"]</h3>
+        <p>@L["NoTablesCopy"]</p>
+    </section>
 }
 else
 {
-    <div class="tables-grid">
+    <section class="entity-grid">
         @foreach (var table in TableList)
         {
-            <div class="table-card @(table.IsActive ? "active" : "inactive")">
-                <h3>@table.Name</h3>
-                <p>Code: @table.Code</p>
-                <p>@(table.IsActive ? "Active" : "Inactive")</p>
-            </div>
+            <article class="entity-card">
+                <div class="entity-card-top">
+                    <div>
+                        <p class="eyebrow">@(table.IsActive ? L["Active"] : L["Inactive"])</p>
+                        <h3>@table.Name</h3>
+                    </div>
+                    <span class="status-pill @(table.IsActive ? "success" : "neutral")">@(table.IsActive ? L["Active"] : L["Inactive"])</span>
+                </div>
+
+                <div class="kv-grid compact-kv">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableCode"]</span>
+                        <span class="kv-value">@table.Code</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(table.Id)">
+                        @L["OpenInspector"]
+                    </button>
+                </div>
+            </article>
         }
-    </div>
+    </section>
 }
 
 @code {
@@ -33,5 +69,37 @@ else
         TableList = await Http.GetFromJsonAsync<List<TableDto>>("/api/tables");
     }
 
+    private async Task OpenInspectorAsync(Guid tableId)
+    {
+        var detail = await Http.GetFromJsonAsync<TableDetailDto>($"/api/tables/{tableId}");
+        if (detail is null)
+        {
+            return;
+        }
+
+        await DialogService.OpenSideAsync(
+            L["TableDrawerTitle"],
+            typeof(TableInspectorPanel),
+            new Dictionary<string, object?>
+            {
+                [nameof(TableInspectorPanel.Detail)] = new TableInspectorPanel.TableDetailDto(
+                    detail.Id,
+                    detail.Name,
+                    detail.Code,
+                    detail.Color,
+                    detail.Type,
+                    detail.IsActive,
+                    detail.SortOrder,
+                    detail.HasOpenSession)
+            },
+            new SideDialogOptions
+            {
+                Position = DialogPosition.Right,
+                Width = "420px",
+                ShowMask = true
+            });
+    }
+
     private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder);
+    private record TableDetailDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession);
 }

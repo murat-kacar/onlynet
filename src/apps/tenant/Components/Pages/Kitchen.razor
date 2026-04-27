@@ -1,39 +1,66 @@
 @page "/kitchen"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize(Policy = "Tenant:Read")]
 @inject HttpClient Http
+@inject IStringLocalizer<TenantText> L
+@inject DialogService DialogService
 
-<PageTitle>Kitchen Display</PageTitle>
+<PageTitle>@L["KitchenTitle"]</PageTitle>
+<RadzenComponents />
 
-<h1>Kitchen Display</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">@L["NavKitchen"]</p>
+        <h1>@L["KitchenTitle"]</h1>
+        <p class="hero-copy">@L["KitchenHero"]</p>
+    </div>
+</section>
 
-@if (Orders == null)
+@if (Orders is null)
 {
-    <p>Loading...</p>
+    <section class="empty-state">
+        <h3>@L["LoadingKitchen"]</h3>
+        <p>@L["LoadingKitchenCopy"]</p>
+    </section>
+}
+else if (Orders.Count == 0)
+{
+    <section class="empty-state">
+        <h3>@L["NoKitchenOrders"]</h3>
+        <p>@L["NoKitchenOrdersCopy"]</p>
+    </section>
 }
 else
 {
-    <div class="kitchen-orders">
+    <section class="entity-grid">
         @foreach (var order in Orders)
         {
-            <div class="order-card">
-                <h3>Order #@order.Id</h3>
-                <p>Table: @order.TableLabel</p>
-                <p>Total: @order.TotalAmount.ToString("C")</p>
-                <h4>Items</h4>
-                <ul>
-                    @foreach (var item in order.Items)
+            <article class="entity-card">
+                <div class="entity-card-top">
+                    <div>
+                        <p class="eyebrow">@order.TableLabel</p>
+                        <h3>#@order.Id.ToString()[..8]</h3>
+                    </div>
+                    <span class="status-pill warning">@($"{order.Items.Count} {L["TableItem"]}")</span>
+                </div>
+
+                <p class="entity-meta">@order.TotalAmount.ToString("C")</p>
+
+                <div class="chip-row">
+                    @foreach (var item in order.Items.Take(3))
                     {
-                        <li class="item @item.Status">
-                            @item.ItemName x @item.Quantity
-                            <button class="btn btn-sm btn-primary" @onclick="@(() => UpdateItemStatus(item.Id, "Preparing"))">Start</button>
-                            <button class="btn btn-sm btn-success" @onclick="@(() => UpdateItemStatus(item.Id, "Ready"))">Ready</button>
-                        </li>
+                        <span class="status-pill neutral">@($"{item.ItemName} x{item.Quantity}")</span>
                     }
-                </ul>
-            </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(order)">
+                        @L["OpenInspector"]
+                    </button>
+                </div>
+            </article>
         }
-    </div>
+    </section>
 }
 
 @code {
@@ -44,13 +71,28 @@ else
         Orders = await Http.GetFromJsonAsync<List<KitchenOrderDto>>("/api/kitchen/orders");
     }
 
-    private async Task UpdateItemStatus(Guid itemId, string status)
+    private async Task OpenInspectorAsync(KitchenOrderDto order)
     {
-        await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
-        await OnInitializedAsync();
+        await DialogService.OpenSideAsync(
+            L["KitchenDrawerTitle"],
+            typeof(KitchenOrderPanel),
+            new Dictionary<string, object?>
+            {
+                [nameof(KitchenOrderPanel.Order)] = new KitchenOrderPanel.KitchenOrderDto(
+                    order.Id,
+                    order.TableLabel,
+                    order.TotalAmount,
+                    order.Items.Select(item => new KitchenOrderPanel.KitchenItemDto(item.Id, item.ItemName, item.Quantity, item.Status)).ToList()),
+                [nameof(KitchenOrderPanel.ReloadRequested)] = EventCallback.Factory.Create(this, OnInitializedAsync)
+            },
+            new SideDialogOptions
+            {
+                Position = DialogPosition.Right,
+                Width = "460px",
+                ShowMask = true
+            });
     }
 
     private record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, List<KitchenItemDto> Items);
     private record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status);
-    private record UpdateItemStatusRequest(string Status);
 }

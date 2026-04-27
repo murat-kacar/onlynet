@@ -1,0 +1,51 @@
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IStringLocalizer<TenantText> L
+
+<div class="drawer-stack">
+    <div class="drawer-kv">
+        <span class="kv-label">Order</span>
+        <span class="kv-value">@Order.Id</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">Table</span>
+        <span class="kv-value">@Order.TableLabel</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["TableTotal"]</span>
+        <span class="kv-value">@Order.TotalAmount.ToString("C")</span>
+    </div>
+
+    @foreach (var item in Order.Items)
+    {
+        <div class="drawer-item-row">
+            <div class="drawer-item-copy">
+                <strong>@item.ItemName x@item.Quantity</strong>
+                <span class="kv-label">@item.Status</span>
+            </div>
+            <div class="drawer-item-actions">
+                <button type="button" class="btn btn-secondary btn-sm" @onclick='() => UpdateItemStatus(item.Id, "Preparing")'>@L["Start"]</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick='() => UpdateItemStatus(item.Id, "Ready")'>@L["Ready"]</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public KitchenOrderDto Order { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback ReloadRequested { get; set; }
+
+    private async Task UpdateItemStatus(Guid itemId, string status)
+    {
+        await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
+        await ReloadRequested.InvokeAsync();
+        DialogService.Close();
+    }
+
+    public sealed record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, List<KitchenItemDto> Items);
+    public sealed record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status);
+    private sealed record UpdateItemStatusRequest(string Status);
+}

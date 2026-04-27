@@ -1,0 +1,31 @@
+@inject IStringLocalizer<TenantText> L
+
+<div class="drawer-stack">
+    <div class="drawer-kv">
+        <span class="kv-label">Name</span>
+        <span class="kv-value">@Detail.Name</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["TableCode"]</span>
+        <span class="kv-value">@Detail.Code</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["StationType"]</span>
+        <span class="kv-value">@Detail.Type</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["SortOrder"]</span>
+        <span class="kv-value">@Detail.SortOrder</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["OpenSessionState"]</span>
+        <span class="kv-value">@(Detail.HasOpenSession ? L["Active"] : L["Inactive"])</span>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TableDetailDto Detail { get; set; } = default!;
+
+    public sealed record TableDetailDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession);
+}

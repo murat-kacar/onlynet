@@ -1,8 +1,78 @@
 @inherits LayoutComponentBase
 @namespace TabFlow.Tenant.Shared
+@inject IStringLocalizer<TenantText> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject TenantUserPreferenceService PreferenceService
+@inject NavigationManager NavigationManager
 
-<div class="page">
-    <main>
-        @Body
-    </main>
+<div class="tenant-shell" data-ui-density="@ShellDensity">
+    <aside class="tenant-sidebar">
+        <div class="brand-block">
+            <p class="eyebrow">@L["BrandEyebrow"]</p>
+            <h1>demo1</h1>
+            <p class="brand-copy">@L["BrandCopy"]</p>
+        </div>
+
+        <nav class="tenant-nav" aria-label="Tenant">
+            @if (IsAuthenticated)
+            {
+                <NavLink href="/tables" class="nav-link">@L["NavTables"]</NavLink>
+                <NavLink href="/kitchen" class="nav-link">@L["NavKitchen"]</NavLink>
+                <NavLink href="/settings" class="nav-link">@L["NavSettings"]</NavLink>
+            }
+            else
+            {
+                <NavLink href="/menu" class="nav-link">@L["NavMenu"]</NavLink>
+                <NavLink href="/cart" class="nav-link">@L["NavCart"]</NavLink>
+                <NavLink href="/scan-qr" class="nav-link">@L["NavScanQr"]</NavLink>
+            }
+        </nav>
+
+        <div class="sidebar-footnote">
+            <p>@L["ShellFootnote"]</p>
+        </div>
+    </aside>
+
+    <div class="tenant-main">
+        <header class="tenant-header">
+            <div>
+                <p class="eyebrow">@L["ShellEyebrow"]</p>
+                <h2>@L["ShellTitle"]</h2>
+            </div>
+            <div class="header-meta">
+                <span class="status-pill neutral">@(IsAuthenticated ? L["SignedInAs"] : L["AnonymousGuest"])</span>
+                <span class="header-identity">@DisplayIdentity</span>
+            </div>
+        </header>
+
+        <main class="tenant-content">
+            @Body
+        </main>
+    </div>
 </div>
+
+@code {
+    private bool IsAuthenticated { get; set; }
+    private string DisplayIdentity { get; set; } = "demo1";
+    private string ShellDensity { get; set; } = TenantUserPreferenceService.DefaultDensity;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            IsAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+            DisplayIdentity = authState.User.Identity?.Name ?? "demo1";
+
+            if (IsAuthenticated)
+            {
+                var preference = await PreferenceService.GetForPrincipalAsync(authState.User);
+                ShellDensity = preference.Density;
+            }
+        }
+        catch
+        {
+            ShellDensity = TenantUserPreferenceService.DefaultDensity;
+        }
+    }
+}

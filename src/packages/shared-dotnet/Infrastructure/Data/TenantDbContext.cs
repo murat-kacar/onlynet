@@ -8,6 +8,7 @@ namespace TabFlow.Shared.Infrastructure.Data;
 public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options)
     : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>(options)
 {
+    public DbSet<TenantUserPreference> TenantUserPreferences => Set<TenantUserPreference>();
     public DbSet<Station> Stations => Set<Station>();
     public DbSet<TableEntity> Tables => Set<TableEntity>();
     public DbSet<Category> Categories => Set<Category>();
@@ -34,6 +35,15 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.HasIndex(s => s.Code).IsUnique();
             e.Property(s => s.Color).HasMaxLength(20).IsRequired();
             e.Property(s => s.Type).HasMaxLength(50).IsRequired();
+        });
+
+        builder.Entity<TenantUserPreference>(e =>
+        {
+            e.ToTable("tenant_user_preferences");
+            e.HasKey(p => p.UserId);
+            e.Property(p => p.LanguageCode).HasMaxLength(10).IsRequired();
+            e.Property(p => p.TimeZone).HasMaxLength(100).IsRequired();
+            e.Property(p => p.Density).HasMaxLength(20).IsRequired();
         });
 
         builder.Entity<TableEntity>(e =>

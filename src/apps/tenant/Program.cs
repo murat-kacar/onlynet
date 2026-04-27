@@ -1,19 +1,29 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Radzen;
 using Serilog;
+using System.Globalization;
 using TabFlow.Shared.Application.EventBus;
 using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Infrastructure.Data;
 using TabFlow.Shared.Infrastructure.Diagnostics;
+using TabFlow.Tenant.Cli;
 using TabFlow.Tenant.Services;
 using TabFlow.Tenant.WebSocket;
 using TabFlow.Tenant.Hubs;
+
+if (args.Length > 0 && args[0] == "bootstrap-owner")
+{
+    await BootstrapOwnerCommand.RunAsync(args.Skip(1).ToArray());
+    return;
+}
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
@@ -40,6 +50,8 @@ try
 
 builder.Services.AddDbContext<TenantDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("TenantDb")));
+builder.Services.AddDbContextFactory<TenantDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("TenantDb")));
 
 builder.Services.AddSingleton<TableWebSocketHandler>();
 builder.Services.AddSingleton<IEventBus, InProcessEventBus>();
@@ -49,6 +61,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddHostedService<EventSubscriptionService>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<SignalRService>();
+builder.Services.AddScoped<TenantUserPreferenceService>();
 
 builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<TenantDbContext>()
@@ -96,6 +109,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Tenant:Write", policy => policy.RequireClaim("TenantRole", "Write"));
     options.AddPolicy("Tenant:Self", policy => policy.RequireAuthenticatedUser());
 });
+
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddLocalization();
+builder.Services.AddRadzenComponents();
 
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService("TabFlow.Tenant"))
@@ -157,6 +174,23 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
+var supportedCultures = new List<string> { "en-GB", "tr-TR" }
+    .Select(name => new CultureInfo(name))
+    .ToList();
+
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en-GB"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures,
+};
+
+localizationOptions.RequestCultureProviders = new List<IRequestCultureProvider>
+{
+    new TenantUserPreferenceCultureProvider(),
+    new AcceptLanguageHeaderRequestCultureProvider(),
+};
+
 if (!app.Environment.IsEnvironment("Testing") && app.Urls.Count == 0)
 {
     app.Urls.Add("http://localhost:5001");
@@ -168,6 +202,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
+app.UseRequestLocalization(localizationOptions);
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

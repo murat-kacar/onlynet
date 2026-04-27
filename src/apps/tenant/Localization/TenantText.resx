@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
+  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Tenant</value></data>
+  <data name="BrandCopy" xml:space="preserve"><value>Quiet operating surface for service, kitchen flow, and table-side order visibility.</value></data>
+  <data name="NavMenu" xml:space="preserve"><value>Menu</value></data>
+  <data name="NavCart" xml:space="preserve"><value>Cart</value></data>
+  <data name="NavScanQr" xml:space="preserve"><value>Scan</value></data>
+  <data name="NavTables" xml:space="preserve"><value>Tables</value></data>
+  <data name="NavKitchen" xml:space="preserve"><value>Kitchen</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
+  <data name="ShellTitle" xml:space="preserve"><value>Service Console</value></data>
+  <data name="ShellFootnote" xml:space="preserve"><value>Demo runtime currently bound to demo1.cafetech.uk.</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Signed in</value></data>
+  <data name="AnonymousGuest" xml:space="preserve"><value>Guest session</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsHero" xml:space="preserve"><value>Operator language, console density, and local time defaults for this account.</value></data>
+  <data name="AccountEyebrow" xml:space="preserve"><value>Account</value></data>
+  <data name="MetricAccount" xml:space="preserve"><value>Account</value></data>
+  <data name="MetricUiLanguage" xml:space="preserve"><value>UI Language</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>Time Zone</value></data>
+  <data name="StoredForAccount" xml:space="preserve"><value>Stored with this account</value></data>
+  <data name="Preferences" xml:space="preserve"><value>Preferences</value></data>
+  <data name="Security" xml:space="preserve"><value>Security</value></data>
+  <data name="OperatorDefaults" xml:space="preserve"><value>Operator Defaults</value></data>
+  <data name="Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="SessionDefaults" xml:space="preserve"><value>Session Defaults</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Density" xml:space="preserve"><value>Density</value></data>
+  <data name="Compact" xml:space="preserve"><value>Compact</value></data>
+  <data name="Comfortable" xml:space="preserve"><value>Comfortable</value></data>
+  <data name="EnglishUk" xml:space="preserve"><value>English</value></data>
+  <data name="Turkish" xml:space="preserve"><value>Turkish</value></data>
+  <data name="OperatorTimeZone" xml:space="preserve"><value>Operator Time Zone</value></data>
+  <data name="TimeZonePreview" xml:space="preserve"><value>Time Preview</value></data>
+  <data name="Scope" xml:space="preserve"><value>Scope</value></data>
+  <data name="SettingsScopeCopy" xml:space="preserve"><value>These preferences live in the tenant database and follow the operator across sessions and browsers.</value></data>
+  <data name="SavePreferences" xml:space="preserve"><value>Save Preferences</value></data>
+  <data name="Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="PreferencesSavedSuccess" xml:space="preserve"><value>Preferences saved for this account.</value></data>
+  <data name="PreferencesSaveFailed" xml:space="preserve"><value>Preferences could not be saved: {0}</value></data>
+  <data name="SettingsLoadError" xml:space="preserve"><value>Settings failed to load: {0}</value></data>
+  <data name="CurrentPassword" xml:space="preserve"><value>Current Password</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>New Password</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>Confirm Password</value></data>
+  <data name="UpdatePassword" xml:space="preserve"><value>Update Password</value></data>
+  <data name="Updating" xml:space="preserve"><value>Updating...</value></data>
+  <data name="PasswordPolicy" xml:space="preserve"><value>Password Policy</value></data>
+  <data name="PasswordPolicyCopy" xml:space="preserve"><value>Use a unique password with at least eight characters before sharing the console with live staff.</value></data>
+  <data name="SessionBehavior" xml:space="preserve"><value>Session Behavior</value></data>
+  <data name="SessionBehaviorCopy" xml:space="preserve"><value>Identity keeps staff access scoped to this tenant host. Preferences update on the next full reload.</value></data>
+  <data name="PasswordMismatchError" xml:space="preserve"><value>The new password and confirmation do not match.</value></data>
+  <data name="AccountMissingError" xml:space="preserve"><value>The current account could not be loaded.</value></data>
+  <data name="PasswordUpdatedSuccess" xml:space="preserve"><value>Password updated. Your session has been refreshed.</value></data>
+  <data name="PasswordChangeFailed" xml:space="preserve"><value>Password change failed: {0}</value></data>
+  <data name="MenuTitle" xml:space="preserve"><value>Menu</value></data>
+  <data name="MenuHero" xml:space="preserve"><value>Browse the active menu, review session context, and keep ordering flow close to the table.</value></data>
+  <data name="NoActiveSession" xml:space="preserve"><value>No active session yet.</value></data>
+  <data name="ScanQrToStart" xml:space="preserve"><value>Scan a QR code to open the table session before ordering.</value></data>
+  <data name="ViewCart" xml:space="preserve"><value>View Cart</value></data>
+  <data name="LoadingMenu" xml:space="preserve"><value>Loading menu</value></data>
+  <data name="LoadingMenuCopy" xml:space="preserve"><value>Available items are being fetched from the tenant catalog.</value></data>
+  <data name="MenuEmpty" xml:space="preserve"><value>No menu items available</value></data>
+  <data name="MenuEmptyCopy" xml:space="preserve"><value>Add catalog items before opening the demo menu to customers.</value></data>
+  <data name="AddToCart" xml:space="preserve"><value>Add to Cart</value></data>
+  <data name="CartTitle" xml:space="preserve"><value>Cart</value></data>
+  <data name="CartHero" xml:space="preserve"><value>Session-bound cart lines, totals, and the handoff into order submission.</value></data>
+  <data name="LoadingCart" xml:space="preserve"><value>Loading cart</value></data>
+  <data name="LoadingCartCopy" xml:space="preserve"><value>Current session cart lines are being fetched.</value></data>
+  <data name="CartEmpty" xml:space="preserve"><value>Cart is empty</value></data>
+  <data name="CartEmptyCopy" xml:space="preserve"><value>Add one or two menu items to see the submit flow light up.</value></data>
+  <data name="PlaceOrder" xml:space="preserve"><value>Place Order</value></data>
+  <data name="Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="TableItem" xml:space="preserve"><value>Item</value></data>
+  <data name="TableQuantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="TablePrice" xml:space="preserve"><value>Price</value></data>
+  <data name="TableTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="TableActions" xml:space="preserve"><value>Actions</value></data>
+  <data name="ScanQrTitle" xml:space="preserve"><value>Open Table Session</value></data>
+  <data name="ScanQrHero" xml:space="preserve"><value>Use a QR token to open or resume the current table session on this browser.</value></data>
+  <data name="EnterQrToken" xml:space="preserve"><value>Enter a QR token</value></data>
+  <data name="OpenSession" xml:space="preserve"><value>Open Session</value></data>
+  <data name="ScanAgain" xml:space="preserve"><value>Scan Again</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Scanning...</value></data>
+  <data name="QrRequired" xml:space="preserve"><value>QR token is required.</value></data>
+  <data name="OpenSessionFailed" xml:space="preserve"><value>Session could not be opened: {0}</value></data>
+  <data name="TablesTitle" xml:space="preserve"><value>Tables</value></data>
+  <data name="TablesHero" xml:space="preserve"><value>Dense floor visibility with quick context in a drawer instead of a separate workspace.</value></data>
+  <data name="LoadingTables" xml:space="preserve"><value>Loading tables</value></data>
+  <data name="LoadingTablesCopy" xml:space="preserve"><value>Current floor records are being fetched from the tenant store.</value></data>
+  <data name="NoTables" xml:space="preserve"><value>No tables available</value></data>
+  <data name="NoTablesCopy" xml:space="preserve"><value>Seed table records before using the live service workspace.</value></data>
+  <data name="Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="OpenInspector" xml:space="preserve"><value>Inspect</value></data>
+  <data name="TableDrawerTitle" xml:space="preserve"><value>Table Detail</value></data>
+  <data name="TableCode" xml:space="preserve"><value>Code</value></data>
+  <data name="OpenSessionState" xml:space="preserve"><value>Open Session</value></data>
+  <data name="StationType" xml:space="preserve"><value>Type</value></data>
+  <data name="SortOrder" xml:space="preserve"><value>Sort Order</value></data>
+  <data name="KitchenTitle" xml:space="preserve"><value>Kitchen Board</value></data>
+  <data name="KitchenHero" xml:space="preserve"><value>Orders in motion, item status transitions, and quick context without leaving the queue.</value></data>
+  <data name="LoadingKitchen" xml:space="preserve"><value>Loading kitchen board</value></data>
+  <data name="LoadingKitchenCopy" xml:space="preserve"><value>Open orders are being fetched from the kitchen read surface.</value></data>
+  <data name="NoKitchenOrders" xml:space="preserve"><value>No active kitchen orders</value></data>
+  <data name="NoKitchenOrdersCopy" xml:space="preserve"><value>New orders will appear here once a customer submits from the table session.</value></data>
+  <data name="Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="KitchenDrawerTitle" xml:space="preserve"><value>Order Detail</value></data>
+  <data name="OrderStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="BackToMenu" xml:space="preserve"><value>Back to Menu</value></data>
+  <data name="OrderTitle" xml:space="preserve"><value>Order</value></data>
+  <data name="OrderHero" xml:space="preserve"><value>Submitted order detail and the current item-by-item execution status.</value></data>
+  <data name="LoadingOrder" xml:space="preserve"><value>Loading order</value></data>
+  <data name="LoadingOrderCopy" xml:space="preserve"><value>Order detail is being fetched from the tenant API.</value></data>
+  <data name="OrderMissing" xml:space="preserve"><value>Order could not be loaded.</value></data>
+  <data name="OrderMissingCopy" xml:space="preserve"><value>Check the order id or return to the menu and open a fresh customer flow.</value></data>
+</root>

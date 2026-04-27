@@ -1,70 +1,47 @@
 @page "/scan-qr"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject IStringLocalizer<TenantText> L
 
-<PageTitle>Scan QR Code</PageTitle>
+<PageTitle>@L["ScanQrTitle"]</PageTitle>
 
-<h1>Scan QR Code</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">@L["NavScanQr"]</p>
+        <h1>@L["ScanQrTitle"]</h1>
+        <p class="hero-copy">@L["ScanQrHero"]</p>
+    </div>
+</section>
 
-<div class="qr-scan-container">
-    @if (IsScanning)
-    {
-        <div class="scanner">
-            <p>Scanning...</p>
-            <button class="btn btn-secondary" @onclick="CancelScan">Cancel</button>
+<section class="panel auth-panel">
+    <div class="qr-input">
+        <label>@L["EnterQrToken"]</label>
+        <input type="text" @bind="QrToken" placeholder="QR Token" />
+        <div class="form-actions">
+            <button class="btn btn-primary" @onclick="OpenSession">@L["OpenSession"]</button>
+            <button class="btn btn-secondary" @onclick="ResetScan">@L["ScanAgain"]</button>
         </div>
-    }
-    else if (!string.IsNullOrEmpty(QrToken))
-    {
-        <div class="qr-result">
-            <p>QR Token scanned: @QrToken</p>
-            <button class="btn btn-primary" @onclick="OpenSession">Open Session</button>
-            <button class="btn btn-secondary" @onclick="ResetScan">Scan Again</button>
-        </div>
-    }
-    else
-    {
-        <div class="qr-input">
-            <p>Enter QR token manually:</p>
-            <input type="text" @bind="QrToken" placeholder="QR Token" />
-            <button class="btn btn-primary" @onclick="OpenSession">Open Session</button>
-        </div>
-    }
-</div>
+    </div>
+</section>
 
-@if (ErrorMessage != null)
+@if (ErrorMessage is not null)
 {
     <div class="alert alert-danger">@ErrorMessage</div>
 }
 
 @code {
     private string QrToken = string.Empty;
-    private bool IsScanning = false;
     private string? ErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        // Try to load existing session from local storage
         var existingTicketId = await JS.InvokeAsync<string?>("localStorage.getItem", "ticketId");
         if (!string.IsNullOrEmpty(existingTicketId))
         {
             NavigationManager.NavigateTo("/menu");
         }
-    }
-
-    private async Task StartScan()
-    {
-        IsScanning = true;
-        // TODO(TD-0019): Implement actual QR scanning with camera
-        await Task.Delay(1000);
-        IsScanning = false;
-    }
-
-    private void CancelScan()
-    {
-        IsScanning = false;
     }
 
     private void ResetScan()
@@ -75,9 +52,9 @@
 
     private async Task OpenSession()
     {
-        if (string.IsNullOrEmpty(QrToken))
+        if (string.IsNullOrWhiteSpace(QrToken))
         {
-            ErrorMessage = "QR token is required";
+            ErrorMessage = L["QrRequired"];
             return;
         }
 
@@ -87,19 +64,17 @@
             result.EnsureSuccessStatusCode();
 
             var sessionResult = await result.Content.ReadFromJsonAsync<OpenSessionResult>();
-            if (sessionResult != null)
+            if (sessionResult is not null)
             {
-                // Store ticket ID in local storage
                 await JS.InvokeVoidAsync("localStorage.setItem", "ticketId", sessionResult.TicketId.ToString());
                 await JS.InvokeVoidAsync("localStorage.setItem", "sessionId", sessionResult.SessionId.ToString());
                 await JS.InvokeVoidAsync("localStorage.setItem", "tableLabel", sessionResult.TableLabel);
-
                 NavigationManager.NavigateTo("/menu");
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to open session: {ex.Message}";
+            ErrorMessage = L["OpenSessionFailed", ex.Message];
         }
     }
 

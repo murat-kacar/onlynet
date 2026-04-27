@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
+  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Tenant</value></data>
+  <data name="BrandCopy" xml:space="preserve"><value>Servis, mutfak akışı ve masa bazlı sipariş görünürlüğü için sakin bir operasyon yüzeyi.</value></data>
+  <data name="NavMenu" xml:space="preserve"><value>Menü</value></data>
+  <data name="NavCart" xml:space="preserve"><value>Sepet</value></data>
+  <data name="NavScanQr" xml:space="preserve"><value>Tara</value></data>
+  <data name="NavTables" xml:space="preserve"><value>Masalar</value></data>
+  <data name="NavKitchen" xml:space="preserve"><value>Mutfak</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
+  <data name="ShellTitle" xml:space="preserve"><value>Servis Konsolu</value></data>
+  <data name="ShellFootnote" xml:space="preserve"><value>Demo runtime şu anda demo1.cafetech.uk alan adına bağlı.</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Oturum</value></data>
+  <data name="AnonymousGuest" xml:space="preserve"><value>Misafir oturumu</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="SettingsHero" xml:space="preserve"><value>Bu hesap için operatör dili, konsol yoğunluğu ve yerel saat varsayılanları.</value></data>
+  <data name="AccountEyebrow" xml:space="preserve"><value>Hesap</value></data>
+  <data name="MetricAccount" xml:space="preserve"><value>Hesap</value></data>
+  <data name="MetricUiLanguage" xml:space="preserve"><value>Arayüz Dili</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>Saat Dilimi</value></data>
+  <data name="StoredForAccount" xml:space="preserve"><value>Bu hesapta saklanır</value></data>
+  <data name="Preferences" xml:space="preserve"><value>Tercihler</value></data>
+  <data name="Security" xml:space="preserve"><value>Güvenlik</value></data>
+  <data name="OperatorDefaults" xml:space="preserve"><value>Operatör Varsayılanları</value></data>
+  <data name="Preview" xml:space="preserve"><value>Önizleme</value></data>
+  <data name="SessionDefaults" xml:space="preserve"><value>Oturum Varsayılanları</value></data>
+  <data name="Language" xml:space="preserve"><value>Dil</value></data>
+  <data name="Density" xml:space="preserve"><value>Yoğunluk</value></data>
+  <data name="Compact" xml:space="preserve"><value>Kompakt</value></data>
+  <data name="Comfortable" xml:space="preserve"><value>Rahat</value></data>
+  <data name="EnglishUk" xml:space="preserve"><value>İngilizce</value></data>
+  <data name="Turkish" xml:space="preserve"><value>Türkçe</value></data>
+  <data name="OperatorTimeZone" xml:space="preserve"><value>Operatör Saat Dilimi</value></data>
+  <data name="TimeZonePreview" xml:space="preserve"><value>Saat Önizlemesi</value></data>
+  <data name="Scope" xml:space="preserve"><value>Kapsam</value></data>
+  <data name="SettingsScopeCopy" xml:space="preserve"><value>Bu tercihler tenant veritabanında saklanır ve operatörü oturumlar ile tarayıcılar arasında takip eder.</value></data>
+  <data name="SavePreferences" xml:space="preserve"><value>Tercihleri Kaydet</value></data>
+  <data name="Saving" xml:space="preserve"><value>Kaydediliyor...</value></data>
+  <data name="PreferencesSavedSuccess" xml:space="preserve"><value>Tercihler bu hesap için kaydedildi.</value></data>
+  <data name="PreferencesSaveFailed" xml:space="preserve"><value>Tercihler kaydedilemedi: {0}</value></data>
+  <data name="SettingsLoadError" xml:space="preserve"><value>Ayarlar yüklenemedi: {0}</value></data>
+  <data name="CurrentPassword" xml:space="preserve"><value>Mevcut Parola</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>Yeni Parola</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>Parolayı Doğrula</value></data>
+  <data name="UpdatePassword" xml:space="preserve"><value>Parolayı Güncelle</value></data>
+  <data name="Updating" xml:space="preserve"><value>Güncelleniyor...</value></data>
+  <data name="PasswordPolicy" xml:space="preserve"><value>Parola Politikası</value></data>
+  <data name="PasswordPolicyCopy" xml:space="preserve"><value>Canlı personele paylaşmadan önce en az sekiz karakterli ve benzersiz bir parola kullan.</value></data>
+  <data name="SessionBehavior" xml:space="preserve"><value>Oturum Davranışı</value></data>
+  <data name="SessionBehaviorCopy" xml:space="preserve"><value>Identity personel erişimini bu tenant host ile sınırlar. Tercihler bir sonraki tam yenilemede uygulanır.</value></data>
+  <data name="PasswordMismatchError" xml:space="preserve"><value>Yeni parola ile doğrulama aynı değil.</value></data>
+  <data name="AccountMissingError" xml:space="preserve"><value>Geçerli hesap yüklenemedi.</value></data>
+  <data name="PasswordUpdatedSuccess" xml:space="preserve"><value>Parola güncellendi. Oturumunuz yenilendi.</value></data>
+  <data name="PasswordChangeFailed" xml:space="preserve"><value>Parola değişimi başarısız oldu: {0}</value></data>
+  <data name="MenuTitle" xml:space="preserve"><value>Menü</value></data>
+  <data name="MenuHero" xml:space="preserve"><value>Aktif menüyü tara, masa oturumunu gör ve sipariş akışını masaya yakın tut.</value></data>
+  <data name="NoActiveSession" xml:space="preserve"><value>Henüz aktif oturum yok.</value></data>
+  <data name="ScanQrToStart" xml:space="preserve"><value>Sipariş vermeden önce masa oturumunu açmak için bir QR kodu tara.</value></data>
+  <data name="ViewCart" xml:space="preserve"><value>Sepeti Gör</value></data>
+  <data name="LoadingMenu" xml:space="preserve"><value>Menü yükleniyor</value></data>
+  <data name="LoadingMenuCopy" xml:space="preserve"><value>Uygun ürünler tenant kataloğundan getiriliyor.</value></data>
+  <data name="MenuEmpty" xml:space="preserve"><value>Henüz menü ürünü yok</value></data>
+  <data name="MenuEmptyCopy" xml:space="preserve"><value>Canlı demo menüde görünmesi için katalog ürünleri ekleyin.</value></data>
+  <data name="AddToCart" xml:space="preserve"><value>Sepete Ekle</value></data>
+  <data name="CartTitle" xml:space="preserve"><value>Sepet</value></data>
+  <data name="CartHero" xml:space="preserve"><value>Oturuma bağlı sepet satırları, toplamlar ve sipariş gönderim akışı.</value></data>
+  <data name="LoadingCart" xml:space="preserve"><value>Sepet yükleniyor</value></data>
+  <data name="LoadingCartCopy" xml:space="preserve"><value>Geçerli oturumun sepet satırları getiriliyor.</value></data>
+  <data name="CartEmpty" xml:space="preserve"><value>Sepet boş</value></data>
+  <data name="CartEmptyCopy" xml:space="preserve"><value>Sipariş akışını görmek için bir iki ürün ekleyin.</value></data>
+  <data name="PlaceOrder" xml:space="preserve"><value>Siparişi Gönder</value></data>
+  <data name="Remove" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="TableItem" xml:space="preserve"><value>Ürün</value></data>
+  <data name="TableQuantity" xml:space="preserve"><value>Adet</value></data>
+  <data name="TablePrice" xml:space="preserve"><value>Fiyat</value></data>
+  <data name="TableTotal" xml:space="preserve"><value>Toplam</value></data>
+  <data name="TableActions" xml:space="preserve"><value>Aksiyonlar</value></data>
+  <data name="ScanQrTitle" xml:space="preserve"><value>Masa Oturumu Aç</value></data>
+  <data name="ScanQrHero" xml:space="preserve"><value>Bu tarayıcıda masa oturumunu açmak veya sürdürmek için bir QR token kullan.</value></data>
+  <data name="EnterQrToken" xml:space="preserve"><value>QR token gir</value></data>
+  <data name="OpenSession" xml:space="preserve"><value>Oturumu Aç</value></data>
+  <data name="ScanAgain" xml:space="preserve"><value>Tekrar Tara</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Taranıyor...</value></data>
+  <data name="QrRequired" xml:space="preserve"><value>QR token zorunlu.</value></data>
+  <data name="OpenSessionFailed" xml:space="preserve"><value>Oturum açılamadı: {0}</value></data>
+  <data name="TablesTitle" xml:space="preserve"><value>Masalar</value></data>
+  <data name="TablesHero" xml:space="preserve"><value>Ayrı bir sayfaya gitmeden, drawer içinden hızlı bağlam veren yoğun masa görünürlüğü.</value></data>
+  <data name="LoadingTables" xml:space="preserve"><value>Masalar yükleniyor</value></data>
+  <data name="LoadingTablesCopy" xml:space="preserve"><value>Güncel kat kayıtları tenant deposundan getiriliyor.</value></data>
+  <data name="NoTables" xml:space="preserve"><value>Henüz masa yok</value></data>
+  <data name="NoTablesCopy" xml:space="preserve"><value>Canlı servis çalışma alanını kullanmadan önce masa kayıtlarını ekleyin.</value></data>
+  <data name="Active" xml:space="preserve"><value>Aktif</value></data>
+  <data name="Inactive" xml:space="preserve"><value>Pasif</value></data>
+  <data name="OpenInspector" xml:space="preserve"><value>İncele</value></data>
+  <data name="TableDrawerTitle" xml:space="preserve"><value>Masa Detayı</value></data>
+  <data name="TableCode" xml:space="preserve"><value>Kod</value></data>
+  <data name="OpenSessionState" xml:space="preserve"><value>Açık Oturum</value></data>
+  <data name="StationType" xml:space="preserve"><value>Tür</value></data>
+  <data name="SortOrder" xml:space="preserve"><value>Sıra</value></data>
+  <data name="KitchenTitle" xml:space="preserve"><value>Mutfak Ekranı</value></data>
+  <data name="KitchenHero" xml:space="preserve"><value>Akıştaki siparişler, ürün durum geçişleri ve kuyruktan çıkmadan hızlı bağlam.</value></data>
+  <data name="LoadingKitchen" xml:space="preserve"><value>Mutfak ekranı yükleniyor</value></data>
+  <data name="LoadingKitchenCopy" xml:space="preserve"><value>Açık siparişler mutfak okuma yüzeyinden getiriliyor.</value></data>
+  <data name="NoKitchenOrders" xml:space="preserve"><value>Aktif mutfak siparişi yok</value></data>
+  <data name="NoKitchenOrdersCopy" xml:space="preserve"><value>Masa oturumundan yeni sipariş gönderildiğinde burada görünür.</value></data>
+  <data name="Start" xml:space="preserve"><value>Başlat</value></data>
+  <data name="Ready" xml:space="preserve"><value>Hazır</value></data>
+  <data name="KitchenDrawerTitle" xml:space="preserve"><value>Sipariş Detayı</value></data>
+  <data name="OrderStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="BackToMenu" xml:space="preserve"><value>Menüye Dön</value></data>
+  <data name="OrderTitle" xml:space="preserve"><value>Sipariş</value></data>
+  <data name="OrderHero" xml:space="preserve"><value>Gönderilmiş sipariş detayı ve ürün bazında güncel yürütme durumu.</value></data>
+  <data name="LoadingOrder" xml:space="preserve"><value>Sipariş yükleniyor</value></data>
+  <data name="LoadingOrderCopy" xml:space="preserve"><value>Sipariş detayı tenant API'den getiriliyor.</value></data>
+  <data name="OrderMissing" xml:space="preserve"><value>Sipariş yüklenemedi.</value></data>
+  <data name="OrderMissingCopy" xml:space="preserve"><value>Sipariş kimliğini kontrol edin veya menüye dönüp yeni bir akış başlatın.</value></data>
+</root>
