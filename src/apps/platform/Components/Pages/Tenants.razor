@@ -34,7 +34,7 @@ else
         <article class="metric-card">
             <p class="metric-label">Visible Tenants</p>
             <p class="metric-value">@FilteredTenants.Count</p>
-            <p class="metric-footnote">@TenantList.Count total in registry</p>
+            <p class="metric-footnote">@VisibleTenants.Count shown on this page</p>
         </article>
         <article class="metric-card">
             <p class="metric-label">Active</p>
@@ -52,7 +52,7 @@ else
         <div class="registry-toolbar">
             <div class="search-field">
                 <label for="tenant-search">Search tenants</label>
-                <InputText id="tenant-search" @bind-Value="SearchTerm" class="form-control" placeholder="Code, domain, display name" />
+                <input id="tenant-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Code, domain, display name" />
             </div>
 
             <div class="filter-group">
@@ -67,50 +67,133 @@ else
             <div class="empty-state compact-empty">
                 <h4>No tenants match this view</h4>
                 <p>Try clearing the search term or switching the status filter.</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+                    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+                </div>
             </div>
         }
         else
         {
-            <div class="table-shell">
-                <table class="table tenants-table">
-                    <thead>
-                        <tr>
-                            <th>Tenant</th>
-                            <th>Status</th>
-                            <th>Locale</th>
-                            <th>Domain</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var tenant in FilteredTenants)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="tenant-cell">
-                                        <p class="list-title">@tenant.DisplayName</p>
-                                        <p class="list-subtitle">@tenant.Code</p>
-                                    </div>
-                                </td>
-                                <td><span class="@StatusClass(tenant.Status)">@tenant.Status</span></td>
-                                <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
-                                <td>@tenant.PrimaryDomain</td>
-                                <td class="actions-cell">
-                                    <button class="btn btn-sm btn-secondary" @onclick="() => NavigateToDetail(tenant.Id)">Open</button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="inspector-layout">
+                <div class="surface-stack">
+                    <div class="toolbar-meta">
+                        <p>@FilterSummary</p>
+                        <p>@PagingSummary</p>
+                    </div>
+
+                    <div class="table-shell">
+                        <table class="table tenants-table">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Status</th>
+                                    <th>Locale</th>
+                                    <th>Domain</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tenant in VisibleTenants)
+                                {
+                                    var isSelected = tenant.Id == SelectedTenant?.Id;
+
+                                    <tr class="@RowClass(isSelected)" @onclick="() => SelectTenant(tenant.Id)">
+                                        <td>
+                                            <div class="tenant-cell">
+                                                <p class="list-title">@tenant.DisplayName</p>
+                                                <p class="list-subtitle">@tenant.Code</p>
+                                            </div>
+                                        </td>
+                                        <td><span class="@StatusClass(tenant.Status)">@tenant.Status</span></td>
+                                        <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
+                                        <td>@tenant.PrimaryDomain</td>
+                                        <td class="actions-cell">
+                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectTenant(tenant.Id)">Inspect</button>
+                                            <button type="button" class="btn btn-sm btn-primary" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(tenant.Id)">Open</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <p>@PagingSummary</p>
+                        <div class="pagination">
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">Previous</button>
+                            <span>Page @CurrentPage of @TotalPages</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="detail-card">
+                    @if (SelectedTenant is null)
+                    {
+                        <div class="empty-state compact-empty">
+                            <h4>No tenant selected</h4>
+                            <p>Select a row to review its registry snapshot.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Selection</p>
+                                <h3>@SelectedTenant.DisplayName</h3>
+                            </div>
+                            <span class="@StatusClass(SelectedTenant.Status)">@SelectedTenant.Status</span>
+                        </div>
+
+                        <div class="detail-stack">
+                            <div class="kv-grid">
+                                <div class="kv-item">
+                                    <span class="kv-label">Tenant Code</span>
+                                    <span class="kv-value">@SelectedTenant.Code</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Primary Domain</span>
+                                    <span class="kv-value">@SelectedTenant.PrimaryDomain</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Language</span>
+                                    <span class="kv-value">@SelectedTenant.LanguageCode</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Currency</span>
+                                    <span class="kv-value">@SelectedTenant.CurrencyCode</span>
+                                </div>
+                                <div class="kv-item form-span-2">
+                                    <span class="kv-label">Time Zone</span>
+                                    <span class="kv-value">@SelectedTenant.TimeZone</span>
+                                </div>
+                            </div>
+
+                            <section class="detail-section">
+                                <p class="detail-title">Operator Notes</p>
+                                <p class="detail-copy">@TenantStatusCopy(SelectedTenant)</p>
+                            </section>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">Open Full Record</button>
+                                <a href="/tenants/new" class="btn btn-secondary">Create Another</a>
+                            </div>
+                        </div>
+                    }
+                </aside>
             </div>
         }
     </section>
 }
 
 @code {
+    private const int PageSize = 8;
     private List<TenantDto>? TenantList;
+    private Guid? SelectedTenantId;
     private string SearchTerm { get; set; } = string.Empty;
     private string StatusFilter { get; set; } = "all";
+    private int CurrentPage { get; set; } = 1;
     private string? LoadError;
 
     private IReadOnlyList<TenantDto> FilteredTenants =>
@@ -120,11 +203,41 @@ else
             .OrderBy(t => t.DisplayName)
             .ToList();
 
+    private IReadOnlyList<TenantDto> VisibleTenants =>
+        FilteredTenants
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+    private TenantDto? SelectedTenant =>
+        VisibleTenants.FirstOrDefault(t => t.Id == SelectedTenantId) ?? VisibleTenants.FirstOrDefault();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredTenants.Count / (double)PageSize));
+
+    private string FilterSummary =>
+        $"{FilteredTenants.Count} matching tenants from {TenantList?.Count ?? 0} registry records";
+
+    private string PagingSummary
+    {
+        get
+        {
+            if (FilteredTenants.Count == 0)
+            {
+                return "Showing 0 results";
+            }
+
+            var start = ((CurrentPage - 1) * PageSize) + 1;
+            var end = Math.Min(CurrentPage * PageSize, FilteredTenants.Count);
+            return $"Showing {start}-{end} of {FilteredTenants.Count}";
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             TenantList = (await TenantRegistryService.GetTenantsAsync()).ToList();
+            EnsureSelection();
         }
         catch (Exception ex)
         {
@@ -159,10 +272,76 @@ else
         };
     }
 
-    private void SetStatusFilter(string filter) => StatusFilter = filter;
+    private void SetStatusFilter(string filter)
+    {
+        StatusFilter = filter;
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        StatusFilter = "all";
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void SelectTenant(Guid tenantId)
+    {
+        SelectedTenantId = tenantId;
+    }
+
+    private void PreviousPage()
+    {
+        if (CurrentPage <= 1)
+        {
+            return;
+        }
+
+        CurrentPage--;
+        EnsureSelection();
+    }
+
+    private void NextPage()
+    {
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        CurrentPage++;
+        EnsureSelection();
+    }
+
+    private void EnsureSelection()
+    {
+        if (CurrentPage > TotalPages)
+        {
+            CurrentPage = TotalPages;
+        }
+
+        var selected = VisibleTenants.FirstOrDefault(t => t.Id == SelectedTenantId) ?? VisibleTenants.FirstOrDefault();
+        SelectedTenantId = selected?.Id;
+    }
 
     private string FilterButtonClass(string filter) =>
         StatusFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static string RowClass(bool isSelected) =>
+        isSelected ? "data-row selected" : "data-row";
+
+    private static string TenantStatusCopy(TenantDto tenant) =>
+        IsStatus(tenant.Status, "active")
+            ? "This tenant is marked active and should be reachable through its assigned runtime surface."
+            : "This tenant is not active yet and should be checked against provisioning progress or rollout blockers.";
 
     private static bool IsStatus(string? value, string expected) =>
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);

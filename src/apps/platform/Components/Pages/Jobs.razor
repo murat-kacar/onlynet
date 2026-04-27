@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
 @inject IProvisioningJobReadService ProvisioningJobReadService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Provisioning Jobs</PageTitle>
 
@@ -48,7 +49,7 @@ else
         <div class="registry-toolbar">
             <div class="search-field">
                 <label for="job-search">Search jobs</label>
-                <InputText id="job-search" @bind-Value="SearchTerm" class="form-control" placeholder="Type, worker, tenant id" />
+                <input id="job-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Type, worker, tenant id" />
             </div>
 
             <div class="filter-group">
@@ -63,48 +64,188 @@ else
             <div class="empty-state compact-empty">
                 <h4>No jobs in this view</h4>
                 <p>Try clearing the search or changing the status filter.</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+                    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+                </div>
             </div>
         }
         else
         {
-            <div class="table-shell">
-                <table class="table jobs-table">
-                    <thead>
-                        <tr>
-                            <th>Job</th>
-                            <th>Status</th>
-                            <th>Tenant</th>
-                            <th>Claimed By</th>
-                            <th>Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var job in FilteredJobs)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="tenant-cell">
-                                        <p class="list-title">@job.Type</p>
-                                        <p class="list-subtitle">@ShortId(job.Id)</p>
+            <div class="inspector-layout">
+                <div class="surface-stack">
+                    <div class="toolbar-meta">
+                        <p>@FilterSummary</p>
+                        <p>@PagingSummary</p>
+                    </div>
+
+                    <div class="table-shell">
+                        <table class="table jobs-table">
+                            <thead>
+                                <tr>
+                                    <th>Job</th>
+                                    <th>Status</th>
+                                    <th>Tenant</th>
+                                    <th>Claimed By</th>
+                                    <th>Updated</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var job in VisibleJobs)
+                                {
+                                    var isSelected = job.Id == SelectedJob?.Id;
+
+                                    <tr class="@RowClass(isSelected)" @onclick="() => SelectJobAsync(job.Id)">
+                                        <td>
+                                            <div class="tenant-cell">
+                                                <p class="list-title">@job.Type</p>
+                                                <p class="list-subtitle">@ShortId(job.Id)</p>
+                                            </div>
+                                        </td>
+                                        <td><span class="@StatusClass(job.Status)">@job.Status</span></td>
+                                        <td>@ShortId(job.TenantId)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? "Unclaimed" : job.ClaimedBy)</td>
+                                        <td>@FormatDate(job.UpdatedAt)</td>
+                                        <td class="actions-cell">
+                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectJobAsync(job.Id)">Inspect</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <p>@PagingSummary</p>
+                        <div class="pagination">
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPageAsync" disabled="@(CurrentPage == 1)">Previous</button>
+                            <span>Page @CurrentPage of @TotalPages</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPageAsync" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="detail-card">
+                    @if (IsLoadingDetail)
+                    {
+                        <div class="empty-state compact-empty">
+                            <h4>Loading job detail</h4>
+                            <p>Fetching step-level execution data from the provisioning store.</p>
+                        </div>
+                    }
+                    else if (DetailError is not null)
+                    {
+                        <div class="alert alert-danger">@DetailError</div>
+                    }
+                    else if (SelectedJob is null || SelectedJobDetail is null)
+                    {
+                        <div class="empty-state compact-empty">
+                            <h4>No job selected</h4>
+                            <p>Select a row to inspect payload, result, and step progression.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Selection</p>
+                                <h3>@SelectedJob.Type</h3>
+                            </div>
+                            <span class="@StatusClass(SelectedJob.Status)">@SelectedJob.Status</span>
+                        </div>
+
+                        <div class="detail-stack">
+                            <div class="kv-grid">
+                                <div class="kv-item">
+                                    <span class="kv-label">Job Id</span>
+                                    <span class="kv-value">@SelectedJob.Id</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Tenant Id</span>
+                                    <span class="kv-value">@SelectedJob.TenantId</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Claimed By</span>
+                                    <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? "Unclaimed" : SelectedJob.ClaimedBy)</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Updated</span>
+                                    <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
+                                </div>
+                            </div>
+
+                            <section class="detail-section">
+                                <div class="section-heading">
+                                    <p class="detail-title">Execution Steps</p>
+                                    <span>@SelectedJobDetail.Steps.Count step(s)</span>
+                                </div>
+                                @if (SelectedJobDetail.Steps.Count == 0)
+                                {
+                                    <p class="detail-copy">No steps have been recorded yet for this job.</p>
+                                }
+                                else
+                                {
+                                    <div class="step-list">
+                                        @foreach (var step in SelectedJobDetail.Steps.OrderBy(step => step.StartedAt))
+                                        {
+                                            <div class="step-item">
+                                                <div>
+                                                    <p class="list-title">@step.Name</p>
+                                                    <p class="list-subtitle">@FormatDate(step.StartedAt)</p>
+                                                </div>
+                                                <span class="@StatusClass(step.Status)">@step.Status</span>
+                                            </div>
+                                        }
                                     </div>
-                                </td>
-                                <td><span class="@StatusClass(job.Status)">@job.Status</span></td>
-                                <td>@ShortId(job.TenantId)</td>
-                                <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? "Unclaimed" : job.ClaimedBy)</td>
-                                <td>@FormatDate(job.UpdatedAt)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                }
+                            </section>
+
+                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
+                            {
+                                <section class="detail-section">
+                                    <p class="detail-title">Failure Detail</p>
+                                    <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
+                                </section>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Result))
+                            {
+                                <section class="detail-section">
+                                    <p class="detail-title">Result</p>
+                                    <pre class="detail-code">@SelectedJobDetail.Result</pre>
+                                </section>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Payload))
+                            {
+                                <section class="detail-section">
+                                    <p class="detail-title">Payload</p>
+                                    <pre class="detail-code">@SelectedJobDetail.Payload</pre>
+                                </section>
+                            }
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo($"/tenants/{SelectedJob.TenantId}")'>Open Tenant</button>
+                            </div>
+                        </div>
+                    }
+                </aside>
             </div>
         }
     </section>
 }
 
 @code {
+    private const int PageSize = 8;
     private List<JobDto>? JobList;
+    private Guid? SelectedJobId;
+    private JobDetailDto? SelectedJobDetail;
     private string SearchTerm { get; set; } = string.Empty;
     private string StatusFilter { get; set; } = "all";
+    private int CurrentPage { get; set; } = 1;
+    private bool IsLoadingDetail;
+    private string? DetailError;
     private string? LoadError;
     private int OpenJobs => JobList?.Count(j => !IsStatus(j.Status, "completed")) ?? 0;
     private int FailedJobs => JobList?.Count(j => IsStatus(j.Status, "failed")) ?? 0;
@@ -115,11 +256,41 @@ else
             .Where(MatchesFilter)
             .ToList();
 
+    private IReadOnlyList<JobDto> VisibleJobs =>
+        FilteredJobs
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+    private JobDto? SelectedJob =>
+        VisibleJobs.FirstOrDefault(job => job.Id == SelectedJobId) ?? VisibleJobs.FirstOrDefault();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredJobs.Count / (double)PageSize));
+
+    private string FilterSummary =>
+        $"{FilteredJobs.Count} matching jobs from {JobList?.Count ?? 0} queue records";
+
+    private string PagingSummary
+    {
+        get
+        {
+            if (FilteredJobs.Count == 0)
+            {
+                return "Showing 0 results";
+            }
+
+            var start = ((CurrentPage - 1) * PageSize) + 1;
+            var end = Math.Min(CurrentPage * PageSize, FilteredJobs.Count);
+            return $"Showing {start}-{end} of {FilteredJobs.Count}";
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             JobList = (await ProvisioningJobReadService.GetJobsAsync()).ToList();
+            await EnsureSelectionAsync();
         }
         catch (Exception ex)
         {
@@ -149,10 +320,109 @@ else
         };
     }
 
-    private void SetStatusFilter(string filter) => StatusFilter = filter;
+    private async Task SetStatusFilter(string filter)
+    {
+        StatusFilter = filter;
+        CurrentPage = 1;
+        await EnsureSelectionAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        StatusFilter = "all";
+        CurrentPage = 1;
+        await EnsureSelectionAsync();
+    }
+
+    private async Task OnSearchChanged(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+        await EnsureSelectionAsync();
+    }
+
+    private async Task SelectJobAsync(Guid jobId)
+    {
+        if (SelectedJobId == jobId && SelectedJobDetail is not null)
+        {
+            return;
+        }
+
+        SelectedJobId = jobId;
+        await LoadSelectedJobDetailAsync(jobId);
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (CurrentPage <= 1)
+        {
+            return;
+        }
+
+        CurrentPage--;
+        await EnsureSelectionAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        CurrentPage++;
+        await EnsureSelectionAsync();
+    }
+
+    private async Task EnsureSelectionAsync()
+    {
+        if (CurrentPage > TotalPages)
+        {
+            CurrentPage = TotalPages;
+        }
+
+        var selected = VisibleJobs.FirstOrDefault(job => job.Id == SelectedJobId) ?? VisibleJobs.FirstOrDefault();
+
+        if (selected is null)
+        {
+            SelectedJobId = null;
+            SelectedJobDetail = null;
+            DetailError = null;
+            return;
+        }
+
+        if (SelectedJobId != selected.Id || SelectedJobDetail?.Id != selected.Id)
+        {
+            SelectedJobId = selected.Id;
+            await LoadSelectedJobDetailAsync(selected.Id);
+        }
+    }
+
+    private async Task LoadSelectedJobDetailAsync(Guid jobId)
+    {
+        try
+        {
+            IsLoadingDetail = true;
+            DetailError = null;
+            SelectedJobDetail = await ProvisioningJobReadService.GetJobAsync(jobId);
+        }
+        catch (Exception ex)
+        {
+            DetailError = $"Job detail failed to load: {ex.Message}";
+            SelectedJobDetail = null;
+        }
+        finally
+        {
+            IsLoadingDetail = false;
+        }
+    }
 
     private string FilterButtonClass(string filter) =>
         StatusFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static string RowClass(bool isSelected) =>
+        isSelected ? "data-row selected" : "data-row";
 
     private static bool IsStatus(string? value, string expected) =>
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);

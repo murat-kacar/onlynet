@@ -41,7 +41,7 @@ else
         <div class="registry-toolbar">
             <div class="search-field">
                 <label for="audit-search">Search audit</label>
-                <InputText id="audit-search" @bind-Value="SearchTerm" class="form-control" placeholder="Actor, action, resource" />
+                <input id="audit-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Actor, action, resource" />
             </div>
 
             <div class="filter-group">
@@ -56,62 +56,168 @@ else
             <div class="empty-state compact-empty">
                 <h4>No audit entries yet</h4>
                 <p>Bootstrap, login, and future tenant mutations will appear here as the log fills.</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+                </div>
             </div>
         }
         else
         {
-            <div class="table-shell">
-                <table class="table audit-table">
-                    <thead>
-                        <tr>
-                            <th>When</th>
-                            <th>Actor</th>
-                            <th>Action</th>
-                            <th>Resource</th>
-                            <th>IP</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var entry in FilteredEntries)
-                        {
-                            <tr>
-                                <td>@FormatDate(entry.CreatedAt)</td>
-                                <td>@entry.ActorEmail</td>
-                                <td><span class="status-pill neutral">@entry.Action</span></td>
-                                <td>
-                                    <div class="tenant-cell">
-                                        <p class="list-title">@entry.ResourceType</p>
-                                        <p class="list-subtitle">@entry.ResourceId</p>
-                                    </div>
-                                </td>
-                                <td>@(entry.Ip ?? "-")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="inspector-layout">
+                <div class="surface-stack">
+                    <div class="toolbar-meta">
+                        <p>@FilterSummary</p>
+                        <p>@PagingSummary</p>
+                    </div>
+
+                    <div class="table-shell">
+                        <table class="table audit-table">
+                            <thead>
+                                <tr>
+                                    <th>When</th>
+                                    <th>Actor</th>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in VisibleEntries)
+                                {
+                                    var isSelected = entry.Id == SelectedEntry?.Id;
+
+                                    <tr class="@RowClass(isSelected)" @onclick="() => SelectEntry(entry.Id)">
+                                        <td>@FormatDate(entry.CreatedAt)</td>
+                                        <td>@entry.ActorEmail</td>
+                                        <td><span class="@ActionClass(entry.Action)">@entry.Action</span></td>
+                                        <td>
+                                            <div class="tenant-cell">
+                                                <p class="list-title">@entry.ResourceType</p>
+                                                <p class="list-subtitle">@entry.ResourceId</p>
+                                            </div>
+                                        </td>
+                                        <td>@(entry.Ip ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <p>@PagingSummary</p>
+                        <div class="pagination">
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">Previous</button>
+                            <span>Page @CurrentPage of @TotalPages</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="detail-card">
+                    @if (SelectedEntry is null)
+                    {
+                        <div class="empty-state compact-empty">
+                            <h4>No event selected</h4>
+                            <p>Select a row to inspect the full audit context.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Selection</p>
+                                <h3>@SelectedEntry.Action</h3>
+                            </div>
+                            <span class="@ActionClass(SelectedEntry.Action)">@EntryTone(SelectedEntry.Action)</span>
+                        </div>
+
+                        <div class="detail-stack">
+                            <div class="kv-grid">
+                                <div class="kv-item">
+                                    <span class="kv-label">When</span>
+                                    <span class="kv-value">@FormatDate(SelectedEntry.CreatedAt)</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Actor</span>
+                                    <span class="kv-value">@SelectedEntry.ActorEmail</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">Resource Type</span>
+                                    <span class="kv-value">@SelectedEntry.ResourceType</span>
+                                </div>
+                                <div class="kv-item">
+                                    <span class="kv-label">IP</span>
+                                    <span class="kv-value">@(SelectedEntry.Ip ?? "-")</span>
+                                </div>
+                                <div class="kv-item form-span-2">
+                                    <span class="kv-label">Resource Id</span>
+                                    <span class="kv-value">@SelectedEntry.ResourceId</span>
+                                </div>
+                            </div>
+
+                            <section class="detail-section">
+                                <p class="detail-title">Operator Notes</p>
+                                <p class="detail-copy">@EntryCopy(SelectedEntry)</p>
+                            </section>
+                        </div>
+                    }
+                </aside>
             </div>
         }
     </section>
 }
 
 @code {
+    private const int PageSize = 10;
     private List<PlatformAuditEntryDto> AuditEntries = [];
+    private Guid? SelectedEntryId;
     private string SearchTerm { get; set; } = string.Empty;
     private string ActionFilter { get; set; } = "all";
+    private int CurrentPage { get; set; } = 1;
     private string? LoadError;
-    private int DistinctActors => AuditEntries.Select(entry => entry.ActorEmail).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-    private int DistinctActions => AuditEntries.Select(entry => entry.Action).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    private int DistinctActors => FilteredEntries.Select(entry => entry.ActorEmail).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    private int DistinctActions => FilteredEntries.Select(entry => entry.Action).Distinct(StringComparer.OrdinalIgnoreCase).Count();
     private IReadOnlyList<PlatformAuditEntryDto> FilteredEntries =>
         AuditEntries
             .Where(MatchesSearch)
             .Where(MatchesActionFilter)
             .ToList();
 
+    private IReadOnlyList<PlatformAuditEntryDto> VisibleEntries =>
+        FilteredEntries
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+    private PlatformAuditEntryDto? SelectedEntry =>
+        VisibleEntries.FirstOrDefault(entry => entry.Id == SelectedEntryId) ?? VisibleEntries.FirstOrDefault();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredEntries.Count / (double)PageSize));
+
+    private string FilterSummary =>
+        $"{FilteredEntries.Count} matching entries from {AuditEntries.Count} audit records";
+
+    private string PagingSummary
+    {
+        get
+        {
+            if (FilteredEntries.Count == 0)
+            {
+                return "Showing 0 results";
+            }
+
+            var start = ((CurrentPage - 1) * PageSize) + 1;
+            var end = Math.Min(CurrentPage * PageSize, FilteredEntries.Count);
+            return $"Showing {start}-{end} of {FilteredEntries.Count}";
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             AuditEntries = (await PlatformAuditReadService.GetEntriesAsync()).ToList();
+            EnsureSelection();
         }
         catch (Exception ex)
         {
@@ -142,10 +248,116 @@ else
         };
     }
 
-    private void SetActionFilter(string filter) => ActionFilter = filter;
+    private void SetActionFilter(string filter)
+    {
+        ActionFilter = filter;
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        ActionFilter = "all";
+        CurrentPage = 1;
+        EnsureSelection();
+    }
+
+    private void SelectEntry(Guid entryId)
+    {
+        SelectedEntryId = entryId;
+    }
+
+    private void PreviousPage()
+    {
+        if (CurrentPage <= 1)
+        {
+            return;
+        }
+
+        CurrentPage--;
+        EnsureSelection();
+    }
+
+    private void NextPage()
+    {
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        CurrentPage++;
+        EnsureSelection();
+    }
+
+    private void EnsureSelection()
+    {
+        if (CurrentPage > TotalPages)
+        {
+            CurrentPage = TotalPages;
+        }
+
+        var selected = VisibleEntries.FirstOrDefault(entry => entry.Id == SelectedEntryId) ?? VisibleEntries.FirstOrDefault();
+        SelectedEntryId = selected?.Id;
+    }
 
     private string FilterButtonClass(string filter) =>
         ActionFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static string RowClass(bool isSelected) =>
+        isSelected ? "data-row selected" : "data-row";
+
+    private static string ActionClass(string action)
+    {
+        if (action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+
+        if (action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+
+        return "status-pill neutral";
+    }
+
+    private static string EntryTone(string action)
+    {
+        if (action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Auth";
+        }
+
+        if (action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Tenant";
+        }
+
+        return "Platform";
+    }
+
+    private static string EntryCopy(PlatformAuditEntryDto entry)
+    {
+        if (entry.Action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "This event belongs to the platform authentication surface and should be reviewed together with sign-in or credential activity.";
+        }
+
+        if (entry.Action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "This event reflects tenant lifecycle activity and should line up with a matching registry change or provisioning job.";
+        }
+
+        return "This event was captured by the platform audit surface and can be used to reconstruct operator activity across shared control flows.";
+    }
 
     private static string FormatDate(DateTimeOffset value) =>
         value.ToString("yyyy-MM-dd HH:mm");
