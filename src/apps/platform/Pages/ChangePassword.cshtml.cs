@@ -67,7 +67,7 @@ public class ChangePasswordModel : PageModel
                 }
             }
             await _signInManager.RefreshSignInAsync(user);
-            return RedirectToPage("/Index");
+            return LocalRedirect("/");
         }
 
         foreach (var error in result.Errors)

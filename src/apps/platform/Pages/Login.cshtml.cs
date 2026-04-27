@@ -26,7 +26,7 @@ public class LoginModel : PageModel
         var result = await _signInManager.PasswordSignInAsync(Email, Password, false, false);
         if (result.Succeeded)
         {
-            return RedirectToPage("/Index");
+            return LocalRedirect("/");
         }
 
         ModelState.AddModelError(string.Empty, "Invalid login attempt.");
