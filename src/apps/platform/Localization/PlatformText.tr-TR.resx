@@ -111,6 +111,8 @@
   <data name="IdentityEyebrow" xml:space="preserve"><value>Kimlik</value></data>
   <data name="RegistrySummary" xml:space="preserve"><value>Kayıt Özeti</value></data>
   <data name="OwnerEmail" xml:space="preserve"><value>Sahip E-postası</value></data>
+  <data name="AdminEmail" xml:space="preserve"><value>Admin E-postası</value></data>
+  <data name="BootstrapAdmin" xml:space="preserve"><value>İlk Admin</value></data>
   <data name="Database" xml:space="preserve"><value>Veritabanı</value></data>
   <data name="DatabaseUser" xml:space="preserve"><value>VT Kullanıcısı</value></data>
   <data name="Pending" xml:space="preserve"><value>Bekliyor</value></data>

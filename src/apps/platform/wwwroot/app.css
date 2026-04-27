@@ -223,6 +223,14 @@ h4 {
     backdrop-filter: blur(4px);
 }
 
+.rz-dialog-wrapper.platform-modal-dialog-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(4px);
+}
+
 .rz-dialog.platform-side-dialog {
     border: 0;
     border-left: 1px solid var(--line);
@@ -251,6 +259,34 @@ h4 {
 
 .rz-dialog.platform-side-dialog .rz-dialog-titlebar-close {
     color: var(--muted);
+}
+
+.rz-dialog.platform-modal-dialog {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    margin: 0;
+}
+
+.rz-dialog.platform-modal-dialog .rz-dialog-titlebar {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    background: #f7fbfb;
+}
+
+.rz-dialog.platform-modal-dialog .rz-dialog-title {
+    color: var(--text);
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.rz-dialog.platform-modal-dialog .rz-dialog-content {
+    padding: 18px;
+    max-height: min(calc(100vh - 120px), 760px);
+    overflow: auto;
+    background: transparent;
 }
 
 .dialog-stack {

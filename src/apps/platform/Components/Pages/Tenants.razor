@@ -263,7 +263,7 @@ else
 
     private async Task OpenCreateTenantAsync()
     {
-        var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
+        var result = await DialogService.OpenAsync<TenantEditorPanel>(
             L["CreateTenantDialogTitle"],
             new Dictionary<string, object?>(),
             CreateDialogOptions());
@@ -397,15 +397,16 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private static SideDialogOptions CreateDialogOptions() => new()
+    private static DialogOptions CreateDialogOptions() => new()
     {
-        Position = DialogPosition.Right,
-        ShowMask = true,
+        ShowClose = true,
         CloseDialogOnOverlayClick = false,
-        Width = "560px",
-        CssClass = "platform-side-dialog",
-        WrapperCssClass = "platform-side-dialog-wrapper",
-        ContentCssClass = "platform-side-dialog-content",
+        Width = "min(720px, calc(100vw - 32px))",
+        Height = "auto",
+        Style = "width:min(720px, calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);",
+        CssClass = "platform-modal-dialog",
+        WrapperCssClass = "platform-modal-dialog-wrapper",
+        ContentCssClass = "platform-modal-dialog-content",
     };
 
     private static SideDialogOptions EditDialogOptions() => new()

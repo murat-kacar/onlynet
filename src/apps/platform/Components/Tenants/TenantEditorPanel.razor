@@ -52,45 +52,59 @@ else
                     else
                     {
                         <div class="form-group">
-                            <label>@L["TenantCode"]</label>
-                            <InputText @bind-Value="Model.Code" class="form-control" />
-                            <ValidationMessage For="() => Model.Code" />
+                            <label>@L["DisplayName"]</label>
+                            <InputText @bind-Value="Model.DisplayName" class="form-control" @bind-Value:after="SyncGeneratedFields" />
+                            <ValidationMessage For="() => Model.DisplayName" />
                         </div>
 
                         <div class="form-group">
-                            <label>@L["DisplayName"]</label>
-                            <InputText @bind-Value="Model.DisplayName" class="form-control" />
-                            <ValidationMessage For="() => Model.DisplayName" />
+                            <label>@L["TenantCode"]</label>
+                            <InputText Value="@Model.Code" class="form-control" readonly />
                         </div>
 
                         <div class="form-group form-span-2">
                             <label>@L["PrimaryDomain"]</label>
-                            <InputText @bind-Value="Model.PrimaryDomain" class="form-control" />
+                            <InputText @bind-Value="Model.PrimaryDomain" class="form-control" @bind-Value:after="SyncGeneratedFields" />
                             <ValidationMessage For="() => Model.PrimaryDomain" />
                         </div>
 
                         <div class="form-group form-span-2">
-                            <label>@L["OwnerEmail"]</label>
-                            <InputText @bind-Value="Model.IntendedOwnerEmail" class="form-control" />
+                            <label>@L["AdminEmail"]</label>
+                            <InputText Value="@Model.IntendedOwnerEmail" class="form-control" readonly />
                             <ValidationMessage For="() => Model.IntendedOwnerEmail" />
                         </div>
                     }
 
                     <div class="form-group">
                         <label>@L["Language"]</label>
-                        <InputText @bind-Value="Model.LanguageCode" class="form-control" />
+                        <InputSelect @bind-Value="Model.LanguageCode" class="form-control">
+                            @foreach (var option in LanguageOptions)
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
+                        </InputSelect>
                         <ValidationMessage For="() => Model.LanguageCode" />
                     </div>
 
                     <div class="form-group">
                         <label>@L["Currency"]</label>
-                        <InputText @bind-Value="Model.CurrencyCode" class="form-control" />
+                        <InputSelect @bind-Value="Model.CurrencyCode" class="form-control">
+                            @foreach (var option in CurrencyOptions)
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
+                        </InputSelect>
                         <ValidationMessage For="() => Model.CurrencyCode" />
                     </div>
 
                     <div class="form-group form-span-2">
                         <label>@L["TimeZone"]</label>
-                        <InputText @bind-Value="Model.TimeZone" class="form-control" />
+                        <InputSelect @bind-Value="Model.TimeZone" class="form-control">
+                            @foreach (var option in TimeZoneOptions)
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
+                        </InputSelect>
                         <ValidationMessage For="() => Model.TimeZone" />
                     </div>
                 </div>
@@ -141,9 +155,16 @@ else
                     <span class="kv-value">@Fallback(Model.TimeZone)</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">@L["Owner"]</span>
+                    <span class="kv-label">@L["AdminEmail"]</span>
                     <span class="kv-value">@Fallback(Model.IntendedOwnerEmail)</span>
                 </div>
+                @if (!IsEditMode)
+                {
+                    <div class="kv-item form-span-2">
+                        <span class="kv-label">@L["BootstrapAdmin"]</span>
+                        <span class="kv-value">admin / admin123.</span>
+                    </div>
+                }
             </div>
         </article>
     </section>
@@ -171,6 +192,25 @@ else
     private bool IsEditMode => TenantId.HasValue;
     private string SubmitLabel => IsEditMode ? L["SaveChanges"] : L["CreateTenant"];
     private string BusyLabel => IsEditMode ? L["SavingChanges"] : L["Creating"];
+    private static readonly (string Value, string Label)[] LanguageOptions =
+    [
+        ("en-GB", "English"),
+        ("tr-TR", "Turkish")
+    ];
+    private static readonly (string Value, string Label)[] CurrencyOptions =
+    [
+        ("GBP", "GBP"),
+        ("TRY", "TRY"),
+        ("EUR", "EUR"),
+        ("USD", "USD")
+    ];
+    private static readonly (string Value, string Label)[] TimeZoneOptions =
+    [
+        ("Europe/London", "Europe/London"),
+        ("Europe/Istanbul", "Europe/Istanbul"),
+        ("Europe/Berlin", "Europe/Berlin"),
+        ("America/New_York", "America/New_York")
+    ];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -204,6 +244,7 @@ else
                 CurrencyCode = "GBP",
                 TimeZone = "Europe/London",
             };
+            SyncGeneratedFields();
             return;
         }
 
@@ -286,6 +327,47 @@ else
         }
     }
 
+    private void SyncGeneratedFields()
+    {
+        if (IsEditMode)
+        {
+            return;
+        }
+
+        Model.Code = GenerateTenantCode(Model.PrimaryDomain, Model.DisplayName);
+        Model.IntendedOwnerEmail = GenerateAdminEmail(Model.PrimaryDomain);
+    }
+
+    private static string GenerateTenantCode(string? primaryDomain, string? displayName)
+    {
+        var source = primaryDomain;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            source = displayName;
+        }
+
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        var candidate = source.Trim().ToLowerInvariant();
+        var firstDot = candidate.IndexOf('.');
+        if (firstDot > 0)
+        {
+            candidate = candidate[..firstDot];
+        }
+
+        candidate = new string(candidate.Where(ch => char.IsLetterOrDigit(ch) || ch == '-').ToArray());
+        return candidate;
+    }
+
+    private static string GenerateAdminEmail(string? primaryDomain)
+    {
+        var domain = primaryDomain?.Trim().ToLowerInvariant();
+        return string.IsNullOrWhiteSpace(domain) ? string.Empty : $"admin@{domain}";
+    }
+
     private async Task CompleteAsync(Guid tenantId)
     {
         if (OnCompleted.HasDelegate)
@@ -295,11 +377,27 @@ else
 
         if (!Embedded)
         {
-            await DialogService.CloseSideAsync(tenantId);
+            if (IsEditMode)
+            {
+                await DialogService.CloseSideAsync(tenantId);
+            }
+            else
+            {
+                DialogService.Close(tenantId);
+            }
         }
     }
 
-    private Task CloseDialogAsync() => DialogService.CloseSideAsync(null);
+    private Task CloseDialogAsync()
+    {
+        if (IsEditMode)
+        {
+            return DialogService.CloseSideAsync(null);
+        }
+
+        DialogService.Close(null);
+        return Task.CompletedTask;
+    }
 
     private async Task CancelEmbedded()
     {

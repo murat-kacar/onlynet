@@ -119,6 +119,8 @@
   <data name="IdentityEyebrow" xml:space="preserve"><value>Identity</value></data>
   <data name="RegistrySummary" xml:space="preserve"><value>Registry Summary</value></data>
   <data name="OwnerEmail" xml:space="preserve"><value>Owner Email</value></data>
+  <data name="AdminEmail" xml:space="preserve"><value>Admin Email</value></data>
+  <data name="BootstrapAdmin" xml:space="preserve"><value>Bootstrap Admin</value></data>
   <data name="Database" xml:space="preserve"><value>Database</value></data>
   <data name="DatabaseUser" xml:space="preserve"><value>DB User</value></data>
   <data name="Pending" xml:space="preserve"><value>Pending</value></data>
