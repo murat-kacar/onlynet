@@ -1,27 +1,28 @@
 @page "/tenants/{id:guid}"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IStringLocalizer<PlatformText> L
 @inject DialogService DialogService
 @inject ITenantRegistryService TenantRegistryService
 @inject IProvisioningJobReadService ProvisioningJobReadService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Tenant Details</PageTitle>
+<PageTitle>@L["TenantDetailTitle"]</PageTitle>
 
 <RadzenComponents />
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Tenant Record</p>
-        <h1>@(Tenant?.DisplayName ?? "Tenant Detail")</h1>
-        <p class="hero-copy">Registry state, regional settings, owner identity, and provisioning activity in one place.</p>
+        <p class="eyebrow">@L["TenantRecordEyebrow"]</p>
+        <h1>@(Tenant?.DisplayName ?? L["TenantDetailFallbackTitle"])</h1>
+        <p class="hero-copy">@L["TenantDetailHero"]</p>
     </div>
     <div class="hero-actions">
-        <a href="/tenants" class="btn btn-secondary">Back</a>
+        <a href="/tenants" class="btn btn-secondary">@L["Back"]</a>
         <AuthorizeView Policy="Platform:Write">
             @if (Tenant is not null)
             {
-                <button type="button" class="btn btn-primary" @onclick="OpenEditAsync">Edit Settings</button>
+                <button type="button" class="btn btn-primary" @onclick="OpenEditAsync">@L["EditSettings"]</button>
             }
         </AuthorizeView>
     </div>
@@ -34,27 +35,27 @@
 else if (Tenant is null)
 {
     <section class="empty-state">
-        <h3>Tenant not found</h3>
-        <p>The requested tenant record is unavailable or no longer exists.</p>
+        <h3>@L["TenantNotFound"]</h3>
+        <p>@L["TenantNotFoundCopy"]</p>
     </section>
 }
 else
 {
     <section class="stats-grid compact-stats">
         <article class="metric-card">
-            <p class="metric-label">Status</p>
+            <p class="metric-label">@L["TableStatus"]</p>
             <p class="metric-value metric-value-sm">@Tenant.Status</p>
-            <p class="metric-footnote">Current registry state</p>
+            <p class="metric-footnote">@L["CurrentRegistryState"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Locale</p>
+            <p class="metric-label">@L["Locale"]</p>
             <p class="metric-value metric-value-sm">@Tenant.LanguageCode</p>
             <p class="metric-footnote">@Tenant.CurrencyCode · @Tenant.TimeZone</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Jobs</p>
+            <p class="metric-label">@L["Jobs"]</p>
             <p class="metric-value">@RelatedJobs.Count</p>
-            <p class="metric-footnote">@FailedJobs failed · @OpenJobs open</p>
+            <p class="metric-footnote">@L["JobsMetricCopy", FailedJobs, OpenJobs]</p>
         </article>
     </section>
 
@@ -62,35 +63,35 @@ else
         <article class="panel detail-panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Identity</p>
-                    <h3>Registry Summary</h3>
+                    <p class="eyebrow">@L["IdentityEyebrow"]</p>
+                    <h3>@L["RegistrySummary"]</h3>
                 </div>
-                <span class="@StatusClass(Tenant.Status)">@Tenant.Status</span>
+                <span class="@StatusClass(Tenant.Status)">@LocalizedStatus(Tenant.Status)</span>
             </div>
 
             <div class="kv-grid">
                 <div class="kv-item">
-                    <span class="kv-label">Code</span>
+                    <span class="kv-label">@L["TenantCode"]</span>
                     <span class="kv-value">@Tenant.Code</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">Primary Domain</span>
+                    <span class="kv-label">@L["PrimaryDomain"]</span>
                     <span class="kv-value">@Tenant.PrimaryDomain</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">Owner Email</span>
+                    <span class="kv-label">@L["OwnerEmail"]</span>
                     <span class="kv-value">@Tenant.IntendedOwnerEmail</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">Database</span>
-                    <span class="kv-value">@(Tenant.DatabaseName ?? "Pending")</span>
+                    <span class="kv-label">@L["Database"]</span>
+                    <span class="kv-value">@(Tenant.DatabaseName ?? L["Pending"])</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">DB User</span>
-                    <span class="kv-value">@(Tenant.DatabaseUser ?? "Pending")</span>
+                    <span class="kv-label">@L["DatabaseUser"]</span>
+                    <span class="kv-value">@(Tenant.DatabaseUser ?? L["Pending"])</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">Time Zone</span>
+                    <span class="kv-label">@L["TimeZone"]</span>
                     <span class="kv-value">@Tenant.TimeZone</span>
                 </div>
             </div>
@@ -99,17 +100,17 @@ else
         <article class="panel detail-panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Provisioning</p>
-                    <h3>Related Jobs</h3>
+                    <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                    <h3>@L["RelatedJobs"]</h3>
                 </div>
-                <a href="/jobs" class="text-link">Queue</a>
+                <a href="/jobs" class="text-link">@L["Queue"]</a>
             </div>
 
             @if (RelatedJobs.Count == 0)
             {
                 <div class="empty-state compact-empty">
-                    <h4>No jobs for this tenant</h4>
-                    <p>Provisioning activity will appear here once jobs are recorded.</p>
+                    <h4>@L["NoJobsForTenant"]</h4>
+                    <p>@L["NoJobsForTenantCopy"]</p>
                 </div>
             }
             else
@@ -123,7 +124,7 @@ else
                                 <p class="list-subtitle">@ShortId(job.Id)</p>
                             </div>
                             <div class="list-meta">
-                                <span class="@StatusClass(job.Status)">@job.Status</span>
+                                <span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span>
                                 <span>@FormatDate(job.UpdatedAt)</span>
                             </div>
                         </button>
@@ -161,7 +162,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Tenant detail failed to load: {ex.Message}";
+            LoadError = L["TenantDetailLoadError", ex.Message];
         }
     }
 
@@ -173,7 +174,7 @@ else
         }
 
         var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
-            "Edit Tenant",
+            L["EditTenantDialogTitle"],
             new Dictionary<string, object?>
             {
                 [nameof(TenantEditorPanel.TenantId)] = Tenant.Id,
@@ -203,6 +204,18 @@ else
 
     private static bool IsStatus(string? value, string expected) =>
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+
+    private string LocalizedStatus(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "active" => L["StatusActive"],
+            "completed" => L["StatusCompleted"],
+            "failed" => L["StatusFailed"],
+            "claimed" => L["StatusClaimed"],
+            "running" => L["StatusRunning"],
+            "provisioning" => L["StatusProvisioning"],
+            _ => L["StatusNeutral"],
+        };
 
     private static string StatusClass(string status)
     {

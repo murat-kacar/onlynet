@@ -1,17 +1,18 @@
 @page "/"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IStringLocalizer<PlatformText> L
 @inject NavigationManager NavigationManager
 @inject ITenantRegistryService TenantRegistryService
 @inject IProvisioningJobReadService ProvisioningJobReadService
 
-<PageTitle>Platform Dashboard</PageTitle>
+<PageTitle>@L["DashboardTitle"]</PageTitle>
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Overview</p>
-        <h1>Platform Dashboard</h1>
-        <p class="hero-copy">A scan-first view of tenant volume, provisioning pressure, and the newest control-plane changes.</p>
+        <p class="eyebrow">@L["OverviewEyebrow"]</p>
+        <h1>@L["DashboardTitle"]</h1>
+        <p class="hero-copy">@L["DashboardHero"]</p>
     </div>
 </section>
 
@@ -22,32 +23,32 @@
 else if (Tenants is null || Jobs is null)
 {
     <section class="empty-state">
-        <h3>Loading platform data</h3>
-        <p>Tenant registry and provisioning queue are being fetched.</p>
+        <h3>@L["LoadingPlatformData"]</h3>
+        <p>@L["LoadingPlatformDataCopy"]</p>
     </section>
 }
 else
 {
     <section class="stats-grid">
         <article class="metric-card">
-            <p class="metric-label">Tenants</p>
+            <p class="metric-label">@L["MetricTenants"]</p>
             <p class="metric-value">@Tenants.Count</p>
-            <p class="metric-footnote">@ActiveTenantCount active, @ProvisioningTenantCount provisioning</p>
+            <p class="metric-footnote">@L["DashboardActiveProvisioning", ActiveTenantCount, ProvisioningTenantCount]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Open Jobs</p>
+            <p class="metric-label">@L["MetricOpenJobs"]</p>
             <p class="metric-value">@OpenJobCount</p>
-            <p class="metric-footnote">@FailedJobCount failed, @ClaimedJobCount claimed</p>
+            <p class="metric-footnote">@L["DashboardFailedClaimed", FailedJobCount, ClaimedJobCount]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Regions</p>
+            <p class="metric-label">@L["MetricRegions"]</p>
             <p class="metric-value">@DistinctTimeZones</p>
-            <p class="metric-footnote">@DistinctCurrencies currencies, @DistinctLanguages languages</p>
+            <p class="metric-footnote">@L["DashboardCurrenciesLanguages", DistinctCurrencies, DistinctLanguages]</p>
         </article>
         <article class="metric-card accent-card">
-            <p class="metric-label">Newest Tenant</p>
+            <p class="metric-label">@L["MetricNewestTenant"]</p>
             <p class="metric-value metric-value-sm">@NewestTenantLabel</p>
-            <p class="metric-footnote">Most recently created registry row in the current data set.</p>
+            <p class="metric-footnote">@L["MetricNewestTenantCopy"]</p>
         </article>
     </section>
 
@@ -55,17 +56,17 @@ else
         <article class="panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Provisioning</p>
-                    <h3>Queue Snapshot</h3>
+                    <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                    <h3>@L["QueueSnapshot"]</h3>
                 </div>
-                <a href="/jobs" class="text-link">All jobs</a>
+                <a href="/jobs" class="text-link">@L["AllJobs"]</a>
             </div>
 
             @if (RecentJobs.Count == 0)
             {
                 <div class="empty-state compact-empty">
-                    <h4>No provisioning jobs yet</h4>
-                    <p>New tenant creation will surface queue activity here.</p>
+                    <h4>@L["NoProvisioningJobsYet"]</h4>
+                    <p>@L["NoProvisioningJobsYetCopy"]</p>
                 </div>
             }
             else
@@ -76,10 +77,10 @@ else
                         <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo("/jobs")'>
                             <div>
                                 <p class="list-title">@job.Type</p>
-                                <p class="list-subtitle">@ShortId(job.Id) for @ResolveTenant(job.TenantId)</p>
+                                <p class="list-subtitle">@L["RecentJobForTenant", ShortId(job.Id), ResolveTenant(job.TenantId)]</p>
                             </div>
                             <div class="list-meta">
-                                <span class="@StatusClass(job.Status)">@job.Status</span>
+                                <span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span>
                                 <span>@RelativeTime(job.UpdatedAt)</span>
                             </div>
                         </button>
@@ -91,17 +92,17 @@ else
         <article class="panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Registry</p>
-                    <h3>Recent Tenants</h3>
+                    <p class="eyebrow">@L["RegistryEyebrow"]</p>
+                    <h3>@L["RecentTenants"]</h3>
                 </div>
-                <a href="/tenants" class="text-link">Registry</a>
+                <a href="/tenants" class="text-link">@L["Registry"]</a>
             </div>
 
             @if (RecentTenants.Count == 0)
             {
                 <div class="empty-state compact-empty">
-                    <h4>No tenants yet</h4>
-                    <p>Create the first tenant to initialize the registry and provisioning flow.</p>
+                    <h4>@L["NoTenantsYet"]</h4>
+                    <p>@L["NoTenantsYetCopy"]</p>
                 </div>
             }
             else
@@ -115,7 +116,7 @@ else
                                 <p class="list-subtitle">@tenant.PrimaryDomain</p>
                             </div>
                             <div class="list-meta">
-                                <span class="@StatusClass(tenant.Status)">@tenant.Status</span>
+                                <span class="@StatusClass(tenant.Status)">@LocalizedStatus(tenant.Status)</span>
                                 <span>@tenant.CurrencyCode · @tenant.LanguageCode</span>
                             </div>
                         </button>
@@ -127,21 +128,21 @@ else
         <article class="panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Attention</p>
-                    <h3>What Needs Eyes</h3>
+                    <p class="eyebrow">@L["AttentionEyebrow"]</p>
+                    <h3>@L["WhatNeedsEyes"]</h3>
                 </div>
             </div>
 
             <div class="attention-grid">
                 <div class="attention-card">
-                    <p class="attention-label">Failed Jobs</p>
+                    <p class="attention-label">@L["FailedJobs"]</p>
                     <p class="attention-value">@FailedJobCount</p>
-                    <p class="attention-copy">Queue items requiring operator intervention.</p>
+                    <p class="attention-copy">@L["FailedJobsCopy"]</p>
                 </div>
                 <div class="attention-card">
-                    <p class="attention-label">Pending Tenants</p>
+                    <p class="attention-label">@L["PendingTenants"]</p>
                     <p class="attention-value">@ProvisioningTenantCount</p>
-                    <p class="attention-copy">Tenants still in provisioning or not yet active.</p>
+                    <p class="attention-copy">@L["PendingTenantsCopy"]</p>
                 </div>
             </div>
         </article>
@@ -162,7 +163,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Dashboard failed to load: {ex.Message}";
+            LoadError = L["DashboardLoadError", ex.Message];
         }
     }
 
@@ -174,7 +175,7 @@ else
     private int DistinctTimeZones => Tenants?.Select(t => t.TimeZone).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
     private int DistinctCurrencies => Tenants?.Select(t => t.CurrencyCode).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
     private int DistinctLanguages => Tenants?.Select(t => t.LanguageCode).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
-    private string NewestTenantLabel => RecentTenants.FirstOrDefault()?.DisplayName ?? "None";
+    private string NewestTenantLabel => RecentTenants.FirstOrDefault()?.DisplayName ?? L["None"];
     private IReadOnlyList<TenantDto> RecentTenants => (Tenants ?? []).Take(5).ToList();
     private IReadOnlyList<JobDto> RecentJobs => (Jobs ?? []).Take(5).ToList();
 
@@ -186,23 +187,35 @@ else
 
     private static string ShortId(Guid id) => id.ToString("N")[..8];
 
-    private static string RelativeTime(DateTimeOffset value)
+    private string RelativeTime(DateTimeOffset value)
     {
         var delta = DateTimeOffset.UtcNow - value.ToUniversalTime();
         if (delta.TotalMinutes < 1)
         {
-            return "just now";
+            return L["JustNow"];
         }
         if (delta.TotalHours < 1)
         {
-            return $"{Math.Max(1, (int)delta.TotalMinutes)}m ago";
+            return L["MinutesAgo", Math.Max(1, (int)delta.TotalMinutes)];
         }
         if (delta.TotalDays < 1)
         {
-            return $"{Math.Max(1, (int)delta.TotalHours)}h ago";
+            return L["HoursAgo", Math.Max(1, (int)delta.TotalHours)];
         }
-        return $"{Math.Max(1, (int)delta.TotalDays)}d ago";
+        return L["DaysAgo", Math.Max(1, (int)delta.TotalDays)];
     }
+
+    private string LocalizedStatus(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "active" => L["StatusActive"],
+            "completed" => L["StatusCompleted"],
+            "failed" => L["StatusFailed"],
+            "claimed" => L["StatusClaimed"],
+            "running" => L["StatusRunning"],
+            "provisioning" => L["StatusProvisioning"],
+            _ => L["StatusNeutral"],
+        };
 
     private static string StatusClass(string status)
     {

@@ -1,42 +1,43 @@
 @inherits LayoutComponentBase
 @namespace TabFlow.Platform.Shared
+@inject IStringLocalizer<PlatformText> L
 
 <div class="platform-shell">
     <aside class="shell-sidebar">
         <div class="brand-block">
-            <p class="eyebrow">CafeTech Platform</p>
+            <p class="eyebrow">@L["BrandEyebrow"]</p>
             <h1>TabFlow</h1>
-            <p class="brand-copy">Multi-tenant admin panel for tenant lifecycle, provisioning flow, and control-plane visibility.</p>
+            <p class="brand-copy">@L["BrandCopy"]</p>
         </div>
 
         <nav class="shell-nav" aria-label="Platform">
             <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
-                Overview
+                @L["NavOverview"]
             </NavLink>
             <NavLink href="/tenants" class="nav-link">
-                Tenants
+                @L["NavTenants"]
             </NavLink>
             <NavLink href="/jobs" class="nav-link">
-                Jobs
+                @L["NavJobs"]
             </NavLink>
             <NavLink href="/audit" class="nav-link">
-                Audit
+                @L["NavAudit"]
             </NavLink>
             <NavLink href="/settings" class="nav-link">
-                Settings
+                @L["NavSettings"]
             </NavLink>
         </nav>
 
         <div class="sidebar-footnote">
-            <p>Platform UI is now live on the same host as identity and provisioning read surfaces.</p>
+            <p>@L["SidebarFootnote"]</p>
         </div>
     </aside>
 
     <div class="shell-main">
         <header class="shell-header">
             <div>
-                <p class="eyebrow">Control Plane</p>
-                <h2>Management Console</h2>
+                <p class="eyebrow">@L["ShellEyebrow"]</p>
+                <h2>@L["ShellTitle"]</h2>
             </div>
         </header>
 

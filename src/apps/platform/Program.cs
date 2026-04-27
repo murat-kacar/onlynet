@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Localization;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Radzen;
 using Serilog;
+using System.Globalization;
 using TabFlow.Platform.Cli;
 using TabFlow.Platform.Middleware;
 using TabFlow.Platform.Services;
@@ -152,10 +154,28 @@ builder.Services.AddHealthChecks()
 // rendering as classic Razor Pages.
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+builder.Services.AddLocalization();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
+var supportedCultures = new List<string> { "en-GB", "tr-TR" }
+    .Select(name => new CultureInfo(name))
+    .ToList();
+
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en-GB"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures,
+};
+
+localizationOptions.RequestCultureProviders = new List<IRequestCultureProvider>
+{
+    new CookieRequestCultureProvider(),
+    new AcceptLanguageHeaderRequestCultureProvider(),
+};
 
 if (app.Environment.IsDevelopment())
 {
@@ -163,6 +183,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
+app.UseRequestLocalization(localizationOptions);
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

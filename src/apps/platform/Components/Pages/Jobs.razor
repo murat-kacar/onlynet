@@ -1,16 +1,17 @@
 @page "/jobs"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IStringLocalizer<PlatformText> L
 @inject IProvisioningJobReadService ProvisioningJobReadService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Provisioning Jobs</PageTitle>
+<PageTitle>@L["JobsPageTitle"]</PageTitle>
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Operations</p>
-        <h1>Provisioning Jobs</h1>
-        <p class="hero-copy">Queue health, failures, claims, and recent tenant provisioning activity.</p>
+        <p class="eyebrow">@L["OperationsEyebrow"]</p>
+        <h1>@L["JobsPageTitle"]</h1>
+        <p class="hero-copy">@L["JobsHero"]</p>
     </div>
 </section>
 
@@ -21,52 +22,52 @@
 else if (JobList is null)
 {
     <section class="empty-state">
-        <h3>Loading queue</h3>
-        <p>Provisioning activity is being fetched from the platform store.</p>
+        <h3>@L["LoadingQueue"]</h3>
+        <p>@L["LoadingQueueCopy"]</p>
     </section>
 }
 else
 {
     <section class="stats-grid compact-stats">
         <article class="metric-card">
-            <p class="metric-label">Jobs</p>
+            <p class="metric-label">@L["Jobs"]</p>
             <p class="metric-value">@JobList.Count</p>
-            <p class="metric-footnote">@OpenJobs open in the queue</p>
+            <p class="metric-footnote">@L["OpenInQueueCopy", OpenJobs]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Failed</p>
+            <p class="metric-label">@L["StatusFailed"]</p>
             <p class="metric-value">@FailedJobs</p>
-            <p class="metric-footnote">Need direct operator attention</p>
+            <p class="metric-footnote">@L["NeedAttentionCopy"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Claimed</p>
+            <p class="metric-label">@L["Claimed"]</p>
             <p class="metric-value">@ClaimedJobs</p>
-            <p class="metric-footnote">Currently attached to a worker</p>
+            <p class="metric-footnote">@L["ClaimedCopy"]</p>
         </article>
     </section>
 
     <section class="panel">
         <div class="registry-toolbar">
             <div class="search-field">
-                <label for="job-search">Search jobs</label>
-                <input id="job-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Type, worker, tenant id" />
+                <label for="job-search">@L["SearchJobs"]</label>
+                <input id="job-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="@L["SearchJobsPlaceholder"]" />
             </div>
 
             <div class="filter-group">
-                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>All</button>
-                <button type="button" class="@FilterButtonClass("open")" @onclick='() => SetStatusFilter("open")'>Open</button>
-                <button type="button" class="@FilterButtonClass("failed")" @onclick='() => SetStatusFilter("failed")'>Failed</button>
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>@L["FilterAll"]</button>
+                <button type="button" class="@FilterButtonClass("open")" @onclick='() => SetStatusFilter("open")'>@L["FilterOpen"]</button>
+                <button type="button" class="@FilterButtonClass("failed")" @onclick='() => SetStatusFilter("failed")'>@L["StatusFailed"]</button>
             </div>
         </div>
 
         @if (FilteredJobs.Count == 0)
         {
             <div class="empty-state compact-empty">
-                <h4>No jobs in this view</h4>
-                <p>Try clearing the search or changing the status filter.</p>
+                <h4>@L["NoJobsInView"]</h4>
+                <p>@L["NoJobsInViewCopy"]</p>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-                    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">@L["ClearFilters"]</button>
+                    <a href="/tenants/new" class="btn btn-primary">@L["CreateTenant"]</a>
                 </div>
             </div>
         }
@@ -83,11 +84,11 @@ else
                         <table class="table jobs-table">
                             <thead>
                                 <tr>
-                                    <th>Job</th>
-                                    <th>Status</th>
-                                    <th>Tenant</th>
-                                    <th>Claimed By</th>
-                                    <th>Updated</th>
+                                    <th>@L["TableJob"]</th>
+                                    <th>@L["TableStatus"]</th>
+                                    <th>@L["TableTenant"]</th>
+                                    <th>@L["TableClaimedBy"]</th>
+                                    <th>@L["TableUpdated"]</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -103,12 +104,12 @@ else
                                                 <p class="list-subtitle">@ShortId(job.Id)</p>
                                             </div>
                                         </td>
-                                        <td><span class="@StatusClass(job.Status)">@job.Status</span></td>
+                                        <td><span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span></td>
                                         <td>@ShortId(job.TenantId)</td>
-                                        <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? "Unclaimed" : job.ClaimedBy)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? L["Unclaimed"] : job.ClaimedBy)</td>
                                         <td>@FormatDate(job.UpdatedAt)</td>
                                         <td class="actions-cell">
-                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectJobAsync(job.Id)">Inspect</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectJobAsync(job.Id)">@L["Inspect"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -119,9 +120,9 @@ else
                     <div class="table-footer">
                         <p>@PagingSummary</p>
                         <div class="pagination">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPageAsync" disabled="@(CurrentPage == 1)">Previous</button>
-                            <span>Page @CurrentPage of @TotalPages</span>
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPageAsync" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPageAsync" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
+                            <span>@L["PageOf", CurrentPage, TotalPages]</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPageAsync" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
                         </div>
                     </div>
                 </div>
@@ -130,8 +131,8 @@ else
                     @if (IsLoadingDetail)
                     {
                         <div class="empty-state compact-empty">
-                            <h4>Loading job detail</h4>
-                            <p>Fetching step-level execution data from the provisioning store.</p>
+                            <h4>@L["LoadingJobDetail"]</h4>
+                            <p>@L["LoadingJobDetailCopy"]</p>
                         </div>
                     }
                     else if (DetailError is not null)
@@ -141,48 +142,48 @@ else
                     else if (SelectedJob is null || SelectedJobDetail is null)
                     {
                         <div class="empty-state compact-empty">
-                            <h4>No job selected</h4>
-                            <p>Select a row to inspect payload, result, and step progression.</p>
+                            <h4>@L["NoJobSelected"]</h4>
+                            <p>@L["NoJobSelectedCopy"]</p>
                         </div>
                     }
                     else
                     {
                         <div class="panel-header">
                             <div>
-                                <p class="eyebrow">Selection</p>
+                                <p class="eyebrow">@L["Selection"]</p>
                                 <h3>@SelectedJob.Type</h3>
                             </div>
-                            <span class="@StatusClass(SelectedJob.Status)">@SelectedJob.Status</span>
+                            <span class="@StatusClass(SelectedJob.Status)">@LocalizedStatus(SelectedJob.Status)</span>
                         </div>
 
                         <div class="detail-stack">
                             <div class="kv-grid">
                                 <div class="kv-item">
-                                    <span class="kv-label">Job Id</span>
+                                    <span class="kv-label">@L["JobId"]</span>
                                     <span class="kv-value">@SelectedJob.Id</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Tenant Id</span>
+                                    <span class="kv-label">@L["TableTenant"] @L["JobId"]</span>
                                     <span class="kv-value">@SelectedJob.TenantId</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Claimed By</span>
-                                    <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? "Unclaimed" : SelectedJob.ClaimedBy)</span>
+                                    <span class="kv-label">@L["TableClaimedBy"]</span>
+                                    <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? L["Unclaimed"] : SelectedJob.ClaimedBy)</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Updated</span>
+                                    <span class="kv-label">@L["TableUpdated"]</span>
                                     <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
                                 </div>
                             </div>
 
                             <section class="detail-section">
                                 <div class="section-heading">
-                                    <p class="detail-title">Execution Steps</p>
-                                    <span>@SelectedJobDetail.Steps.Count step(s)</span>
+                                    <p class="detail-title">@L["ExecutionSteps"]</p>
+                                    <span>@L["StepCount", SelectedJobDetail.Steps.Count]</span>
                                 </div>
                                 @if (SelectedJobDetail.Steps.Count == 0)
                                 {
-                                    <p class="detail-copy">No steps have been recorded yet for this job.</p>
+                                    <p class="detail-copy">@L["NoStepsRecorded"]</p>
                                 }
                                 else
                                 {
@@ -204,7 +205,7 @@ else
                             @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
                             {
                                 <section class="detail-section">
-                                    <p class="detail-title">Failure Detail</p>
+                                    <p class="detail-title">@L["FailureDetail"]</p>
                                     <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
                                 </section>
                             }
@@ -212,7 +213,7 @@ else
                             @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Result))
                             {
                                 <section class="detail-section">
-                                    <p class="detail-title">Result</p>
+                                    <p class="detail-title">@L["Result"]</p>
                                     <pre class="detail-code">@SelectedJobDetail.Result</pre>
                                 </section>
                             }
@@ -220,13 +221,13 @@ else
                             @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Payload))
                             {
                                 <section class="detail-section">
-                                    <p class="detail-title">Payload</p>
+                                    <p class="detail-title">@L["Payload"]</p>
                                     <pre class="detail-code">@SelectedJobDetail.Payload</pre>
                                 </section>
                             }
 
                             <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo($"/tenants/{SelectedJob.TenantId}")'>Open Tenant</button>
+                                <button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo($"/tenants/{SelectedJob.TenantId}")'>@L["OpenTenant"]</button>
                             </div>
                         </div>
                     }
@@ -268,7 +269,7 @@ else
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredJobs.Count / (double)PageSize));
 
     private string FilterSummary =>
-        $"{FilteredJobs.Count} matching jobs from {JobList?.Count ?? 0} queue records";
+        L["MatchingJobsSummary", FilteredJobs.Count, JobList?.Count ?? 0];
 
     private string PagingSummary
     {
@@ -276,12 +277,12 @@ else
         {
             if (FilteredJobs.Count == 0)
             {
-                return "Showing 0 results";
+                return L["ShowingZeroResults"];
             }
 
             var start = ((CurrentPage - 1) * PageSize) + 1;
             var end = Math.Min(CurrentPage * PageSize, FilteredJobs.Count);
-            return $"Showing {start}-{end} of {FilteredJobs.Count}";
+            return L["ShowingResults", start, end, FilteredJobs.Count];
         }
     }
 
@@ -294,7 +295,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Jobs failed to load: {ex.Message}";
+            LoadError = L["JobsLoadError", ex.Message];
         }
     }
 
@@ -409,7 +410,7 @@ else
         }
         catch (Exception ex)
         {
-            DetailError = $"Job detail failed to load: {ex.Message}";
+            DetailError = L["JobDetailLoadError", ex.Message];
             SelectedJobDetail = null;
         }
         finally
@@ -423,6 +424,18 @@ else
 
     private static string RowClass(bool isSelected) =>
         isSelected ? "data-row selected" : "data-row";
+
+    private string LocalizedStatus(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "active" => L["StatusActive"],
+            "completed" => L["StatusCompleted"],
+            "failed" => L["StatusFailed"],
+            "claimed" => L["StatusClaimed"],
+            "running" => L["StatusRunning"],
+            "provisioning" => L["StatusProvisioning"],
+            _ => L["StatusNeutral"],
+        };
 
     private static bool IsStatus(string? value, string expected) =>
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);

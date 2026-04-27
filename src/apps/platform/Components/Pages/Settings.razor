@@ -1,18 +1,20 @@
 @page "/settings"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Self")]
+@inject IStringLocalizer<PlatformText> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 @inject UserManager<IdentityUser<Guid>> UserManager
 @inject SignInManager<IdentityUser<Guid>> SignInManager
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Settings</PageTitle>
+<PageTitle>@L["SettingsTitle"]</PageTitle>
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Account</p>
-        <h1>Settings</h1>
-        <p class="hero-copy">Security, operator preferences, and the small control points that shape how the console feels day to day.</p>
+        <p class="eyebrow">@L["AccountEyebrow"]</p>
+        <h1>@L["SettingsTitle"]</h1>
+        <p class="hero-copy">@L["SettingsHero"]</p>
     </div>
 </section>
 
@@ -24,17 +26,17 @@ else
 {
     <section class="stats-grid compact-stats">
         <article class="metric-card">
-            <p class="metric-label">Account</p>
+            <p class="metric-label">@L["MetricAccount"]</p>
             <p class="metric-value metric-value-sm">@DisplayEmail</p>
-            <p class="metric-footnote">Current platform identity</p>
+            <p class="metric-footnote">@L["CurrentPlatformIdentity"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">UI Language</p>
+            <p class="metric-label">@L["MetricUiLanguage"]</p>
             <p class="metric-value metric-value-sm">@PreferenceModel.Language</p>
-            <p class="metric-footnote">Stored for this browser</p>
+            <p class="metric-footnote">@L["StoredForBrowser"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Time Zone</p>
+            <p class="metric-label">@L["TimeZone"]</p>
             <p class="metric-value metric-value-sm">@PreferenceModel.TimeZone</p>
             <p class="metric-footnote">@PreferencePreview</p>
         </article>
@@ -42,8 +44,8 @@ else
 
     <section class="panel">
         <div class="tab-strip" role="tablist" aria-label="Settings sections">
-            <button type="button" class="@TabClass("security")" @onclick='() => SelectTab("security")'>Security</button>
-            <button type="button" class="@TabClass("preferences")" @onclick='() => SelectTab("preferences")'>Preferences</button>
+            <button type="button" class="@TabClass("security")" @onclick='() => SelectTab("security")'>@L["Security"]</button>
+            <button type="button" class="@TabClass("preferences")" @onclick='() => SelectTab("preferences")'>@L["Preferences"]</button>
         </div>
     </section>
 
@@ -53,12 +55,12 @@ else
             <article class="panel detail-panel">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Security</p>
-                        <h3>Password Rotation</h3>
+                        <p class="eyebrow">@L["Security"]</p>
+                        <h3>@L["PasswordRotation"]</h3>
                     </div>
                     @if (MustRotatePassword)
                     {
-                        <span class="status-pill warning">Required</span>
+                        <span class="status-pill warning">@L["Required"]</span>
                     }
                 </div>
 
@@ -78,19 +80,19 @@ else
 
                     <div class="form-grid">
                         <div class="form-group form-span-2">
-                            <label>Current Password</label>
+                            <label>@L["CurrentPassword"]</label>
                             <InputText @bind-Value="PasswordModel.CurrentPassword" type="password" class="form-control" />
                             <ValidationMessage For="() => PasswordModel.CurrentPassword" />
                         </div>
 
                         <div class="form-group">
-                            <label>New Password</label>
+                            <label>@L["NewPassword"]</label>
                             <InputText @bind-Value="PasswordModel.NewPassword" type="password" class="form-control" />
                             <ValidationMessage For="() => PasswordModel.NewPassword" />
                         </div>
 
                         <div class="form-group">
-                            <label>Confirm Password</label>
+                            <label>@L["ConfirmPassword"]</label>
                             <InputText @bind-Value="PasswordModel.ConfirmPassword" type="password" class="form-control" />
                             <ValidationMessage For="() => PasswordModel.ConfirmPassword" />
                         </div>
@@ -98,7 +100,7 @@ else
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary" disabled="@IsSavingPassword">
-                            @(IsSavingPassword ? "Updating..." : "Update Password")
+                            @(IsSavingPassword ? L["Updating"] : L["UpdatePassword"])
                         </button>
                     </div>
                 </EditForm>
@@ -107,20 +109,20 @@ else
             <article class="panel detail-panel">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Status</p>
-                        <h3>Security Notes</h3>
+                        <p class="eyebrow">@L["Status"]</p>
+                        <h3>@L["SecurityNotes"]</h3>
                     </div>
                 </div>
 
                 <div class="detail-stack">
                     <section class="detail-section">
-                        <p class="detail-title">Password Policy</p>
-                        <p class="detail-copy">Rotate bootstrap credentials immediately, then keep this surface for voluntary changes and incident response.</p>
+                        <p class="detail-title">@L["PasswordPolicy"]</p>
+                        <p class="detail-copy">@L["PasswordPolicyCopy"]</p>
                     </section>
 
                     <section class="detail-section">
-                        <p class="detail-title">Session Behavior</p>
-                        <p class="detail-copy">A successful password change refreshes the current sign-in and clears any forced-rotation claim on the account.</p>
+                        <p class="detail-title">@L["SessionBehavior"]</p>
+                        <p class="detail-copy">@L["SessionBehaviorCopy"]</p>
                     </section>
                 </div>
             </article>
@@ -132,8 +134,8 @@ else
             <article class="panel detail-panel">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Preferences</p>
-                        <h3>Operator Defaults</h3>
+                        <p class="eyebrow">@L["Preferences"]</p>
+                        <h3>@L["OperatorDefaults"]</h3>
                     </div>
                 </div>
 
@@ -145,23 +147,23 @@ else
                 <EditForm Model="@PreferenceModel" OnValidSubmit="SavePreferencesAsync">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>UI Language</label>
+                            <label>@L["MetricUiLanguage"]</label>
                             <InputSelect @bind-Value="PreferenceModel.Language" class="form-control">
-                                <option value="en-GB">English (UK)</option>
-                                <option value="tr-TR">Turkish</option>
+                                <option value="en-GB">@L["EnglishUk"]</option>
+                                <option value="tr-TR">@L["Turkish"]</option>
                             </InputSelect>
                         </div>
 
                         <div class="form-group">
-                            <label>Density</label>
+                            <label>@L["Density"]</label>
                             <InputSelect @bind-Value="PreferenceModel.Density" class="form-control">
-                                <option value="compact">Compact</option>
-                                <option value="comfortable">Comfortable</option>
+                                <option value="compact">@L["Compact"]</option>
+                                <option value="comfortable">@L["Comfortable"]</option>
                             </InputSelect>
                         </div>
 
                         <div class="form-group form-span-2">
-                            <label>Operator Time Zone</label>
+                            <label>@L["OperatorTimeZone"]</label>
                             <InputSelect @bind-Value="PreferenceModel.TimeZone" class="form-control">
                                 <option value="UTC">UTC</option>
                                 <option value="Europe/London">Europe/London</option>
@@ -173,7 +175,7 @@ else
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary" disabled="@IsSavingPreferences">
-                            @(IsSavingPreferences ? "Saving..." : "Save Preferences")
+                            @(IsSavingPreferences ? L["Saving"] : L["SavePreferences"])
                         </button>
                     </div>
                 </EditForm>
@@ -182,30 +184,30 @@ else
             <article class="panel detail-panel">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Preview</p>
-                        <h3>Session Defaults</h3>
+                        <p class="eyebrow">@L["Preview"]</p>
+                        <h3>@L["SessionDefaults"]</h3>
                     </div>
                 </div>
 
                 <div class="detail-stack">
                     <div class="kv-grid">
                         <div class="kv-item">
-                            <span class="kv-label">Language</span>
+                            <span class="kv-label">@L["Language"]</span>
                             <span class="kv-value">@PreferenceModel.Language</span>
                         </div>
                         <div class="kv-item">
-                            <span class="kv-label">Density</span>
+                            <span class="kv-label">@L["Density"]</span>
                             <span class="kv-value">@PreferenceModel.Density</span>
                         </div>
                         <div class="kv-item form-span-2">
-                            <span class="kv-label">Time Zone Preview</span>
+                            <span class="kv-label">@L["TimeZonePreview"]</span>
                             <span class="kv-value">@PreferencePreview</span>
                         </div>
                     </div>
 
                     <section class="detail-section">
-                        <p class="detail-title">Scope</p>
-                        <p class="detail-copy">These preferences are stored in the current browser and shape how the management console feels for this operator.</p>
+                        <p class="detail-title">@L["Scope"]</p>
+                        <p class="detail-copy">@L["SettingsScopeCopy"]</p>
                     </section>
                 </div>
             </article>
@@ -216,6 +218,9 @@ else
 @code {
     [SupplyParameterFromQuery(Name = "tab")]
     public string? Tab { get; set; }
+
+    [SupplyParameterFromQuery(Name = "saved")]
+    public int? Saved { get; set; }
 
     private bool _preferencesLoaded;
     private bool IsSavingPassword;
@@ -236,6 +241,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         ActiveTab = string.Equals(Tab, "preferences", StringComparison.OrdinalIgnoreCase) ? "preferences" : "security";
+        PreferenceSuccess = Saved == 1 ? L["PreferencesSavedSuccess"].Value : null;
 
         try
         {
@@ -248,7 +254,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Settings failed to load: {ex.Message}";
+            LoadError = L["SettingsLoadError", ex.Message];
         }
     }
 
@@ -290,13 +296,13 @@ else
             var user = await UserManager.GetUserAsync(authState.User);
             if (user is null)
             {
-                SecurityError = "The current account could not be loaded.";
+                SecurityError = L["AccountMissingError"];
                 return;
             }
 
             if (!string.Equals(PasswordModel.NewPassword, PasswordModel.ConfirmPassword, StringComparison.Ordinal))
             {
-                SecurityError = "The new password and confirmation do not match.";
+                SecurityError = L["PasswordMismatchError"];
                 return;
             }
 
@@ -319,11 +325,11 @@ else
             await SignInManager.RefreshSignInAsync(user);
             MustRotatePassword = false;
             PasswordModel = new PasswordChangeInput();
-            SecuritySuccess = "Password updated. Your session has been refreshed.";
+            SecuritySuccess = L["PasswordUpdatedSuccess"];
         }
         catch (Exception ex)
         {
-            SecurityError = $"Password change failed: {ex.Message}";
+            SecurityError = L["PasswordChangeFailed", ex.Message];
         }
         finally
         {
@@ -338,9 +344,15 @@ else
 
         try
         {
+            var languageChanged = !string.Equals(CultureInfo.CurrentUICulture.Name, PreferenceModel.Language, StringComparison.OrdinalIgnoreCase);
             await JSRuntime.InvokeVoidAsync("tabflowSettings.save", PreferenceModel);
             await JSRuntime.InvokeVoidAsync("tabflowSettings.apply", PreferenceModel);
-            PreferenceSuccess = "Preferences saved for this browser.";
+            PreferenceSuccess = L["PreferencesSavedSuccess"];
+
+            if (languageChanged)
+            {
+                NavigationManager.NavigateTo("/settings?tab=preferences&saved=1", forceLoad: true);
+            }
         }
         finally
         {

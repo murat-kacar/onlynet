@@ -1,23 +1,24 @@
 @page "/tenants"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IStringLocalizer<PlatformText> L
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ITenantRegistryService TenantRegistryService
 
-<PageTitle>Tenants</PageTitle>
+<PageTitle>@L["TenantsPageTitle"]</PageTitle>
 
 <RadzenComponents />
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Registry</p>
-        <h1>Tenants</h1>
-        <p class="hero-copy">Search the tenant registry, check rollout status, and jump straight into a regional configuration record.</p>
+        <p class="eyebrow">@L["RegistryEyebrow"]</p>
+        <h1>@L["TenantsPageTitle"]</h1>
+        <p class="hero-copy">@L["TenantsHero"]</p>
     </div>
     <AuthorizeView Policy="Platform:Write">
         <div class="hero-actions">
-            <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">Create Tenant</button>
+            <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">@L["CreateTenant"]</button>
         </div>
     </AuthorizeView>
 </section>
@@ -29,53 +30,53 @@
 else if (TenantList == null)
 {
     <section class="empty-state">
-        <h3>Loading tenant registry</h3>
-        <p>The current tenant list is being fetched from the platform API.</p>
+        <h3>@L["LoadingTenantRegistry"]</h3>
+        <p>@L["LoadingTenantRegistryCopy"]</p>
     </section>
 }
 else
 {
     <section class="stats-grid compact-stats">
         <article class="metric-card">
-            <p class="metric-label">Visible Tenants</p>
+            <p class="metric-label">@L["MetricVisibleTenants"]</p>
             <p class="metric-value">@FilteredTenants.Count</p>
-            <p class="metric-footnote">@VisibleTenants.Count shown on this page</p>
+            <p class="metric-footnote">@L["VisibleTenantsPageCopy", VisibleTenants.Count]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Active</p>
+            <p class="metric-label">@L["MetricActive"]</p>
             <p class="metric-value">@TenantList.Count(t => IsStatus(t.Status, "active"))</p>
-            <p class="metric-footnote">Healthy runtime records</p>
+            <p class="metric-footnote">@L["ActiveTenantsCopy"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Provisioning</p>
+            <p class="metric-label">@L["MetricProvisioning"]</p>
             <p class="metric-value">@TenantList.Count(t => !IsStatus(t.Status, "active"))</p>
-            <p class="metric-footnote">Need rollout follow-up</p>
+            <p class="metric-footnote">@L["ProvisioningTenantsCopy"]</p>
         </article>
     </section>
 
     <section class="panel">
         <div class="registry-toolbar">
             <div class="search-field">
-                <label for="tenant-search">Search tenants</label>
-                <input id="tenant-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Code, domain, display name" />
+                <label for="tenant-search">@L["SearchTenants"]</label>
+                <input id="tenant-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="@L["SearchTenantsPlaceholder"]" />
             </div>
 
             <div class="filter-group">
-                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>All</button>
-                <button type="button" class="@FilterButtonClass("active")" @onclick='() => SetStatusFilter("active")'>Active</button>
-                <button type="button" class="@FilterButtonClass("other")" @onclick='() => SetStatusFilter("other")'>Needs attention</button>
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>@L["FilterAll"]</button>
+                <button type="button" class="@FilterButtonClass("active")" @onclick='() => SetStatusFilter("active")'>@L["MetricActive"]</button>
+                <button type="button" class="@FilterButtonClass("other")" @onclick='() => SetStatusFilter("other")'>@L["NeedsAttention"]</button>
             </div>
         </div>
 
         @if (FilteredTenants.Count == 0)
         {
             <div class="empty-state compact-empty">
-                <h4>No tenants match this view</h4>
-                <p>Try clearing the search term or switching the status filter.</p>
+                <h4>@L["NoTenantsMatch"]</h4>
+                <p>@L["NoTenantsMatchCopy"]</p>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">@L["ClearFilters"]</button>
                     <AuthorizeView Policy="Platform:Write">
-                        <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">Create Tenant</button>
+                        <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">@L["CreateTenant"]</button>
                     </AuthorizeView>
                 </div>
             </div>
@@ -93,10 +94,10 @@ else
                         <table class="table tenants-table">
                             <thead>
                                 <tr>
-                                    <th>Tenant</th>
-                                    <th>Status</th>
-                                    <th>Locale</th>
-                                    <th>Domain</th>
+                                    <th>@L["TableTenant"]</th>
+                                    <th>@L["TableStatus"]</th>
+                                    <th>@L["TableLocale"]</th>
+                                    <th>@L["TableDomain"]</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -112,12 +113,12 @@ else
                                                 <p class="list-subtitle">@tenant.Code</p>
                                             </div>
                                         </td>
-                                        <td><span class="@StatusClass(tenant.Status)">@tenant.Status</span></td>
+                                        <td><span class="@StatusClass(tenant.Status)">@LocalizedStatus(tenant.Status)</span></td>
                                         <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
                                         <td>@tenant.PrimaryDomain</td>
                                         <td class="actions-cell">
-                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectTenant(tenant.Id)">Inspect</button>
-                                            <button type="button" class="btn btn-sm btn-primary" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(tenant.Id)">Open</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectTenant(tenant.Id)">@L["Inspect"]</button>
+                                            <button type="button" class="btn btn-sm btn-primary" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(tenant.Id)">@L["Open"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -128,9 +129,9 @@ else
                     <div class="table-footer">
                         <p>@PagingSummary</p>
                         <div class="pagination">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">Previous</button>
-                            <span>Page @CurrentPage of @TotalPages</span>
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
+                            <span>@L["PageOf", CurrentPage, TotalPages]</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
                         </div>
                     </div>
                 </div>
@@ -139,54 +140,54 @@ else
                     @if (SelectedTenant is null)
                     {
                         <div class="empty-state compact-empty">
-                            <h4>No tenant selected</h4>
-                            <p>Select a row to review its registry snapshot.</p>
+                            <h4>@L["NoTenantSelected"]</h4>
+                            <p>@L["NoTenantSelectedCopy"]</p>
                         </div>
                     }
                     else
                     {
                         <div class="panel-header">
                             <div>
-                                <p class="eyebrow">Selection</p>
+                                <p class="eyebrow">@L["Selection"]</p>
                                 <h3>@SelectedTenant.DisplayName</h3>
                             </div>
-                            <span class="@StatusClass(SelectedTenant.Status)">@SelectedTenant.Status</span>
+                            <span class="@StatusClass(SelectedTenant.Status)">@LocalizedStatus(SelectedTenant.Status)</span>
                         </div>
 
                         <div class="detail-stack">
                             <div class="kv-grid">
                                 <div class="kv-item">
-                                    <span class="kv-label">Tenant Code</span>
+                                    <span class="kv-label">@L["TenantCode"]</span>
                                     <span class="kv-value">@SelectedTenant.Code</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Primary Domain</span>
+                                    <span class="kv-label">@L["PrimaryDomain"]</span>
                                     <span class="kv-value">@SelectedTenant.PrimaryDomain</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Language</span>
+                                    <span class="kv-label">@L["Language"]</span>
                                     <span class="kv-value">@SelectedTenant.LanguageCode</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Currency</span>
+                                    <span class="kv-label">@L["Currency"]</span>
                                     <span class="kv-value">@SelectedTenant.CurrencyCode</span>
                                 </div>
                                 <div class="kv-item form-span-2">
-                                    <span class="kv-label">Time Zone</span>
+                                    <span class="kv-label">@L["TimeZone"]</span>
                                     <span class="kv-value">@SelectedTenant.TimeZone</span>
                                 </div>
                             </div>
 
                             <section class="detail-section">
-                                <p class="detail-title">Operator Notes</p>
+                                <p class="detail-title">@L["OperatorNotes"]</p>
                                 <p class="detail-copy">@TenantStatusCopy(SelectedTenant)</p>
                             </section>
 
                             <div class="form-actions">
-                                <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">Open Full Record</button>
+                                <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">@L["OpenFullRecord"]</button>
                                 <AuthorizeView Policy="Platform:Write">
-                                    <button type="button" class="btn btn-secondary" @onclick="() => OpenEditTenantAsync(SelectedTenant.Id)">Edit Settings</button>
-                                    <button type="button" class="btn btn-secondary" @onclick="OpenCreateTenantAsync">Create Another</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="() => OpenEditTenantAsync(SelectedTenant.Id)">@L["EditSettings"]</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="OpenCreateTenantAsync">@L["CreateAnother"]</button>
                                 </AuthorizeView>
                             </div>
                         </div>
@@ -225,7 +226,7 @@ else
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredTenants.Count / (double)PageSize));
 
     private string FilterSummary =>
-        $"{FilteredTenants.Count} matching tenants from {TenantList?.Count ?? 0} registry records";
+        L["MatchingTenantsSummary", FilteredTenants.Count, TenantList?.Count ?? 0];
 
     private string PagingSummary
     {
@@ -233,12 +234,12 @@ else
         {
             if (FilteredTenants.Count == 0)
             {
-                return "Showing 0 results";
+                return L["ShowingZeroResults"];
             }
 
             var start = ((CurrentPage - 1) * PageSize) + 1;
             var end = Math.Min(CurrentPage * PageSize, FilteredTenants.Count);
-            return $"Showing {start}-{end} of {FilteredTenants.Count}";
+            return L["ShowingResults", start, end, FilteredTenants.Count];
         }
     }
 
@@ -251,7 +252,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Tenant registry failed to load: {ex.Message}";
+            LoadError = L["TenantRegistryLoadError", ex.Message];
         }
     }
 
@@ -263,7 +264,7 @@ else
     private async Task OpenCreateTenantAsync()
     {
         var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
-            "Create Tenant",
+            L["CreateTenantDialogTitle"],
             new Dictionary<string, object?>(),
             CreateDialogOptions());
 
@@ -276,7 +277,7 @@ else
     private async Task OpenEditTenantAsync(Guid tenantId)
     {
         var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
-            "Edit Tenant",
+            L["EditTenantDialogTitle"],
             new Dictionary<string, object?>
             {
                 [nameof(TenantEditorPanel.TenantId)] = tenantId,
@@ -424,10 +425,22 @@ else
     private static string RowClass(bool isSelected) =>
         isSelected ? "data-row selected" : "data-row";
 
-    private static string TenantStatusCopy(TenantDto tenant) =>
+    private string TenantStatusCopy(TenantDto tenant) =>
         IsStatus(tenant.Status, "active")
-            ? "This tenant is marked active and should be reachable through its assigned runtime surface."
-            : "This tenant is not active yet and should be checked against provisioning progress or rollout blockers.";
+            ? L["TenantActiveNote"]
+            : L["TenantNotActiveNote"];
+
+    private string LocalizedStatus(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "active" => L["StatusActive"],
+            "completed" => L["StatusCompleted"],
+            "failed" => L["StatusFailed"],
+            "claimed" => L["StatusClaimed"],
+            "running" => L["StatusRunning"],
+            "provisioning" => L["StatusProvisioning"],
+            _ => L["StatusNeutral"],
+        };
 
     private static bool IsStatus(string? value, string expected) =>
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);

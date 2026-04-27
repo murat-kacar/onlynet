@@ -1,15 +1,16 @@
 @page "/audit"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IStringLocalizer<PlatformText> L
 @inject IPlatformAuditReadService PlatformAuditReadService
 
-<PageTitle>Platform Audit Log</PageTitle>
+<PageTitle>@L["AuditPageTitle"]</PageTitle>
 
 <section class="page-hero">
     <div>
-        <p class="eyebrow">Compliance</p>
-        <h1>Platform Audit Log</h1>
-        <p class="hero-copy">Recent platform-side security and provisioning events, grouped for operator review.</p>
+        <p class="eyebrow">@L["ComplianceEyebrow"]</p>
+        <h1>@L["AuditPageTitle"]</h1>
+        <p class="hero-copy">@L["AuditHero"]</p>
     </div>
 </section>
 
@@ -21,43 +22,43 @@ else
 {
     <section class="stats-grid compact-stats">
         <article class="metric-card">
-            <p class="metric-label">Entries</p>
+            <p class="metric-label">@L["Entries"]</p>
             <p class="metric-value">@FilteredEntries.Count</p>
-            <p class="metric-footnote">Visible in current filter</p>
+            <p class="metric-footnote">@L["EntriesVisibleCopy"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Actors</p>
+            <p class="metric-label">@L["Actors"]</p>
             <p class="metric-value">@DistinctActors</p>
-            <p class="metric-footnote">Distinct operator identities</p>
+            <p class="metric-footnote">@L["ActorsCopy"]</p>
         </article>
         <article class="metric-card">
-            <p class="metric-label">Actions</p>
+            <p class="metric-label">@L["Actions"]</p>
             <p class="metric-value">@DistinctActions</p>
-            <p class="metric-footnote">Current action vocabulary</p>
+            <p class="metric-footnote">@L["ActionsCopy"]</p>
         </article>
     </section>
 
     <section class="panel">
         <div class="registry-toolbar">
             <div class="search-field">
-                <label for="audit-search">Search audit</label>
-                <input id="audit-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="Actor, action, resource" />
+                <label for="audit-search">@L["SearchAudit"]</label>
+                <input id="audit-search" value="@SearchTerm" @oninput="OnSearchChanged" class="form-control" placeholder="@L["SearchAuditPlaceholder"]" />
             </div>
 
             <div class="filter-group">
-                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetActionFilter("all")'>All</button>
-                <button type="button" class="@FilterButtonClass("auth")" @onclick='() => SetActionFilter("auth")'>Auth</button>
-                <button type="button" class="@FilterButtonClass("tenant")" @onclick='() => SetActionFilter("tenant")'>Tenant</button>
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetActionFilter("all")'>@L["FilterAll"]</button>
+                <button type="button" class="@FilterButtonClass("auth")" @onclick='() => SetActionFilter("auth")'>@L["Auth"]</button>
+                <button type="button" class="@FilterButtonClass("tenant")" @onclick='() => SetActionFilter("tenant")'>@L["TableTenant"]</button>
             </div>
         </div>
 
         @if (FilteredEntries.Count == 0)
         {
             <div class="empty-state compact-empty">
-                <h4>No audit entries yet</h4>
-                <p>Bootstrap, login, and future tenant mutations will appear here as the log fills.</p>
+                <h4>@L["NoAuditEntriesYet"]</h4>
+                <p>@L["NoAuditEntriesYetCopy"]</p>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+                    <button type="button" class="btn btn-secondary" @onclick="ClearFilters">@L["ClearFilters"]</button>
                 </div>
             </div>
         }
@@ -74,11 +75,11 @@ else
                         <table class="table audit-table">
                             <thead>
                                 <tr>
-                                    <th>When</th>
-                                    <th>Actor</th>
-                                    <th>Action</th>
-                                    <th>Resource</th>
-                                    <th>IP</th>
+                                    <th>@L["TableWhen"]</th>
+                                    <th>@L["TableActor"]</th>
+                                    <th>@L["TableAction"]</th>
+                                    <th>@L["TableResource"]</th>
+                                    <th>@L["TableIp"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -106,9 +107,9 @@ else
                     <div class="table-footer">
                         <p>@PagingSummary</p>
                         <div class="pagination">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">Previous</button>
-                            <span>Page @CurrentPage of @TotalPages</span>
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
+                            <span>@L["PageOf", CurrentPage, TotalPages]</span>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
                         </div>
                     </div>
                 </div>
@@ -117,15 +118,15 @@ else
                     @if (SelectedEntry is null)
                     {
                         <div class="empty-state compact-empty">
-                            <h4>No event selected</h4>
-                            <p>Select a row to inspect the full audit context.</p>
+                            <h4>@L["NoEventSelected"]</h4>
+                            <p>@L["NoEventSelectedCopy"]</p>
                         </div>
                     }
                     else
                     {
                         <div class="panel-header">
                             <div>
-                                <p class="eyebrow">Selection</p>
+                                <p class="eyebrow">@L["Selection"]</p>
                                 <h3>@SelectedEntry.Action</h3>
                             </div>
                             <span class="@ActionClass(SelectedEntry.Action)">@EntryTone(SelectedEntry.Action)</span>
@@ -134,29 +135,29 @@ else
                         <div class="detail-stack">
                             <div class="kv-grid">
                                 <div class="kv-item">
-                                    <span class="kv-label">When</span>
+                                    <span class="kv-label">@L["TableWhen"]</span>
                                     <span class="kv-value">@FormatDate(SelectedEntry.CreatedAt)</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Actor</span>
+                                    <span class="kv-label">@L["TableActor"]</span>
                                     <span class="kv-value">@SelectedEntry.ActorEmail</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">Resource Type</span>
+                                    <span class="kv-label">@L["ResourceType"]</span>
                                     <span class="kv-value">@SelectedEntry.ResourceType</span>
                                 </div>
                                 <div class="kv-item">
-                                    <span class="kv-label">IP</span>
+                                    <span class="kv-label">@L["TableIp"]</span>
                                     <span class="kv-value">@(SelectedEntry.Ip ?? "-")</span>
                                 </div>
                                 <div class="kv-item form-span-2">
-                                    <span class="kv-label">Resource Id</span>
+                                    <span class="kv-label">@L["ResourceId"]</span>
                                     <span class="kv-value">@SelectedEntry.ResourceId</span>
                                 </div>
                             </div>
 
                             <section class="detail-section">
-                                <p class="detail-title">Operator Notes</p>
+                                <p class="detail-title">@L["OperatorNotes"]</p>
                                 <p class="detail-copy">@EntryCopy(SelectedEntry)</p>
                             </section>
                         </div>
@@ -195,7 +196,7 @@ else
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredEntries.Count / (double)PageSize));
 
     private string FilterSummary =>
-        $"{FilteredEntries.Count} matching entries from {AuditEntries.Count} audit records";
+        L["MatchingAuditSummary", FilteredEntries.Count, AuditEntries.Count];
 
     private string PagingSummary
     {
@@ -203,12 +204,12 @@ else
         {
             if (FilteredEntries.Count == 0)
             {
-                return "Showing 0 results";
+                return L["ShowingZeroResults"];
             }
 
             var start = ((CurrentPage - 1) * PageSize) + 1;
             var end = Math.Min(CurrentPage * PageSize, FilteredEntries.Count);
-            return $"Showing {start}-{end} of {FilteredEntries.Count}";
+            return L["ShowingResults", start, end, FilteredEntries.Count];
         }
     }
 
@@ -221,7 +222,7 @@ else
         }
         catch (Exception ex)
         {
-            LoadError = $"Audit log failed to load: {ex.Message}";
+            LoadError = L["AuditLoadError", ex.Message];
         }
     }
 
@@ -329,34 +330,34 @@ else
         return "status-pill neutral";
     }
 
-    private static string EntryTone(string action)
+    private string EntryTone(string action)
     {
         if (action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase))
         {
-            return "Auth";
+            return L["AuthTone"];
         }
 
         if (action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase))
         {
-            return "Tenant";
+            return L["TenantTone"];
         }
 
-        return "Platform";
+        return L["PlatformTone"];
     }
 
-    private static string EntryCopy(PlatformAuditEntryDto entry)
+    private string EntryCopy(PlatformAuditEntryDto entry)
     {
         if (entry.Action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase))
         {
-            return "This event belongs to the platform authentication surface and should be reviewed together with sign-in or credential activity.";
+            return L["AuthEntryCopy"];
         }
 
         if (entry.Action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase))
         {
-            return "This event reflects tenant lifecycle activity and should line up with a matching registry change or provisioning job.";
+            return L["TenantEntryCopy"];
         }
 
-        return "This event was captured by the platform audit surface and can be used to reconstruct operator activity across shared control flows.";
+        return L["PlatformEntryCopy"];
     }
 
     private static string FormatDate(DateTimeOffset value) =>
