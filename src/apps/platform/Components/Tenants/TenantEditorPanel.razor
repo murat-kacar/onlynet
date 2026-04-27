@@ -1,0 +1,361 @@
+@attribute [Authorize(Policy = "Platform:Write")]
+@inject ITenantRegistryService TenantRegistryService
+@inject DialogService DialogService
+
+@if (LoadError is not null)
+{
+    <div class="alert alert-danger">@LoadError</div>
+}
+else
+{
+    @if (SubmitError is not null)
+    {
+        <div class="alert alert-danger">@SubmitError</div>
+    }
+
+    @if (SubmitSuccess is not null)
+    {
+        <div class="alert alert-success">@SubmitSuccess</div>
+    }
+
+    <section class="dialog-stack">
+        <article class="panel create-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Input</p>
+                    <h3>@(IsEditMode ? "Regional Settings" : "Tenant Registration")</h3>
+                </div>
+                @if (IsEditMode)
+                {
+                    <span class="@StatusClass(CurrentStatus)">@CurrentStatus</span>
+                }
+            </div>
+
+            <EditForm Model="@Model" OnValidSubmit="HandleSubmitAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-grid">
+                    @if (IsEditMode)
+                    {
+                        <div class="kv-item">
+                            <span class="kv-label">Tenant</span>
+                            <span class="kv-value">@Fallback(Model.DisplayName)</span>
+                        </div>
+
+                        <div class="kv-item">
+                            <span class="kv-label">Code</span>
+                            <span class="kv-value">@Fallback(Model.Code)</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-group">
+                            <label>Code</label>
+                            <InputText @bind-Value="Model.Code" class="form-control" />
+                            <ValidationMessage For="() => Model.Code" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Display Name</label>
+                            <InputText @bind-Value="Model.DisplayName" class="form-control" />
+                            <ValidationMessage For="() => Model.DisplayName" />
+                        </div>
+
+                        <div class="form-group form-span-2">
+                            <label>Primary Domain</label>
+                            <InputText @bind-Value="Model.PrimaryDomain" class="form-control" />
+                            <ValidationMessage For="() => Model.PrimaryDomain" />
+                        </div>
+
+                        <div class="form-group form-span-2">
+                            <label>Owner Email</label>
+                            <InputText @bind-Value="Model.IntendedOwnerEmail" class="form-control" />
+                            <ValidationMessage For="() => Model.IntendedOwnerEmail" />
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label>Language</label>
+                        <InputText @bind-Value="Model.LanguageCode" class="form-control" />
+                        <ValidationMessage For="() => Model.LanguageCode" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <InputText @bind-Value="Model.CurrencyCode" class="form-control" />
+                        <ValidationMessage For="() => Model.CurrencyCode" />
+                    </div>
+
+                    <div class="form-group form-span-2">
+                        <label>Time Zone</label>
+                        <InputText @bind-Value="Model.TimeZone" class="form-control" />
+                        <ValidationMessage For="() => Model.TimeZone" />
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+                        @(IsSubmitting ? BusyLabel : SubmitLabel)
+                    </button>
+                    @if (Embedded)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CancelEmbedded">Cancel</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDialogAsync">Cancel</button>
+                    }
+                </div>
+            </EditForm>
+        </article>
+
+        <article class="panel create-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Preview</p>
+                    <h3>@(IsEditMode ? "Update Snapshot" : "Registration Snapshot")</h3>
+                </div>
+            </div>
+
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <span class="kv-label">Tenant</span>
+                    <span class="kv-value">@Fallback(Model.DisplayName)</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Code</span>
+                    <span class="kv-value">@Fallback(Model.Code)</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Domain</span>
+                    <span class="kv-value">@Fallback(Model.PrimaryDomain)</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Locale</span>
+                    <span class="kv-value">@Fallback($"{Model.LanguageCode} · {Model.CurrencyCode}")</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Time Zone</span>
+                    <span class="kv-value">@Fallback(Model.TimeZone)</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Owner</span>
+                    <span class="kv-value">@Fallback(Model.IntendedOwnerEmail)</span>
+                </div>
+            </div>
+        </article>
+    </section>
+}
+
+@code {
+    private bool _createInitialized;
+    private Guid? _loadedTenantId;
+    private CreateTenantModel Model = new();
+    private bool IsSubmitting;
+    private string? CurrentStatus;
+    private string? LoadError;
+    private string? SubmitError;
+    private string? SubmitSuccess;
+
+    [Parameter]
+    public bool Embedded { get; set; }
+
+    [Parameter]
+    public Guid? TenantId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnCompleted { get; set; }
+
+    private bool IsEditMode => TenantId.HasValue;
+    private string SubmitLabel => IsEditMode ? "Save Changes" : "Create Tenant";
+    private string BusyLabel => IsEditMode ? "Saving..." : "Creating...";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsEditMode && _createInitialized)
+        {
+            return;
+        }
+
+        if (IsEditMode && TenantId == _loadedTenantId && !string.IsNullOrWhiteSpace(Model.Code))
+        {
+            return;
+        }
+
+        await LoadModelAsync();
+    }
+
+    private async Task LoadModelAsync()
+    {
+        LoadError = null;
+        SubmitError = null;
+        SubmitSuccess = null;
+
+        if (!IsEditMode)
+        {
+            _createInitialized = true;
+            _loadedTenantId = null;
+            CurrentStatus = null;
+            Model = new CreateTenantModel
+            {
+                LanguageCode = "en-GB",
+                CurrencyCode = "GBP",
+                TimeZone = "Europe/London",
+            };
+            return;
+        }
+
+        try
+        {
+            _createInitialized = false;
+            var tenant = await TenantRegistryService.GetTenantAsync(TenantId!.Value);
+            if (tenant is null)
+            {
+                LoadError = "Tenant detail could not be loaded for editing.";
+                return;
+            }
+
+            _loadedTenantId = tenant.Id;
+            CurrentStatus = tenant.Status;
+            Model = new CreateTenantModel
+            {
+                Code = tenant.Code,
+                DisplayName = tenant.DisplayName,
+                PrimaryDomain = tenant.PrimaryDomain,
+                LanguageCode = tenant.LanguageCode,
+                CurrencyCode = tenant.CurrencyCode,
+                TimeZone = tenant.TimeZone,
+                IntendedOwnerEmail = tenant.IntendedOwnerEmail,
+            };
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Editor failed to load: {ex.Message}";
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        IsSubmitting = true;
+        SubmitError = null;
+        SubmitSuccess = null;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                var ok = await TenantRegistryService.UpdateTenantRegionalSettingsAsync(TenantId!.Value, new UpdateTenantRequest(
+                    Model.LanguageCode.Trim(),
+                    Model.CurrencyCode.Trim(),
+                    Model.TimeZone.Trim()));
+
+                if (!ok)
+                {
+                    SubmitError = "Tenant could not be updated because the record is no longer available.";
+                    return;
+                }
+
+                SubmitSuccess = "Tenant settings updated.";
+                await CompleteAsync(TenantId.Value);
+                return;
+            }
+
+            var created = await TenantRegistryService.CreateTenantAsync(new CreateTenantRequest(
+                Model.Code.Trim(),
+                Model.DisplayName.Trim(),
+                Model.PrimaryDomain.Trim(),
+                Model.LanguageCode.Trim(),
+                Model.CurrencyCode.Trim(),
+                Model.TimeZone.Trim(),
+                Model.IntendedOwnerEmail.Trim()));
+
+            SubmitSuccess = $"{created.DisplayName} created.";
+            await CompleteAsync(created.Id);
+        }
+        catch (Exception ex)
+        {
+            SubmitError = IsEditMode
+                ? $"Tenant settings could not be updated: {ex.Message}"
+                : $"Tenant could not be created: {ex.Message}";
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private async Task CompleteAsync(Guid tenantId)
+    {
+        if (OnCompleted.HasDelegate)
+        {
+            await OnCompleted.InvokeAsync(tenantId);
+        }
+
+        if (!Embedded)
+        {
+            await DialogService.CloseSideAsync(tenantId);
+        }
+    }
+
+    private Task CloseDialogAsync() => DialogService.CloseSideAsync(null);
+
+    private async Task CancelEmbedded()
+    {
+        if (OnCompleted.HasDelegate)
+        {
+            await OnCompleted.InvokeAsync(Guid.Empty);
+        }
+    }
+
+    private static string Fallback(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Pending" : value;
+
+    private static string StatusClass(string? status)
+    {
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+
+        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill danger";
+        }
+
+        if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "provisioning", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+
+        return "status-pill neutral";
+    }
+
+    private sealed class CreateTenantModel
+    {
+        [Required]
+        public string Code { get; set; } = string.Empty;
+
+        [Required]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [Required]
+        public string PrimaryDomain { get; set; } = string.Empty;
+
+        [Required]
+        public string LanguageCode { get; set; } = string.Empty;
+
+        [Required]
+        public string CurrencyCode { get; set; } = string.Empty;
+
+        [Required]
+        public string TimeZone { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        public string IntendedOwnerEmail { get; set; } = string.Empty;
+    }
+}

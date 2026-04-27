@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Radzen;
 using Serilog;
 using TabFlow.Platform.Cli;
 using TabFlow.Platform.Middleware;
@@ -103,6 +104,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Platform:Write", policy => policy.RequireClaim("PlatformRole", "Write"));
     options.AddPolicy("Platform:Self", policy => policy.RequireAuthenticatedUser());
 });
+
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddRadzenComponents();
 
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService("TabFlow.Platform"))

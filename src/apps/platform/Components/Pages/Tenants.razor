@@ -1,6 +1,7 @@
 @page "/tenants"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ITenantRegistryService TenantRegistryService
 
@@ -12,9 +13,11 @@
         <h1>Tenants</h1>
         <p class="hero-copy">Search the tenant registry, check rollout status, and jump straight into a regional configuration record.</p>
     </div>
-    <div class="hero-actions">
-        <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
-    </div>
+    <AuthorizeView Policy="Platform:Write">
+        <div class="hero-actions">
+            <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">Create Tenant</button>
+        </div>
+    </AuthorizeView>
 </section>
 
 @if (LoadError is not null)
@@ -69,7 +72,9 @@ else
                 <p>Try clearing the search term or switching the status filter.</p>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-                    <a href="/tenants/new" class="btn btn-primary">Create Tenant</a>
+                    <AuthorizeView Policy="Platform:Write">
+                        <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">Create Tenant</button>
+                    </AuthorizeView>
                 </div>
             </div>
         }
@@ -177,7 +182,10 @@ else
 
                             <div class="form-actions">
                                 <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">Open Full Record</button>
-                                <a href="/tenants/new" class="btn btn-secondary">Create Another</a>
+                                <AuthorizeView Policy="Platform:Write">
+                                    <button type="button" class="btn btn-secondary" @onclick="() => OpenEditTenantAsync(SelectedTenant.Id)">Edit Settings</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="OpenCreateTenantAsync">Create Another</button>
+                                </AuthorizeView>
                             </div>
                         </div>
                     }
@@ -236,7 +244,7 @@ else
     {
         try
         {
-            TenantList = (await TenantRegistryService.GetTenantsAsync()).ToList();
+            await RefreshTenantListAsync();
             EnsureSelection();
         }
         catch (Exception ex)
@@ -248,6 +256,35 @@ else
     private void NavigateToDetail(Guid id)
     {
         NavigationManager.NavigateTo($"/tenants/{id}");
+    }
+
+    private async Task OpenCreateTenantAsync()
+    {
+        var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
+            "Create Tenant",
+            new Dictionary<string, object?>(),
+            CreateDialogOptions());
+
+        if (result is Guid createdTenantId && createdTenantId != Guid.Empty)
+        {
+            await RefreshTenantListAsync(createdTenantId);
+        }
+    }
+
+    private async Task OpenEditTenantAsync(Guid tenantId)
+    {
+        var result = await DialogService.OpenSideAsync<TenantEditorPanel>(
+            "Edit Tenant",
+            new Dictionary<string, object?>
+            {
+                [nameof(TenantEditorPanel.TenantId)] = tenantId,
+            },
+            EditDialogOptions());
+
+        if (result is Guid updatedTenantId && updatedTenantId != Guid.Empty)
+        {
+            await RefreshTenantListAsync(updatedTenantId);
+        }
     }
 
     private bool MatchesSearch(TenantDto tenant)
@@ -331,6 +368,53 @@ else
         var selected = VisibleTenants.FirstOrDefault(t => t.Id == SelectedTenantId) ?? VisibleTenants.FirstOrDefault();
         SelectedTenantId = selected?.Id;
     }
+
+    private async Task RefreshTenantListAsync(Guid? selectedTenantId = null)
+    {
+        TenantList = (await TenantRegistryService.GetTenantsAsync()).ToList();
+
+        if (selectedTenantId.HasValue)
+        {
+            SearchTerm = string.Empty;
+            StatusFilter = "all";
+            var selectedIndex = TenantList
+                .OrderBy(t => t.DisplayName)
+                .Select((tenant, index) => new { tenant.Id, index })
+                .FirstOrDefault(item => item.Id == selectedTenantId.Value)
+                ?.index;
+
+            if (selectedIndex.HasValue)
+            {
+                CurrentPage = (selectedIndex.Value / PageSize) + 1;
+                SelectedTenantId = selectedTenantId;
+            }
+        }
+
+        EnsureSelection();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static SideDialogOptions CreateDialogOptions() => new()
+    {
+        Position = DialogPosition.Right,
+        ShowMask = true,
+        CloseDialogOnOverlayClick = false,
+        Width = "560px",
+        CssClass = "platform-side-dialog",
+        WrapperCssClass = "platform-side-dialog-wrapper",
+        ContentCssClass = "platform-side-dialog-content",
+    };
+
+    private static SideDialogOptions EditDialogOptions() => new()
+    {
+        Position = DialogPosition.Right,
+        ShowMask = true,
+        CloseDialogOnOverlayClick = false,
+        Width = "520px",
+        CssClass = "platform-side-dialog",
+        WrapperCssClass = "platform-side-dialog-wrapper",
+        ContentCssClass = "platform-side-dialog-content",
+    };
 
     private string FilterButtonClass(string filter) =>
         StatusFilter == filter ? "filter-chip active" : "filter-chip";

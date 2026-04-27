@@ -16,9 +16,6 @@
             <NavLink href="/tenants" class="nav-link">
                 Tenants
             </NavLink>
-            <NavLink href="/tenants/new" class="nav-link">
-                Create Tenant
-            </NavLink>
             <NavLink href="/jobs" class="nav-link">
                 Jobs
             </NavLink>
@@ -39,7 +36,6 @@
                 <h2>Management Console</h2>
             </div>
             <div class="header-actions">
-                <a href="/tenants/new" class="btn btn-primary">New Tenant</a>
                 <a href="/change-password" class="btn btn-secondary">Password</a>
             </div>
         </header>
@@ -49,3 +45,5 @@
         </main>
     </div>
 </div>
+
+<RadzenComponents @rendermode="InteractiveServer" />

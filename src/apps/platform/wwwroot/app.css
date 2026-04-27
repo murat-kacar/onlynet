@@ -219,6 +219,45 @@ h4 {
     color: #18794e;
 }
 
+.rz-dialog-wrapper.platform-side-dialog-wrapper {
+    backdrop-filter: blur(4px);
+}
+
+.rz-dialog.platform-side-dialog {
+    border: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: -24px 0 60px rgba(24, 39, 75, 0.12);
+}
+
+.rz-dialog.platform-side-dialog .rz-dialog-titlebar {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    background: #f7fbfb;
+}
+
+.rz-dialog.platform-side-dialog .rz-dialog-title {
+    color: var(--text);
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.rz-dialog.platform-side-dialog .rz-dialog-content {
+    padding: 18px;
+    background: transparent;
+}
+
+.rz-dialog.platform-side-dialog .rz-dialog-titlebar-close {
+    color: var(--muted);
+}
+
+.dialog-stack {
+    display: grid;
+    gap: 16px;
+}
+
 .platform-shell {
     min-height: 100vh;
     display: grid;

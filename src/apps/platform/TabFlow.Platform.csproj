@@ -13,6 +13,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="Radzen.Blazor" GeneratePathProperty="true" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
@@ -33,5 +34,10 @@
   <Target Name="CopyBlazorFrameworkScripts" AfterTargets="Build">
     <MakeDir Directories="$(OutDir)wwwroot/_framework" />
     <Copy SourceFiles="@(BlazorFrameworkScript)" DestinationFolder="$(OutDir)wwwroot/_framework" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="CopyRadzenStaticAssets" AfterTargets="Build">
+    <RemoveDir Directories="$(OutDir)wwwroot/_content/Radzen.Blazor" />
+    <MakeDir Directories="$(OutDir)wwwroot/_content/Radzen.Blazor" />
+    <Exec Command="cp -R &quot;$(PkgRadzen_Blazor)/staticwebassets/.&quot; &quot;$(OutDir)wwwroot/_content/Radzen.Blazor/&quot;" />
   </Target>
 </Project>

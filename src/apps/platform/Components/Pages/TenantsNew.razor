@@ -1,7 +1,6 @@
 @page "/tenants/new"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Write")]
-@inject ITenantRegistryService TenantRegistryService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create Tenant</PageTitle>
@@ -10,181 +9,19 @@
     <div>
         <p class="eyebrow">Provisioning</p>
         <h1>Create Tenant</h1>
-        <p class="hero-copy">Register a new tenant identity, regional defaults, and owner handoff target in one pass.</p>
+        <p class="hero-copy">Legacy route retained for compatibility. The primary create workflow now lives inside the tenant registry as a side panel.</p>
     </div>
     <div class="hero-actions">
         <a href="/tenants" class="btn btn-secondary">Back to Registry</a>
     </div>
 </section>
 
-@if (SubmitError is not null)
-{
-    <div class="alert alert-danger">@SubmitError</div>
-}
-
-@if (SubmitSuccess is not null)
-{
-    <div class="alert alert-success">@SubmitSuccess</div>
-}
-
-<section class="create-layout">
-    <article class="panel create-panel">
-        <div class="panel-header">
-            <div>
-                <p class="eyebrow">Input</p>
-                <h3>Tenant Registration</h3>
-            </div>
-        </div>
-
-        <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Code</label>
-                    <InputText @bind-value="Model.Code" class="form-control" />
-                    <ValidationMessage For="() => Model.Code" />
-                </div>
-
-                <div class="form-group">
-                    <label>Display Name</label>
-                    <InputText @bind-value="Model.DisplayName" class="form-control" />
-                    <ValidationMessage For="() => Model.DisplayName" />
-                </div>
-
-                <div class="form-group form-span-2">
-                    <label>Primary Domain</label>
-                    <InputText @bind-value="Model.PrimaryDomain" class="form-control" />
-                    <ValidationMessage For="() => Model.PrimaryDomain" />
-                </div>
-
-                <div class="form-group">
-                    <label>Language</label>
-                    <InputText @bind-value="Model.LanguageCode" class="form-control" />
-                    <ValidationMessage For="() => Model.LanguageCode" />
-                </div>
-
-                <div class="form-group">
-                    <label>Currency</label>
-                    <InputText @bind-value="Model.CurrencyCode" class="form-control" />
-                    <ValidationMessage For="() => Model.CurrencyCode" />
-                </div>
-
-                <div class="form-group form-span-2">
-                    <label>Time Zone</label>
-                    <InputText @bind-value="Model.TimeZone" class="form-control" />
-                    <ValidationMessage For="() => Model.TimeZone" />
-                </div>
-
-                <div class="form-group form-span-2">
-                    <label>Owner Email</label>
-                    <InputText @bind-value="Model.IntendedOwnerEmail" class="form-control" />
-                    <ValidationMessage For="() => Model.IntendedOwnerEmail" />
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
-                    @(IsSubmitting ? "Creating..." : "Create Tenant")
-                </button>
-                <a href="/tenants" class="btn btn-secondary">Cancel</a>
-            </div>
-        </EditForm>
-    </article>
-
-    <article class="panel create-panel">
-        <div class="panel-header">
-            <div>
-                <p class="eyebrow">Preview</p>
-                <h3>Registration Snapshot</h3>
-            </div>
-        </div>
-
-        <div class="kv-grid">
-            <div class="kv-item">
-                <span class="kv-label">Tenant</span>
-                <span class="kv-value">@Fallback(Model.DisplayName)</span>
-            </div>
-            <div class="kv-item">
-                <span class="kv-label">Code</span>
-                <span class="kv-value">@Fallback(Model.Code)</span>
-            </div>
-            <div class="kv-item">
-                <span class="kv-label">Domain</span>
-                <span class="kv-value">@Fallback(Model.PrimaryDomain)</span>
-            </div>
-            <div class="kv-item">
-                <span class="kv-label">Locale</span>
-                <span class="kv-value">@Fallback($"{Model.LanguageCode} · {Model.CurrencyCode}")</span>
-            </div>
-            <div class="kv-item">
-                <span class="kv-label">Time Zone</span>
-                <span class="kv-value">@Fallback(Model.TimeZone)</span>
-            </div>
-            <div class="kv-item">
-                <span class="kv-label">Owner</span>
-                <span class="kv-value">@Fallback(Model.IntendedOwnerEmail)</span>
-            </div>
-        </div>
-    </article>
-</section>
+<TenantEditorPanel Embedded="true" OnCompleted="HandleCompletedAsync" />
 
 @code {
-    private CreateTenantModel Model = new();
-    private bool IsSubmitting;
-    private string? SubmitError;
-    private string? SubmitSuccess;
-
-    private async Task HandleSubmit()
+    private Task HandleCompletedAsync(Guid tenantId)
     {
-        IsSubmitting = true;
-        SubmitError = null;
-        SubmitSuccess = null;
-
-        try
-        {
-            var created = await TenantRegistryService.CreateTenantAsync(new CreateTenantRequest(
-                Model.Code.Trim(),
-                Model.DisplayName.Trim(),
-                Model.PrimaryDomain.Trim(),
-                Model.LanguageCode.Trim(),
-                Model.CurrencyCode.Trim(),
-                Model.TimeZone.Trim(),
-                Model.IntendedOwnerEmail.Trim()));
-
-            SubmitSuccess = $"{created.DisplayName} created.";
-            NavigationManager.NavigateTo($"/tenants/{created.Id}");
-        }
-        catch (Exception ex)
-        {
-            SubmitError = $"Tenant could not be created: {ex.Message}";
-        }
-        finally
-        {
-            IsSubmitting = false;
-        }
-    }
-
-    private static string Fallback(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? "Pending" : value;
-
-    private class CreateTenantModel
-    {
-        [Required]
-        public string Code { get; set; } = string.Empty;
-        [Required]
-        public string DisplayName { get; set; } = string.Empty;
-        [Required]
-        public string PrimaryDomain { get; set; } = string.Empty;
-        [Required]
-        public string LanguageCode { get; set; } = string.Empty;
-        [Required]
-        public string CurrencyCode { get; set; } = string.Empty;
-        [Required]
-        public string TimeZone { get; set; } = string.Empty;
-        [Required]
-        [EmailAddress]
-        public string IntendedOwnerEmail { get; set; } = string.Empty;
+        NavigationManager.NavigateTo(tenantId == Guid.Empty ? "/tenants" : $"/tenants/{tenantId}");
+        return Task.CompletedTask;
     }
 }
