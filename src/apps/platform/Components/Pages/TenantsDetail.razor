@@ -1,61 +1,187 @@
 @page "/tenants/{id:guid}"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject ITenantRegistryService TenantRegistryService
+@inject IProvisioningJobReadService ProvisioningJobReadService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Tenant Details</PageTitle>
 
-<h1>Tenant Details</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Tenant Record</p>
+        <h1>@(Tenant?.DisplayName ?? "Tenant Detail")</h1>
+        <p class="hero-copy">Registry state, regional settings, owner identity, and provisioning activity in one place.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/tenants" class="btn btn-secondary">Back</a>
+        <a href="/jobs" class="btn btn-primary">Jobs</a>
+    </div>
+</section>
 
-@if (Tenant != null)
+@if (LoadError is not null)
 {
-    <div class="detail-card">
-        <h3>@Tenant.DisplayName</h3>
-        <dl>
-            <dt>Code</dt>
-            <dd>@Tenant.Code</dd>
-            <dt>Status</dt>
-            <dd>@Tenant.Status</dd>
-            <dt>Primary Domain</dt>
-            <dd>@Tenant.PrimaryDomain</dd>
-            <dt>Language</dt>
-            <dd>@Tenant.LanguageCode</dd>
-            <dt>Currency</dt>
-            <dd>@Tenant.CurrencyCode</dd>
-            <dt>Time Zone</dt>
-            <dd>@Tenant.TimeZone</dd>
-            <dt>Intended Owner Email</dt>
-            <dd>@Tenant.IntendedOwnerEmail</dd>
-        </dl>
-    </div>
-
-    <div class="actions">
-        <a href="/tenants" class="btn btn-secondary">Back to Tenants</a>
-    </div>
+    <div class="alert alert-danger">@LoadError</div>
+}
+else if (Tenant is null)
+{
+    <section class="empty-state">
+        <h3>Tenant not found</h3>
+        <p>The requested tenant record is unavailable or no longer exists.</p>
+    </section>
 }
 else
 {
-    <p>Tenant not found.</p>
+    <section class="stats-grid compact-stats">
+        <article class="metric-card">
+            <p class="metric-label">Status</p>
+            <p class="metric-value metric-value-sm">@Tenant.Status</p>
+            <p class="metric-footnote">Current registry state</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Locale</p>
+            <p class="metric-value metric-value-sm">@Tenant.LanguageCode</p>
+            <p class="metric-footnote">@Tenant.CurrencyCode · @Tenant.TimeZone</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Jobs</p>
+            <p class="metric-value">@RelatedJobs.Count</p>
+            <p class="metric-footnote">@FailedJobs failed · @OpenJobs open</p>
+        </article>
+    </section>
+
+    <section class="detail-layout">
+        <article class="panel detail-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Identity</p>
+                    <h3>Registry Summary</h3>
+                </div>
+                <span class="@StatusClass(Tenant.Status)">@Tenant.Status</span>
+            </div>
+
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <span class="kv-label">Code</span>
+                    <span class="kv-value">@Tenant.Code</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Primary Domain</span>
+                    <span class="kv-value">@Tenant.PrimaryDomain</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Owner Email</span>
+                    <span class="kv-value">@Tenant.IntendedOwnerEmail</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Database</span>
+                    <span class="kv-value">@(Tenant.DatabaseName ?? "Pending")</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">DB User</span>
+                    <span class="kv-value">@(Tenant.DatabaseUser ?? "Pending")</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">Time Zone</span>
+                    <span class="kv-value">@Tenant.TimeZone</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel detail-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Provisioning</p>
+                    <h3>Related Jobs</h3>
+                </div>
+                <a href="/jobs" class="text-link">Queue</a>
+            </div>
+
+            @if (RelatedJobs.Count == 0)
+            {
+                <div class="empty-state compact-empty">
+                    <h4>No jobs for this tenant</h4>
+                    <p>Provisioning activity will appear here once jobs are recorded.</p>
+                </div>
+            }
+            else
+            {
+                <div class="stack-list">
+                    @foreach (var job in RelatedJobs.Take(6))
+                    {
+                        <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo("/jobs")'>
+                            <div>
+                                <p class="list-title">@job.Type</p>
+                                <p class="list-subtitle">@ShortId(job.Id)</p>
+                            </div>
+                            <div class="list-meta">
+                                <span class="@StatusClass(job.Status)">@job.Status</span>
+                                <span>@FormatDate(job.UpdatedAt)</span>
+                            </div>
+                        </button>
+                    }
+                </div>
+            }
+        </article>
+    </section>
 }
 
 @code {
     [Parameter]
     public Guid Id { get; set; }
 
-    private TenantDetail? Tenant = null;
+    private TenantDetailedDto? Tenant;
+    private List<JobDto> RelatedJobs = [];
+    private string? LoadError;
+    private int FailedJobs => RelatedJobs.Count(job => IsStatus(job.Status, "failed"));
+    private int OpenJobs => RelatedJobs.Count(job => !IsStatus(job.Status, "completed"));
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        // TODO(TD-0019): Load from database
+        try
+        {
+            Tenant = await TenantRegistryService.GetTenantAsync(Id);
+            if (Tenant is null)
+            {
+                RelatedJobs = [];
+                return;
+            }
+
+            RelatedJobs = (await ProvisioningJobReadService.GetJobsAsync())
+                .Where(job => job.TenantId == Id)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Tenant detail failed to load: {ex.Message}";
+        }
     }
 
-    private record TenantDetail(
-        Guid Id,
-        string Code,
-        string DisplayName,
-        string Status,
-        string PrimaryDomain,
-        string LanguageCode,
-        string CurrencyCode,
-        string TimeZone,
-        string IntendedOwnerEmail);
+    private static string ShortId(Guid id) => id.ToString("N")[..8];
+
+    private static string FormatDate(DateTimeOffset value) =>
+        value.ToString("yyyy-MM-dd HH:mm");
+
+    private static bool IsStatus(string? value, string expected) =>
+        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+
+    private static string StatusClass(string status)
+    {
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill danger";
+        }
+        if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "provisioning", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+        return "status-pill neutral";
+    }
 }

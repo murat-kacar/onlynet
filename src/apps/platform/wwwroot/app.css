@@ -195,6 +195,11 @@ h4 {
     color: #9a3412;
 }
 
+.alert-success {
+    background: #edf9f0;
+    color: #18794e;
+}
+
 .platform-shell {
     min-height: 100vh;
     display: grid;
@@ -329,6 +334,20 @@ h4 {
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(280px, 0.9fr);
 }
 
+.detail-layout,
+.create-layout {
+    display: grid;
+    gap: 16px;
+}
+
+.detail-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.create-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
 .metric-card,
 .panel,
 .empty-state,
@@ -381,6 +400,11 @@ h4 {
 
 .panel {
     padding: 18px;
+}
+
+.detail-panel,
+.create-panel {
+    min-width: 0;
 }
 
 .panel-header,
@@ -571,6 +595,50 @@ h4 {
     box-shadow: none;
 }
 
+.kv-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.kv-item {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--soft);
+}
+
+.kv-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.kv-value {
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+}
+
+.form-span-2 {
+    grid-column: span 2;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
 @media (max-width: 1100px) {
     .platform-shell {
         grid-template-columns: 1fr;
@@ -582,7 +650,9 @@ h4 {
 
     .stats-grid,
     .compact-stats,
-    .platform-dashboard-grid {
+    .platform-dashboard-grid,
+    .detail-layout,
+    .create-layout {
         grid-template-columns: 1fr 1fr;
     }
 }
@@ -602,8 +672,16 @@ h4 {
 
     .stats-grid,
     .compact-stats,
-    .platform-dashboard-grid {
+    .platform-dashboard-grid,
+    .detail-layout,
+    .create-layout,
+    .kv-grid,
+    .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .form-span-2 {
+        grid-column: span 1;
     }
 
     h1 {
