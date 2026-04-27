@@ -1,50 +1,152 @@
 @page "/audit"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
+@inject IPlatformAuditReadService PlatformAuditReadService
 
 <PageTitle>Platform Audit Log</PageTitle>
 
-<h1>Platform Audit Log</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Compliance</p>
+        <h1>Platform Audit Log</h1>
+        <p class="hero-copy">Recent platform-side security and provisioning events, grouped for operator review.</p>
+    </div>
+</section>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Timestamp</th>
-            <th>Actor Email</th>
-            <th>Action</th>
-            <th>Resource Type</th>
-            <th>Resource ID</th>
-            <th>IP</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var entry in AuditEntries)
+@if (LoadError is not null)
+{
+    <div class="alert alert-danger">@LoadError</div>
+}
+else
+{
+    <section class="stats-grid compact-stats">
+        <article class="metric-card">
+            <p class="metric-label">Entries</p>
+            <p class="metric-value">@FilteredEntries.Count</p>
+            <p class="metric-footnote">Visible in current filter</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Actors</p>
+            <p class="metric-value">@DistinctActors</p>
+            <p class="metric-footnote">Distinct operator identities</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Actions</p>
+            <p class="metric-value">@DistinctActions</p>
+            <p class="metric-footnote">Current action vocabulary</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="registry-toolbar">
+            <div class="search-field">
+                <label for="audit-search">Search audit</label>
+                <InputText id="audit-search" @bind-Value="SearchTerm" class="form-control" placeholder="Actor, action, resource" />
+            </div>
+
+            <div class="filter-group">
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetActionFilter("all")'>All</button>
+                <button type="button" class="@FilterButtonClass("auth")" @onclick='() => SetActionFilter("auth")'>Auth</button>
+                <button type="button" class="@FilterButtonClass("tenant")" @onclick='() => SetActionFilter("tenant")'>Tenant</button>
+            </div>
+        </div>
+
+        @if (FilteredEntries.Count == 0)
         {
-            <tr>
-                <td>@entry.CreatedAt</td>
-                <td>@entry.ActorEmail</td>
-                <td>@entry.Action</td>
-                <td>@entry.ResourceType</td>
-                <td>@entry.ResourceId</td>
-                <td>@entry.Ip</td>
-            </tr>
+            <div class="empty-state compact-empty">
+                <h4>No audit entries yet</h4>
+                <p>Bootstrap, login, and future tenant mutations will appear here as the log fills.</p>
+            </div>
         }
-    </tbody>
-</table>
+        else
+        {
+            <div class="table-shell">
+                <table class="table audit-table">
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in FilteredEntries)
+                        {
+                            <tr>
+                                <td>@FormatDate(entry.CreatedAt)</td>
+                                <td>@entry.ActorEmail</td>
+                                <td><span class="status-pill neutral">@entry.Action</span></td>
+                                <td>
+                                    <div class="tenant-cell">
+                                        <p class="list-title">@entry.ResourceType</p>
+                                        <p class="list-subtitle">@entry.ResourceId</p>
+                                    </div>
+                                </td>
+                                <td>@(entry.Ip ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
 
 @code {
-    private List<AuditEntryListItem> AuditEntries = [];
+    private List<PlatformAuditEntryDto> AuditEntries = [];
+    private string SearchTerm { get; set; } = string.Empty;
+    private string ActionFilter { get; set; } = "all";
+    private string? LoadError;
+    private int DistinctActors => AuditEntries.Select(entry => entry.ActorEmail).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    private int DistinctActions => AuditEntries.Select(entry => entry.Action).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    private IReadOnlyList<PlatformAuditEntryDto> FilteredEntries =>
+        AuditEntries
+            .Where(MatchesSearch)
+            .Where(MatchesActionFilter)
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
-        // TODO(TD-0019): Load from database
+        try
+        {
+            AuditEntries = (await PlatformAuditReadService.GetEntriesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Audit log failed to load: {ex.Message}";
+        }
     }
 
-    private record AuditEntryListItem(
-        DateTimeOffset CreatedAt,
-        string ActorEmail,
-        string Action,
-        string ResourceType,
-        string ResourceId,
-        string? Ip);
+    private bool MatchesSearch(PlatformAuditEntryDto entry)
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            return true;
+        }
+
+        return entry.ActorEmail.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               entry.Action.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               entry.ResourceType.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               entry.ResourceId.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool MatchesActionFilter(PlatformAuditEntryDto entry)
+    {
+        return ActionFilter switch
+        {
+            "auth" => entry.Action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase),
+            "tenant" => entry.Action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase),
+            _ => true,
+        };
+    }
+
+    private void SetActionFilter(string filter) => ActionFilter = filter;
+
+    private string FilterButtonClass(string filter) =>
+        ActionFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static string FormatDate(DateTimeOffset value) =>
+        value.ToString("yyyy-MM-dd HH:mm");
 }

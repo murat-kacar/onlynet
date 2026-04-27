@@ -51,6 +51,7 @@ builder.Services.AddDbContext<PlatformDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PlatformDb")));
 
 builder.Services.AddScoped<IPlatformAuditService, PlatformAuditService>();
+builder.Services.AddScoped<IPlatformAuditReadService, PlatformAuditReadService>();
 // TD-0022 step 1: read-path services that own the PlatformDbContext
 // reads which used to live inline in the API controllers.
 builder.Services.AddScoped<ITenantRegistryService, TenantRegistryService>();

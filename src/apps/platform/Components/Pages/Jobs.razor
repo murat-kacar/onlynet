@@ -1,59 +1,184 @@
 @page "/jobs"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Platform:Read")]
-@inject HttpClient Http
+@inject IProvisioningJobReadService ProvisioningJobReadService
 
 <PageTitle>Provisioning Jobs</PageTitle>
 
-<h1>Provisioning Jobs</h1>
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Operations</p>
+        <h1>Provisioning Jobs</h1>
+        <p class="hero-copy">Queue health, failures, claims, and recent tenant provisioning activity.</p>
+    </div>
+</section>
 
-@if (JobList == null)
+@if (LoadError is not null)
 {
-    <p>Loading...</p>
+    <div class="alert alert-danger">@LoadError</div>
+}
+else if (JobList is null)
+{
+    <section class="empty-state">
+        <h3>Loading queue</h3>
+        <p>Provisioning activity is being fetched from the platform store.</p>
+    </section>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tenant ID</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Claimed By</th>
-                <th>Created At</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var job in JobList)
-            {
-                <tr>
-                    <td>@job.Id</td>
-                    <td>@job.TenantId</td>
-                    <td>@job.Type</td>
-                    <td>@job.Status</td>
-                    <td>@job.ClaimedBy</td>
-                    <td>@job.CreatedAt</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <section class="stats-grid compact-stats">
+        <article class="metric-card">
+            <p class="metric-label">Jobs</p>
+            <p class="metric-value">@JobList.Count</p>
+            <p class="metric-footnote">@OpenJobs open in the queue</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Failed</p>
+            <p class="metric-value">@FailedJobs</p>
+            <p class="metric-footnote">Need direct operator attention</p>
+        </article>
+        <article class="metric-card">
+            <p class="metric-label">Claimed</p>
+            <p class="metric-value">@ClaimedJobs</p>
+            <p class="metric-footnote">Currently attached to a worker</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="registry-toolbar">
+            <div class="search-field">
+                <label for="job-search">Search jobs</label>
+                <InputText id="job-search" @bind-Value="SearchTerm" class="form-control" placeholder="Type, worker, tenant id" />
+            </div>
+
+            <div class="filter-group">
+                <button type="button" class="@FilterButtonClass("all")" @onclick='() => SetStatusFilter("all")'>All</button>
+                <button type="button" class="@FilterButtonClass("open")" @onclick='() => SetStatusFilter("open")'>Open</button>
+                <button type="button" class="@FilterButtonClass("failed")" @onclick='() => SetStatusFilter("failed")'>Failed</button>
+            </div>
+        </div>
+
+        @if (FilteredJobs.Count == 0)
+        {
+            <div class="empty-state compact-empty">
+                <h4>No jobs in this view</h4>
+                <p>Try clearing the search or changing the status filter.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table class="table jobs-table">
+                    <thead>
+                        <tr>
+                            <th>Job</th>
+                            <th>Status</th>
+                            <th>Tenant</th>
+                            <th>Claimed By</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var job in FilteredJobs)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="tenant-cell">
+                                        <p class="list-title">@job.Type</p>
+                                        <p class="list-subtitle">@ShortId(job.Id)</p>
+                                    </div>
+                                </td>
+                                <td><span class="@StatusClass(job.Status)">@job.Status</span></td>
+                                <td>@ShortId(job.TenantId)</td>
+                                <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? "Unclaimed" : job.ClaimedBy)</td>
+                                <td>@FormatDate(job.UpdatedAt)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 }
 
 @code {
     private List<JobDto>? JobList;
+    private string SearchTerm { get; set; } = string.Empty;
+    private string StatusFilter { get; set; } = "all";
+    private string? LoadError;
+    private int OpenJobs => JobList?.Count(j => !IsStatus(j.Status, "completed")) ?? 0;
+    private int FailedJobs => JobList?.Count(j => IsStatus(j.Status, "failed")) ?? 0;
+    private int ClaimedJobs => JobList?.Count(j => !string.IsNullOrWhiteSpace(j.ClaimedBy)) ?? 0;
+    private IReadOnlyList<JobDto> FilteredJobs =>
+        (JobList ?? [])
+            .Where(MatchesSearch)
+            .Where(MatchesFilter)
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
-        JobList = await Http.GetFromJsonAsync<List<JobDto>>("/api/jobs");
+        try
+        {
+            JobList = (await ProvisioningJobReadService.GetJobsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Jobs failed to load: {ex.Message}";
+        }
     }
 
-    private record JobDto(
-        Guid Id,
-        Guid TenantId,
-        string Type,
-        string Status,
-        string? ClaimedBy,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset UpdatedAt);
+    private bool MatchesSearch(JobDto job)
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            return true;
+        }
+
+        return job.Type.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               job.TenantId.ToString().Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+               (job.ClaimedBy?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+
+    private bool MatchesFilter(JobDto job)
+    {
+        return StatusFilter switch
+        {
+            "open" => !IsStatus(job.Status, "completed"),
+            "failed" => IsStatus(job.Status, "failed"),
+            _ => true,
+        };
+    }
+
+    private void SetStatusFilter(string filter) => StatusFilter = filter;
+
+    private string FilterButtonClass(string filter) =>
+        StatusFilter == filter ? "filter-chip active" : "filter-chip";
+
+    private static bool IsStatus(string? value, string expected) =>
+        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+
+    private static string ShortId(Guid id) => id.ToString("N")[..8];
+
+    private static string FormatDate(DateTimeOffset value) =>
+        value.ToString("yyyy-MM-dd HH:mm");
+
+    private static string StatusClass(string status)
+    {
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill success";
+        }
+        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill danger";
+        }
+        if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "provisioning", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status-pill warning";
+        }
+        return "status-pill neutral";
+    }
 }
