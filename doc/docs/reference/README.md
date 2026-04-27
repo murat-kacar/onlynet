@@ -15,6 +15,7 @@ Use this section for:
 Reference entrypoints:
 
 - [`./architecture/README.md`](./architecture/README.md)
+- [`./architecture/technology-inventory.md`](./architecture/technology-inventory.md)
 - [`./api/README.md`](./api/README.md)
 - [`./database/README.md`](./database/README.md)
 - [`./firmware.md`](./firmware.md)
