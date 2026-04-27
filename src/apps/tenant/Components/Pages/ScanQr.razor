@@ -1,6 +1,8 @@
 @page "/scan-qr"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@implements IAsyncDisposable
 @inject HttpClient Http
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<TenantText> L
 @inject CustomerSessionBrowserStore CustomerSessionStore
@@ -16,13 +18,40 @@
 </section>
 
 <section class="panel auth-panel">
-    <div class="qr-input">
-        <label>@L["EnterQrToken"]</label>
-        <input type="text" @bind="QrToken" placeholder="QR Token" />
-        <div class="form-actions">
-            <button class="btn btn-primary" @onclick="OpenSession">@L["OpenSession"]</button>
-            <button class="btn btn-secondary" @onclick="ResetScan">@L["ScanAgain"]</button>
-        </div>
+    <div class="detail-layout scanner-layout">
+        <section class="panel detail-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">@L["CameraScan"]</p>
+                    <h3>@L["ScanQrTitle"]</h3>
+                </div>
+            </div>
+
+            <div class="scanner-frame">
+                <video @ref="VideoElement" class="scanner-video" autoplay muted playsinline></video>
+            </div>
+
+            @if (CameraMessage is not null)
+            {
+                <p class="detail-copy">@CameraMessage</p>
+            }
+
+            <div class="form-actions">
+                <button class="btn btn-primary" disabled="@IsOpeningSession" @onclick="StartCameraAsync">@L["StartCameraScan"]</button>
+                <button class="btn btn-secondary" @onclick="StopCameraAsync">@L["StopCameraScan"]</button>
+            </div>
+        </section>
+
+        <section class="panel detail-panel">
+            <div class="qr-input">
+                <label>@L["EnterQrToken"]</label>
+                <input type="text" @bind="QrToken" placeholder="QR Token" />
+                <div class="form-actions">
+                    <button class="btn btn-primary" disabled="@IsOpeningSession" @onclick="OpenSession">@L["OpenSession"]</button>
+                    <button class="btn btn-secondary" @onclick="ResetScan">@L["ScanAgain"]</button>
+                </div>
+            </div>
+        </section>
     </div>
 </section>
 
@@ -34,6 +63,11 @@
 @code {
     private string QrToken = string.Empty;
     private string? ErrorMessage;
+    private string? CameraMessage;
+    private bool IsOpeningSession;
+    private ElementReference VideoElement;
+    private IJSObjectReference? ScannerModule;
+    private DotNetObjectReference<ScanQr>? DotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,20 +86,36 @@
 
     private async Task OpenSession()
     {
-        if (string.IsNullOrWhiteSpace(QrToken))
+        await OpenSessionAsync(QrToken);
+    }
+
+    [JSInvokable]
+    public async Task HandleDetectedQrToken(string token)
+    {
+        QrToken = token;
+        await InvokeAsync(StateHasChanged);
+        await OpenSessionAsync(token);
+    }
+
+    private async Task OpenSessionAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
         {
             ErrorMessage = L["QrRequired"];
             return;
         }
 
+        IsOpeningSession = true;
+
         try
         {
-            var result = await Http.PostAsJsonAsync("/api/public/session/open", new { QrTokenValue = QrToken });
+            var result = await Http.PostAsJsonAsync("/api/public/session/open", new { QrTokenValue = token.Trim() });
             result.EnsureSuccessStatusCode();
 
             var sessionResult = await result.Content.ReadFromJsonAsync<OpenSessionResult>();
             if (sessionResult is not null)
             {
+                await StopCameraAsync();
                 await CustomerSessionStore.SetSnapshotAsync(
                     sessionResult.SessionId,
                     sessionResult.TicketId,
@@ -78,6 +128,56 @@
         {
             ErrorMessage = L["OpenSessionFailed", ex.Message];
         }
+        finally
+        {
+            IsOpeningSession = false;
+        }
+    }
+
+    private async Task StartCameraAsync()
+    {
+        ErrorMessage = null;
+        CameraMessage = null;
+        ScannerModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "/js/qrScanner.js?v=20260427-1");
+        DotNetRef ??= DotNetObjectReference.Create(this);
+
+        var supported = await ScannerModule.InvokeAsync<bool>("isQrScannerSupported");
+        if (!supported)
+        {
+            CameraMessage = L["CameraScanUnsupported"];
+            return;
+        }
+
+        var started = await ScannerModule.InvokeAsync<bool>("startQrScanner", VideoElement, DotNetRef);
+        CameraMessage = started ? L["CameraScanReady"] : L["CameraScanUnsupported"];
+    }
+
+    private async Task StopCameraAsync()
+    {
+        if (ScannerModule is null)
+        {
+            return;
+        }
+
+        await ScannerModule.InvokeVoidAsync("stopQrScanner");
+        CameraMessage = L["CameraScanStopped"];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (ScannerModule is not null)
+        {
+            try
+            {
+                await ScannerModule.InvokeVoidAsync("stopQrScanner");
+                await ScannerModule.DisposeAsync();
+            }
+            catch
+            {
+            }
+        }
+
+        DotNetRef?.Dispose();
     }
 
     private record OpenSessionResult(Guid SessionId, Guid TicketId, Guid TableId, string TableLabel);

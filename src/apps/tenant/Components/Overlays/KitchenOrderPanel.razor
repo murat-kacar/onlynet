@@ -4,17 +4,34 @@
 
 <div class="drawer-stack">
     <div class="drawer-kv">
-        <span class="kv-label">Order</span>
-        <span class="kv-value">@Order.Id</span>
+        <span class="kv-label">@L["OrderReference"]</span>
+        <span class="kv-value">#@Order.Id.ToString()[..8]</span>
     </div>
     <div class="drawer-kv">
-        <span class="kv-label">Table</span>
+        <span class="kv-label">@L["TableName"]</span>
         <span class="kv-value">@Order.TableLabel</span>
+    </div>
+    <div class="drawer-kv">
+        <span class="kv-label">@L["SubmittedAt"]</span>
+        <span class="kv-value">@Order.SubmittedAt.LocalDateTime.ToString("g")</span>
     </div>
     <div class="drawer-kv">
         <span class="kv-label">@L["TableTotal"]</span>
         <span class="kv-value">@Order.TotalAmount.ToString("C")</span>
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(Order.Note))
+    {
+        <div class="drawer-kv">
+            <span class="kv-label">@L["OrderNote"]</span>
+            <span class="kv-value">@Order.Note</span>
+        </div>
+    }
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
 
     @foreach (var item in Order.Items)
     {
@@ -22,10 +39,16 @@
             <div class="drawer-item-copy">
                 <strong>@item.ItemName x@item.Quantity</strong>
                 <span class="kv-label">@item.Status</span>
+                @if (!string.IsNullOrWhiteSpace(item.Note))
+                {
+                    <span class="kv-label">@item.Note</span>
+                }
             </div>
             <div class="drawer-item-actions">
-                <button type="button" class="btn btn-secondary btn-sm" @onclick='() => UpdateItemStatus(item.Id, "Preparing")'>@L["Start"]</button>
-                <button type="button" class="btn btn-secondary btn-sm" @onclick='() => UpdateItemStatus(item.Id, "Ready")'>@L["Ready"]</button>
+                @foreach (var action in GetActions(item.Status))
+                {
+                    <button type="button" class="btn btn-secondary btn-sm" disabled="@IsUpdating" @onclick='() => UpdateItemStatus(item.Id, action.Keyword)'>@action.Label</button>
+                }
             </div>
         </div>
     }
@@ -38,14 +61,44 @@
     [Parameter]
     public EventCallback ReloadRequested { get; set; }
 
+    private bool IsUpdating;
+    private string? ErrorMessage;
+
     private async Task UpdateItemStatus(Guid itemId, string status)
     {
-        await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
-        await ReloadRequested.InvokeAsync();
-        DialogService.Close();
+        IsUpdating = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
+            response.EnsureSuccessStatusCode();
+            await ReloadRequested.InvokeAsync();
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
     }
 
-    public sealed record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, List<KitchenItemDto> Items);
-    public sealed record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status);
+    private IEnumerable<KitchenAction> GetActions(string status)
+    {
+        return status switch
+        {
+            "Submitted" => [new KitchenAction("preparing", L["Start"].Value), new KitchenAction("cancel", L["CancelItem"].Value)],
+            "Preparing" => [new KitchenAction("ready", L["Ready"].Value), new KitchenAction("cancel", L["CancelItem"].Value)],
+            "Ready" => [new KitchenAction("served", L["Serve"].Value)],
+            _ => []
+        };
+    }
+
+    public sealed record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, DateTimeOffset SubmittedAt, string? Note, List<KitchenItemDto> Items);
+    public sealed record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status, string? Note);
     private sealed record UpdateItemStatusRequest(string Status);
+    private sealed record KitchenAction(string Keyword, string Label);
 }

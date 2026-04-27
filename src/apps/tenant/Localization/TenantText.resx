@@ -161,4 +161,24 @@
   <data name="Password" xml:space="preserve"><value>Password</value></data>
   <data name="TenantLoginSubmit" xml:space="preserve"><value>Sign In</value></data>
   <data name="InvalidLoginAttempt" xml:space="preserve"><value>Invalid login attempt.</value></data>
+  <data name="TableName" xml:space="preserve"><value>Table</value></data>
+  <data name="TableColor" xml:space="preserve"><value>Color</value></data>
+  <data name="CreateTable" xml:space="preserve"><value>Create Table</value></data>
+  <data name="EditTable" xml:space="preserve"><value>Edit Table</value></data>
+  <data name="SaveTable" xml:space="preserve"><value>Save Table</value></data>
+  <data name="DangerZone" xml:space="preserve"><value>Danger Zone</value></data>
+  <data name="DeleteTable" xml:space="preserve"><value>Delete Table</value></data>
+  <data name="DeleteTableCopy" xml:space="preserve"><value>Delete is only allowed when the table has no linked catalog, QR, session, or order history.</value></data>
+  <data name="DeleteTableConfirmCopy" xml:space="preserve"><value>This action is permanent. Confirm only if this table has never been used.</value></data>
+  <data name="Deleting" xml:space="preserve"><value>Deleting...</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Confirm Delete</value></data>
+  <data name="SubmittedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Serve" xml:space="preserve"><value>Serve</value></data>
+  <data name="CancelItem" xml:space="preserve"><value>Cancel Item</value></data>
+  <data name="CameraScan" xml:space="preserve"><value>Camera Scan</value></data>
+  <data name="StartCameraScan" xml:space="preserve"><value>Start Camera</value></data>
+  <data name="StopCameraScan" xml:space="preserve"><value>Stop Camera</value></data>
+  <data name="CameraScanUnsupported" xml:space="preserve"><value>This browser does not expose QR scanning. Use manual token entry instead.</value></data>
+  <data name="CameraScanReady" xml:space="preserve"><value>Camera is live. Hold the table QR inside the frame.</value></data>
+  <data name="CameraScanStopped" xml:space="preserve"><value>Camera stopped.</value></data>
 </root>

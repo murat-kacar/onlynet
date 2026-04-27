@@ -96,6 +96,17 @@ main {
     margin-bottom: 16px;
 }
 
+.checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-row input {
+    width: auto;
+    min-height: auto;
+}
+
 label {
     color: var(--muted);
     font-size: 14px;
@@ -535,6 +546,25 @@ h4 {
     max-width: 720px;
 }
 
+.scanner-layout {
+    margin-top: 0;
+}
+
+.scanner-frame {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #0f1a14;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+}
+
+.scanner-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .drawer-stack {
     display: grid;
     gap: 14px;
@@ -557,6 +587,14 @@ h4 {
 .drawer-item-copy {
     display: grid;
     gap: 4px;
+}
+
+.danger-panel {
+    border-color: rgba(180, 35, 24, 0.2);
+}
+
+.color-input {
+    padding: 4px;
 }
 
 [data-ui-density="comfortable"] .panel,

@@ -37,13 +37,16 @@ public sealed class KitchenReadService : IKitchenReadService
                 order.Id,
                 tableLabel,
                 order.TotalAmount,
+                order.SubmittedAt,
+                order.Note,
                 order.Items
                     .Where(i => i.Status.ToString() == "Submitted" || i.Status.ToString() == "Preparing")
                     .Select(i => new KitchenItemDto(
                         i.Id,
                         i.ItemName,
                         i.Quantity,
-                        i.Status.ToString()))
+                        i.Status.ToString(),
+                        i.Note))
                     .ToList()));
         }
 

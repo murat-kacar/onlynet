@@ -38,10 +38,13 @@ public sealed record KitchenOrderDto(
     Guid Id,
     string TableLabel,
     decimal TotalAmount,
+    DateTimeOffset SubmittedAt,
+    string? Note,
     IReadOnlyList<KitchenItemDto> Items);
 
 public sealed record KitchenItemDto(
     Guid Id,
     string ItemName,
     int Quantity,
-    string Status);
+    string Status,
+    string? Note);

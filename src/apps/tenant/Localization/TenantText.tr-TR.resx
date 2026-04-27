@@ -161,4 +161,24 @@
   <data name="Password" xml:space="preserve"><value>Parola</value></data>
   <data name="TenantLoginSubmit" xml:space="preserve"><value>Giriş Yap</value></data>
   <data name="InvalidLoginAttempt" xml:space="preserve"><value>Giriş denemesi başarısız.</value></data>
+  <data name="TableName" xml:space="preserve"><value>Masa</value></data>
+  <data name="TableColor" xml:space="preserve"><value>Renk</value></data>
+  <data name="CreateTable" xml:space="preserve"><value>Masa Oluştur</value></data>
+  <data name="EditTable" xml:space="preserve"><value>Masayı Düzenle</value></data>
+  <data name="SaveTable" xml:space="preserve"><value>Masayı Kaydet</value></data>
+  <data name="DangerZone" xml:space="preserve"><value>Riskli Alan</value></data>
+  <data name="DeleteTable" xml:space="preserve"><value>Masayı Sil</value></data>
+  <data name="DeleteTableCopy" xml:space="preserve"><value>Silme yalnızca masanın bağlı katalog, QR, oturum veya sipariş geçmişi yoksa mümkündür.</value></data>
+  <data name="DeleteTableConfirmCopy" xml:space="preserve"><value>Bu işlem kalıcıdır. Yalnızca bu masa hiç kullanılmadıysa onaylayın.</value></data>
+  <data name="Deleting" xml:space="preserve"><value>Siliniyor...</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Silmeyi Onayla</value></data>
+  <data name="SubmittedAt" xml:space="preserve"><value>Gönderim</value></data>
+  <data name="Serve" xml:space="preserve"><value>Servis Et</value></data>
+  <data name="CancelItem" xml:space="preserve"><value>Ürünü İptal Et</value></data>
+  <data name="CameraScan" xml:space="preserve"><value>Kamera Taraması</value></data>
+  <data name="StartCameraScan" xml:space="preserve"><value>Kamerayı Başlat</value></data>
+  <data name="StopCameraScan" xml:space="preserve"><value>Kamerayı Durdur</value></data>
+  <data name="CameraScanUnsupported" xml:space="preserve"><value>Bu tarayıcı QR taramayı desteklemiyor. Bunun yerine tokenı elle girin.</value></data>
+  <data name="CameraScanReady" xml:space="preserve"><value>Kamera hazır. Masa QR'ını çerçevenin içinde tut.</value></data>
+  <data name="CameraScanStopped" xml:space="preserve"><value>Kamera durduruldu.</value></data>
 </root>

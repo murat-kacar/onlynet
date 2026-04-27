@@ -44,7 +44,12 @@ else
                     <span class="status-pill warning">@($"{order.Items.Count} {L["TableItem"]}")</span>
                 </div>
 
-                <p class="entity-meta">@order.TotalAmount.ToString("C")</p>
+                <p class="entity-meta">@order.SubmittedAt.LocalDateTime.ToString("g") · @order.TotalAmount.ToString("C")</p>
+
+                @if (!string.IsNullOrWhiteSpace(order.Note))
+                {
+                    <p class="detail-copy">@order.Note</p>
+                }
 
                 <div class="chip-row">
                     @foreach (var item in order.Items.Take(3))
@@ -82,7 +87,9 @@ else
                     order.Id,
                     order.TableLabel,
                     order.TotalAmount,
-                    order.Items.Select(item => new KitchenOrderPanel.KitchenItemDto(item.Id, item.ItemName, item.Quantity, item.Status)).ToList()),
+                    order.SubmittedAt,
+                    order.Note,
+                    order.Items.Select(item => new KitchenOrderPanel.KitchenItemDto(item.Id, item.ItemName, item.Quantity, item.Status, item.Note)).ToList()),
                 [nameof(KitchenOrderPanel.ReloadRequested)] = EventCallback.Factory.Create(this, OnInitializedAsync)
             },
             new SideDialogOptions
@@ -93,6 +100,6 @@ else
             });
     }
 
-    private record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, List<KitchenItemDto> Items);
-    private record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status);
+    private record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, DateTimeOffset SubmittedAt, string? Note, List<KitchenItemDto> Items);
+    private record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status, string? Note);
 }

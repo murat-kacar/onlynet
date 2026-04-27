@@ -28,9 +28,10 @@ public sealed class Station
         };
     }
 
-    public void Update(string name, string color, string type, bool isActive, int sortOrder)
+    public void Update(string name, string code, string color, string type, bool isActive, int sortOrder)
     {
         Name = name;
+        Code = code;
         Color = color;
         Type = type;
         IsActive = isActive;

@@ -1,0 +1,211 @@
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IStringLocalizer<TenantText> L
+
+<div class="drawer-stack">
+    @if (ErrorMessage is not null)
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+
+    <EditForm Model="@Model" OnValidSubmit="SaveAsync">
+        <div class="form-grid">
+            <div class="form-group form-span-2">
+                <label>@L["TableName"]</label>
+                <InputText @bind-Value="Model.Name" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>@L["TableCode"]</label>
+                <InputText @bind-Value="Model.Code" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>@L["StationType"]</label>
+                <InputText @bind-Value="Model.Type" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>@L["TableColor"]</label>
+                <input type="color" @bind="Model.Color" class="form-control color-input" />
+            </div>
+            <div class="form-group">
+                <label>@L["SortOrder"]</label>
+                <InputNumber @bind-Value="Model.SortOrder" class="form-control" />
+            </div>
+
+            @if (!IsCreateMode)
+            {
+                <div class="form-group form-span-2">
+                    <label class="checkbox-row">
+                        <InputCheckbox @bind-Value="Model.IsActive" />
+                        <span>@L["Active"]</span>
+                    </label>
+                </div>
+            }
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" disabled="@IsSaving" @onclick="Cancel">@L["Cancel"]</button>
+            <button type="submit" class="btn btn-primary" disabled="@IsSaving">
+                @(IsSaving ? L["Saving"] : (IsCreateMode ? L["CreateTable"] : L["SaveTable"]))
+            </button>
+        </div>
+    </EditForm>
+
+    @if (!IsCreateMode)
+    {
+        <section class="panel danger-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">@L["DangerZone"]</p>
+                    <h3>@L["DeleteTable"]</h3>
+                </div>
+            </div>
+
+            <p class="detail-copy">@L["DeleteTableCopy"]</p>
+
+            @if (!ShowDeleteConfirm)
+            {
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" @onclick="RevealDeleteConfirm">@L["DeleteTable"]</button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">@L["DeleteTableConfirmCopy"]</div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteConfirm">@L["Cancel"]</button>
+                    <button type="button" class="btn btn-danger" disabled="@IsDeleting" @onclick="DeleteAsync">
+                        @(IsDeleting ? L["Deleting"] : L["ConfirmDelete"])
+                    </button>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public TableRecord? Table { get; set; }
+
+    [Parameter]
+    public EventCallback ReloadRequested { get; set; }
+
+    private readonly TableInput Model = new()
+    {
+        Color = "#2f7d58",
+        Type = "table",
+        IsActive = true,
+        SortOrder = 1
+    };
+
+    private bool IsSaving;
+    private bool IsDeleting;
+    private bool ShowDeleteConfirm;
+    private string? ErrorMessage;
+    private bool IsCreateMode => Table is null;
+
+    protected override void OnParametersSet()
+    {
+        if (Table is null)
+        {
+            return;
+        }
+
+        Model.Name = Table.Name;
+        Model.Code = Table.Code;
+        Model.Color = Table.Color;
+        Model.Type = Table.Type;
+        Model.IsActive = Table.IsActive;
+        Model.SortOrder = Table.SortOrder;
+    }
+
+    private async Task SaveAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            using var response = IsCreateMode
+                ? await Http.PostAsJsonAsync("/api/tables", new CreateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.SortOrder))
+                : await Http.PutAsJsonAsync($"/api/tables/{Table!.Id}", new UpdateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.IsActive, Model.SortOrder));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                ErrorMessage = await ReadErrorAsync(response);
+                return;
+            }
+
+            await ReloadRequested.InvokeAsync();
+            DialogService.Close(true);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Table is null)
+        {
+            return;
+        }
+
+        IsDeleting = true;
+        ErrorMessage = null;
+
+        try
+        {
+            using var response = await Http.DeleteAsync($"/api/tables/{Table.Id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                ErrorMessage = await ReadErrorAsync(response);
+                return;
+            }
+
+            await ReloadRequested.InvokeAsync();
+            DialogService.Close(true);
+        }
+        finally
+        {
+            IsDeleting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(false);
+    }
+
+    private void RevealDeleteConfirm() => ShowDeleteConfirm = true;
+    private void HideDeleteConfirm() => ShowDeleteConfirm = false;
+
+    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+            return payload?.Message ?? $"Request failed: {(int)response.StatusCode}";
+        }
+        catch
+        {
+            return $"Request failed: {(int)response.StatusCode}";
+        }
+    }
+
+    public sealed record TableRecord(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder);
+
+    private sealed class TableInput
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    private sealed record CreateTableRequest(string Name, string Code, string Color, string Type, int SortOrder);
+    private sealed record UpdateTableRequest(string Name, string Code, string Color, string Type, bool IsActive, int SortOrder);
+    private sealed record ErrorPayload(string? Message);
+}

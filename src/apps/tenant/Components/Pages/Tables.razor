@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject IStringLocalizer<TenantText> L
 @inject DialogService DialogService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>@L["TablesTitle"]</PageTitle>
 <RadzenComponents />
@@ -14,6 +15,12 @@
         <h1>@L["TablesTitle"]</h1>
         <p class="hero-copy">@L["TablesHero"]</p>
     </div>
+    @if (CanWrite)
+    {
+        <div class="hero-actions">
+            <button type="button" class="btn btn-primary" @onclick="OpenCreateAsync">@L["CreateTable"]</button>
+        </div>
+    }
 </section>
 
 @if (TableList is null)
@@ -61,6 +68,12 @@ else
                     <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(table.Id)">
                         @L["OpenInspector"]
                     </button>
+                    @if (CanWrite)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="() => OpenEditorAsync(table.Id)">
+                            @L["EditTable"]
+                        </button>
+                    }
                 </div>
             </article>
         }
@@ -69,10 +82,13 @@ else
 
 @code {
     private List<TableDto>? TableList;
+    private bool CanWrite;
 
     protected override async Task OnInitializedAsync()
     {
-        TableList = await Http.GetFromJsonAsync<List<TableDto>>("/api/tables");
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CanWrite = authState.User.HasClaim("TenantRole", "Write");
+        await ReloadAsync();
     }
 
     private async Task OpenInspectorAsync(Guid tableId)
@@ -105,7 +121,54 @@ else
         StateHasChanged();
     }
 
+    private async Task OpenCreateAsync()
+    {
+        await DialogService.OpenSideAsync<TableEditorPanel>(
+            L["CreateTable"],
+            new Dictionary<string, object?>
+            {
+                [nameof(TableEditorPanel.ReloadRequested)] = EventCallback.Factory.Create(this, ReloadAsync)
+            },
+            new SideDialogOptions
+            {
+                Position = DialogPosition.Right,
+                Width = "460px",
+                ShowMask = true
+            });
+    }
+
+    private async Task OpenEditorAsync(Guid tableId)
+    {
+        var detail = await Http.GetFromJsonAsync<TableDetailRecord>($"/api/tables/{tableId}");
+        if (detail is null)
+        {
+            return;
+        }
+
+        await DialogService.OpenSideAsync<TableEditorPanel>(
+            $"{L["EditTable"]} · {detail.Name}",
+            new Dictionary<string, object?>
+            {
+                [nameof(TableEditorPanel.Table)] = new TableEditorPanel.TableRecord(
+                    detail.Id,
+                    detail.Name,
+                    detail.Code,
+                    detail.Color,
+                    detail.Type,
+                    detail.IsActive,
+                    detail.SortOrder),
+                [nameof(TableEditorPanel.ReloadRequested)] = EventCallback.Factory.Create(this, ReloadAsync)
+            },
+            new SideDialogOptions
+            {
+                Position = DialogPosition.Right,
+                Width = "460px",
+                ShowMask = true
+            });
+    }
+
     private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder, bool HasOpenSession);
+    private record TableDetailRecord(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool IsOccupied);
     private record TableWorkspaceDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession, TableSessionWorkspaceDto? Session);
     private record TableSessionWorkspaceDto(Guid SessionId, Guid TableId, DateTimeOffset OpenedAt, int TicketCount, IReadOnlyList<TableCartItemDto> CartItems, IReadOnlyList<TableSessionOrderDto> Orders);
     private record TableCartItemDto(Guid Id, string ItemName, int Quantity, decimal UnitPrice, string? Note);
