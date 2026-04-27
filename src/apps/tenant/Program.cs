@@ -62,6 +62,7 @@ builder.Services.AddHostedService<EventSubscriptionService>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<TenantUserPreferenceService>();
+builder.Services.AddScoped<CustomerSessionBrowserStore>();
 
 builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<TenantDbContext>()

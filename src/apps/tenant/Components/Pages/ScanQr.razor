@@ -2,8 +2,8 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
 @inject IStringLocalizer<TenantText> L
+@inject CustomerSessionBrowserStore CustomerSessionStore
 
 <PageTitle>@L["ScanQrTitle"]</PageTitle>
 
@@ -37,7 +37,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var existingTicketId = await JS.InvokeAsync<string?>("localStorage.getItem", "ticketId");
+        var existingTicketId = (await CustomerSessionStore.GetSnapshotAsync()).TicketId;
         if (!string.IsNullOrEmpty(existingTicketId))
         {
             NavigationManager.NavigateTo("/menu");
@@ -66,9 +66,10 @@
             var sessionResult = await result.Content.ReadFromJsonAsync<OpenSessionResult>();
             if (sessionResult is not null)
             {
-                await JS.InvokeVoidAsync("localStorage.setItem", "ticketId", sessionResult.TicketId.ToString());
-                await JS.InvokeVoidAsync("localStorage.setItem", "sessionId", sessionResult.SessionId.ToString());
-                await JS.InvokeVoidAsync("localStorage.setItem", "tableLabel", sessionResult.TableLabel);
+                await CustomerSessionStore.SetSnapshotAsync(
+                    sessionResult.SessionId,
+                    sessionResult.TicketId,
+                    sessionResult.TableLabel);
                 NavigationManager.NavigateTo("/menu");
             }
         }

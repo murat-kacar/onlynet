@@ -1,9 +1,9 @@
 @page "/menu"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject HttpClient Http
-@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<TenantText> L
+@inject CustomerSessionBrowserStore CustomerSessionStore
 
 <PageTitle>@L["MenuTitle"]</PageTitle>
 
@@ -77,8 +77,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var sessionId = await JS.InvokeAsync<string?>("localStorage.getItem", "sessionId");
-        var tableLabel = await JS.InvokeAsync<string?>("localStorage.getItem", "tableLabel");
+        var snapshot = await CustomerSessionStore.GetSnapshotAsync();
+        var sessionId = snapshot.SessionId;
+        var tableLabel = snapshot.TableLabel;
 
         if (!string.IsNullOrEmpty(sessionId))
         {

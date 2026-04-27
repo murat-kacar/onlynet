@@ -1,9 +1,9 @@
 @page "/cart"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject HttpClient Http
-@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<TenantText> L
+@inject CustomerSessionBrowserStore CustomerSessionStore
 
 <PageTitle>@L["CartTitle"]</PageTitle>
 
@@ -83,8 +83,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var sessionId = await JS.InvokeAsync<string?>("localStorage.getItem", "sessionId");
-        var tableLabel = await JS.InvokeAsync<string?>("localStorage.getItem", "tableLabel");
+        var snapshot = await CustomerSessionStore.GetSnapshotAsync();
+        var sessionId = snapshot.SessionId;
+        var tableLabel = snapshot.TableLabel;
 
         if (!string.IsNullOrEmpty(sessionId))
         {
@@ -111,7 +112,8 @@ else
             return;
         }
 
-        var ticketId = await JS.InvokeAsync<string?>("localStorage.getItem", "ticketId");
+        var snapshot = await CustomerSessionStore.GetSnapshotAsync();
+        var ticketId = snapshot.TicketId;
         if (string.IsNullOrEmpty(ticketId))
         {
             NavigationManager.NavigateTo("/scan-qr");
@@ -129,9 +131,7 @@ else
         var result = await Http.PostAsJsonAsync("/api/public/orders", request);
         if (result.IsSuccessStatusCode)
         {
-            await JS.InvokeVoidAsync("localStorage.removeItem", "ticketId");
-            await JS.InvokeVoidAsync("localStorage.removeItem", "sessionId");
-            await JS.InvokeVoidAsync("localStorage.removeItem", "tableLabel");
+            await CustomerSessionStore.ClearAsync();
             NavigationManager.NavigateTo("/menu");
         }
     }
