@@ -26,4 +26,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <BlazorFrameworkScript Include="$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.server.js" />
+    <BlazorFrameworkScript Include="$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.web.js" />
+  </ItemGroup>
+  <Target Name="CopyBlazorFrameworkScripts" AfterTargets="Build">
+    <MakeDir Directories="$(OutDir)wwwroot/_framework" />
+    <Copy SourceFiles="@(BlazorFrameworkScript)" DestinationFolder="$(OutDir)wwwroot/_framework" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

@@ -198,6 +198,13 @@ app.MapHealthChecks("/health", livenessOptions).AllowAnonymous();
 app.MapHealthChecks("/health/live", livenessOptions).AllowAnonymous();
 app.MapHealthChecks("/health/ready", readinessOptions).AllowAnonymous();
 
+// Blazor Web App framework assets (`/_framework/blazor.web.js`,
+// compressed variants, fingerprinted CSS) are described by the
+// static-web-assets manifest generated at build time. MapStaticAssets
+// projects that manifest into runtime endpoints; UseStaticFiles alone
+// only serves the app's physical wwwroot tree.
+app.MapStaticAssets();
+
 app.MapGet("/Account/Login", (HttpRequest request) =>
     Results.Redirect($"/login{request.QueryString}")).AllowAnonymous();
 app.MapGet("/Account/AccessDenied", () =>
