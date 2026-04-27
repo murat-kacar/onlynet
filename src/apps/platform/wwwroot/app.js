@@ -16,7 +16,7 @@ window.tabflowSettings = {
     window.localStorage.setItem("tabflow.platform.settings", JSON.stringify(settings));
     const culture = settings?.language || "en-GB";
     const value = `c=${culture}|uic=${culture}`;
-    document.cookie = `.AspNetCore.Culture=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `.AspNetCore.Culture=${value}; path=/; max-age=31536000; SameSite=Lax; Secure`;
   },
 
   apply(settings) {
@@ -29,6 +29,7 @@ window.tabflowSettings = {
 (() => {
   const settings = window.tabflowSettings.load();
   if (settings) {
+    window.tabflowSettings.save(settings);
     window.tabflowSettings.apply(settings);
   }
 })();
