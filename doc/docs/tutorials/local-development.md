@@ -45,10 +45,22 @@ the contributor's machine.
 
 - .NET 10 SDK
 - PostgreSQL 17 (running locally, listening on default port `5432`)
-- Node tooling — only if working on `firmware/` or generated documentation
+- Node 24 LTS + `pnpm` (via `corepack`) — only if working on `firmware/`,
+  generated documentation, or browser-side TypeScript
 
 The repository does not depend on Docker; running PostgreSQL in a container
 is acceptable but not required.
+
+When Node tooling is needed, contributors enable the repository-standard
+package manager with:
+
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+TabFlow's Node-based tooling targets the current Node 24 LTS line and uses
+`pnpm` rather than `npm` for day-to-day package management.
 
 ## First-Run Setup
 

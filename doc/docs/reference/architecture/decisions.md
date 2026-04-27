@@ -142,7 +142,9 @@ Tradeoffs:
 When custom browser-side logic is required, TabFlow prefers TypeScript over
 plain JavaScript. Blazor remains the default UI programming model; TypeScript
 is the default for non-trivial interop, browser API integration, and custom
-client helpers that live beside it.
+client helpers that live beside it. The Node-side toolchain for that work
+tracks the current Node 24 LTS line and uses `pnpm` as the default package
+manager.
 
 ---
 
@@ -743,7 +745,7 @@ markdown lint, dead-link, SAST, dependency audit). These checks need a
 single CI runner that:
 
 - triggers on every PR and on `main` after merge;
-- has access to .NET 10 SDK + PostgreSQL 17 + Node tooling;
+- has access to .NET 10 SDK + PostgreSQL 17 + Node 24 LTS tooling;
 - can execute the full release-gate checklist on a release branch;
 - produces a single visible "gate green" signal a reviewer can trust.
 

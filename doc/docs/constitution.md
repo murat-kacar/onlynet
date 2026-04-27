@@ -94,9 +94,11 @@ This section states the rules that apply across **all** trees.
    need a justification an ADR can carry.
 4. **Browser-side custom logic is TypeScript-first.** When TabFlow
    needs custom browser code beyond framework-provided scripts,
-   contributors write it in TypeScript by default. Small, trivial
-   snippets may remain JavaScript, but new non-trivial browser logic
-   does not start as ad hoc plain JS.
+   contributors write it in TypeScript by default. Node-based frontend
+   tooling targets the current Node 24 LTS line and uses `pnpm` as the
+   package manager by default. Small, trivial snippets may remain
+   JavaScript, but new non-trivial browser logic does not start as ad
+   hoc plain JS.
 
 ## V. Review
 
