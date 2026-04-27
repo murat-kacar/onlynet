@@ -156,6 +156,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 // TD-0002 step 3: any authenticated principal carrying the
 // must-change-password claim is bounced through /change-password
