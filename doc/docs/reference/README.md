@@ -19,6 +19,7 @@ Reference entrypoints:
 - [`./database/README.md`](./database/README.md)
 - [`./firmware.md`](./firmware.md)
 - [`./branding.md`](./branding.md)
+- [`./design-system.md`](./design-system.md)
 - [`./glossary.md`](./glossary.md)
 - [`./acceptance-criteria.md`](./acceptance-criteria.md)
 - [`./tunable-parameters.md`](./tunable-parameters.md)

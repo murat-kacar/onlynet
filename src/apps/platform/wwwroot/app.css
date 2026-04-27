@@ -16,6 +16,14 @@
     --success: #15803d;
     --warning: #b7791f;
     --shadow: 0 24px 60px rgba(24, 39, 75, 0.08);
+    --radius: 8px;
+    --control-height: 40px;
+    --control-height-sm: 32px;
+    --space-1: 8px;
+    --space-2: 12px;
+    --space-3: 16px;
+    --space-4: 24px;
+    --space-5: 32px;
 }
 
 * {
@@ -40,6 +48,11 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+:focus-visible {
+    outline: 3px solid rgba(13, 109, 119, 0.18);
+    outline-offset: 2px;
 }
 
 .auth-shell {
@@ -104,7 +117,7 @@ textarea:focus,
 button,
 .btn {
     display: inline-flex;
-    min-height: 40px;
+    min-height: var(--control-height);
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
@@ -116,11 +129,17 @@ button,
     font-weight: 700;
     padding: 8px 14px;
     text-decoration: none;
+    transition:
+        transform 140ms ease,
+        background-color 140ms ease,
+        border-color 140ms ease,
+        box-shadow 140ms ease;
 }
 
 button:hover,
 .btn:hover {
     text-decoration: none;
+    transform: translateY(-1px);
 }
 
 .btn-primary,
@@ -150,7 +169,7 @@ button[type="submit"]:hover {
 }
 
 .btn-sm {
-    min-height: 32px;
+    min-height: var(--control-height-sm);
     padding: 5px 10px;
     font-size: 14px;
 }
@@ -214,6 +233,9 @@ h4 {
     color: var(--sidebar-text);
     padding: 28px 22px;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
 }
 
 .brand-block h1,
@@ -286,6 +308,7 @@ h4 {
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 24px;
+    animation: rise-in 240ms ease;
 }
 
 .shell-content {
@@ -353,9 +376,10 @@ h4 {
 .empty-state,
 .detail-card {
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: var(--panel);
     box-shadow: var(--shadow);
+    animation: rise-in 220ms ease;
 }
 
 .metric-card {
@@ -437,14 +461,21 @@ h4 {
     gap: 16px;
     padding: 14px 16px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: var(--soft);
     text-align: left;
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        background-color 140ms ease,
+        box-shadow 140ms ease;
 }
 
 .list-row-button:hover {
     border-color: rgba(13, 109, 119, 0.22);
     background: #ffffff;
+    box-shadow: 0 10px 24px rgba(24, 39, 75, 0.06);
+    transform: translateY(-1px);
 }
 
 .list-title,
@@ -541,7 +572,7 @@ h4 {
 }
 
 .filter-chip {
-    min-height: 40px;
+    min-height: var(--control-height);
     border: 1px solid var(--line);
     border-radius: 999px;
     background: #ffffff;
@@ -557,10 +588,24 @@ h4 {
 
 .table-shell {
     overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
 }
 
 .tenants-table {
     min-width: 820px;
+}
+
+.jobs-table,
+.audit-table {
+    min-width: 760px;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fbfb;
+    z-index: 1;
 }
 
 .tenant-cell {
@@ -637,6 +682,27 @@ h4 {
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 18px;
+}
+
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 @media (max-width: 1100px) {
