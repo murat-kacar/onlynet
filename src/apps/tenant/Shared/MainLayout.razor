@@ -3,13 +3,17 @@
 @inject IStringLocalizer<TenantText> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject TenantUserPreferenceService PreferenceService
-@inject NavigationManager NavigationManager
-
-<div class="tenant-shell" data-ui-density="@ShellDensity">
-    <aside class="tenant-sidebar">
+<div class="tenant-shell @(SidebarCollapsed ? "sidebar-collapsed" : null) @(InspectorCollapsed ? "inspector-collapsed" : null)" data-ui-density="@ShellDensity">
+    <aside class="tenant-sidebar shell-sidebar">
         <div class="brand-block">
             <p class="eyebrow">@L["BrandEyebrow"]</p>
-            <h1>demo1</h1>
+            <div class="brand-lockup">
+                <span class="brand-mark" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                </span>
+                <h1>IoTable</h1>
+            </div>
             <p class="brand-copy">@L["BrandCopy"]</p>
         </div>
 
@@ -33,28 +37,56 @@
         </div>
     </aside>
 
-    <div class="tenant-main">
-        <header class="tenant-header">
-            <div>
-                <p class="eyebrow">@L["ShellEyebrow"]</p>
-                <h2>@L["ShellTitle"]</h2>
+    <div class="tenant-main shell-stage">
+        <header class="tenant-header shell-topbar">
+            <div class="topbar-start">
+                <button type="button" class="chrome-toggle" @onclick="ToggleSidebar" aria-label="@L[SidebarCollapsed ? "ExpandNavigation" : "CollapseNavigation"]">
+                    @(SidebarCollapsed ? ">" : "<")
+                </button>
+                <div class="shell-slot shell-slot-title">
+                    <SectionOutlet SectionName="tenant-header" />
+                </div>
+                <div class="shell-slot-fallback">
+                    <p class="eyebrow">@L["ShellEyebrow"]</p>
+                    <h2>@L["ShellTitle"]</h2>
+                </div>
             </div>
-            <div class="header-meta">
-                <span class="status-pill neutral">@(IsAuthenticated ? L["SignedInAs"] : L["AnonymousGuest"])</span>
-                <span class="header-identity">@DisplayIdentity</span>
+            <div class="topbar-end">
+                <div class="shell-slot shell-slot-actions">
+                    <SectionOutlet SectionName="tenant-header-actions" />
+                </div>
+                <div class="header-meta">
+                    <span class="status-pill neutral">@(IsAuthenticated ? L["SignedInAs"] : L["AnonymousGuest"])</span>
+                    <span class="header-identity">@DisplayIdentity</span>
+                </div>
+                <button type="button" class="chrome-toggle" @onclick="ToggleInspector" aria-label="@L[InspectorCollapsed ? "ShowContextPanel" : "HideContextPanel"]">
+                    @(InspectorCollapsed ? "<" : ">")
+                </button>
             </div>
         </header>
 
-        <main class="tenant-content">
-            @Body
-        </main>
+        <div class="shell-body">
+            <main class="tenant-content shell-content">
+                @Body
+            </main>
+            <aside class="shell-inspector">
+                <div class="shell-inspector-header">
+                    <p class="eyebrow">@L["ContextPanel"]</p>
+                </div>
+                <div class="shell-inspector-content">
+                    <SectionOutlet SectionName="tenant-inspector" />
+                </div>
+            </aside>
+        </div>
     </div>
 </div>
 
 @code {
     private bool IsAuthenticated { get; set; }
-    private string DisplayIdentity { get; set; } = "demo1";
+    private string DisplayIdentity { get; set; } = "IoTable";
     private string ShellDensity { get; set; } = TenantUserPreferenceService.DefaultDensity;
+    private bool SidebarCollapsed { get; set; }
+    private bool InspectorCollapsed { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,7 +94,7 @@
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             IsAuthenticated = authState.User.Identity?.IsAuthenticated == true;
-            DisplayIdentity = authState.User.Identity?.Name ?? "demo1";
+            DisplayIdentity = authState.User.Identity?.Name ?? "IoTable";
 
             if (IsAuthenticated)
             {
@@ -75,4 +107,7 @@
             ShellDensity = TenantUserPreferenceService.DefaultDensity;
         }
     }
+
+    private void ToggleSidebar() => SidebarCollapsed = !SidebarCollapsed;
+    private void ToggleInspector() => InspectorCollapsed = !InspectorCollapsed;
 }

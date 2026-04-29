@@ -16,6 +16,7 @@
   <!-- ASP.NET Core Identity -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.7" />
   </ItemGroup>
   <!-- OpenTelemetry -->
   <ItemGroup>

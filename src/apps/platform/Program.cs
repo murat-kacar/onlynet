@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -40,6 +42,7 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
+    var identityOptions = builder.Configuration.GetSection(PlatformIdentityOptions.SectionName).Get<PlatformIdentityOptions>() ?? new PlatformIdentityOptions();
 
     // TD-0026: register Systemd lifetime so the host signals readiness
     // to systemd via sd_notify("READY=1") only after ASP.NET Core
@@ -61,11 +64,53 @@ builder.Services.AddScoped<IPlatformAuditReadService, PlatformAuditReadService>(
 // reads which used to live inline in the API controllers.
 builder.Services.AddScoped<ITenantRegistryService, TenantRegistryService>();
 builder.Services.AddScoped<IProvisioningJobReadService, ProvisioningJobReadService>();
+builder.Services.AddSingleton<PlatformUserIdentityService>();
+builder.Services.AddScoped<PlatformClaimsTransformation>();
 builder.Services.AddScoped<PlatformUserPreferenceService>();
+builder.Services.Configure<PlatformIdentityOptions>(builder.Configuration.GetSection(PlatformIdentityOptions.SectionName));
 
 builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<PlatformDbContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IClaimsTransformation, PlatformClaimsTransformation>();
+
+if (identityOptions.EnableExternalIdentity)
+{
+    builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        })
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            options.Authority = identityOptions.Authority;
+            options.ClientId = identityOptions.ClientId;
+            options.ClientSecret = identityOptions.ClientSecret;
+            options.CallbackPath = identityOptions.CallbackPath;
+            options.SignedOutCallbackPath = identityOptions.SignedOutCallbackPath;
+            options.RequireHttpsMetadata = identityOptions.RequireHttpsMetadata;
+            options.ResponseType = OpenIdConnectResponseType.Code;
+            options.UsePkce = true;
+            options.SaveTokens = false;
+            options.GetClaimsFromUserInfoEndpoint = true;
+            options.MapInboundClaims = false;
+            options.SignInScheme = IdentityConstants.ApplicationScheme;
+            options.Scope.Clear();
+            options.Scope.Add("openid");
+            options.Scope.Add("profile");
+            options.Scope.Add("email");
+            options.TokenValidationParameters.NameClaimType = "preferred_username";
+            options.Events = new OpenIdConnectEvents
+            {
+                OnRemoteFailure = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.Redirect("/login?error=oidc");
+                    return Task.CompletedTask;
+                }
+            };
+        });
+}
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -118,15 +163,6 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation());
-
-builder.Services.AddScoped(sp =>
-{
-    var navigationManager = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient
-    {
-        BaseAddress = new Uri(navigationManager.BaseUri),
-    };
-});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -206,7 +242,10 @@ app.MapControllers();
 // middleware sits after UseAuthorization so HttpContext.User is fully
 // populated, and before the route mapping below so the redirect wins
 // over the original handler.
-app.UseMiddleware<PasswordChangeRequiredMiddleware>();
+if (!identityOptions.EnableExternalIdentity)
+{
+    app.UseMiddleware<PasswordChangeRequiredMiddleware>();
+}
 
 app.Use(async (context, next) =>
 {
@@ -251,6 +290,24 @@ app.MapGet("/Account/Login", (HttpRequest request) =>
     Results.Redirect($"/login{request.QueryString}")).AllowAnonymous();
 app.MapGet("/Account/AccessDenied", () =>
     Results.Redirect("/login")).AllowAnonymous();
+
+app.MapGet("/logout", async (HttpContext context) =>
+{
+    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+
+    if (identityOptions.EnableExternalIdentity)
+    {
+        await context.SignOutAsync(
+            OpenIdConnectDefaults.AuthenticationScheme,
+            new AuthenticationProperties
+            {
+                RedirectUri = identityOptions.SignedOutRedirectUri
+            });
+        return;
+    }
+
+    context.Response.Redirect("/login");
+}).AllowAnonymous();
 
 app.MapRazorPages();
 

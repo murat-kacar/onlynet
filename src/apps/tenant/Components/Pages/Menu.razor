@@ -7,11 +7,20 @@
 
 <PageTitle>@L["MenuTitle"]</PageTitle>
 
-<section class="page-hero">
-    <div>
-        <p class="eyebrow">@L["NavMenu"]</p>
-        <h1>@L["MenuTitle"]</h1>
-        <p class="hero-copy">@L["MenuHero"]</p>
+<section class="page-hero customer-hero">
+    <div class="customer-hero-copy">
+        <p class="eyebrow">@L["CustomerMenuEyebrow"]</p>
+        <div class="brand-lockup customer-lockup">
+            <span class="brand-mark customer-brand-mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+            </span>
+            <div>
+                <h1>@CustomerBrandName</h1>
+                <p class="customer-slogan">@L["CustomerMenuSlogan"]</p>
+            </div>
+        </div>
+        <p class="hero-copy">@L["MenuHero", CustomerBrandName]</p>
     </div>
     @if (HasSession)
     {
@@ -73,10 +82,13 @@ else
     private List<MenuItemDto>? MenuItems = [];
     private Guid? CurrentSessionId;
     private string TableLabel = string.Empty;
+    private string CustomerBrandName = "Your Venue";
     private bool HasSession;
 
     protected override async Task OnInitializedAsync()
     {
+        CustomerBrandName = ResolveBrandName();
+
         var snapshot = await CustomerSessionStore.GetSnapshotAsync();
         var sessionId = snapshot.SessionId;
         var tableLabel = snapshot.TableLabel;
@@ -101,6 +113,30 @@ else
         var request = new AddCartItemRequest(CurrentSessionId.Value, itemId, 1);
         await Http.PostAsJsonAsync("/api/public/cart", request);
         NavigationManager.NavigateTo("/cart");
+    }
+
+    private string ResolveBrandName()
+    {
+        if (!Uri.TryCreate(NavigationManager.Uri, UriKind.Absolute, out var uri))
+        {
+            return "Your Venue";
+        }
+
+        var label = uri.Host.Split('.', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return "Your Venue";
+        }
+
+        var normalized = label.Replace("-", " ", StringComparison.Ordinal).Trim();
+        if (normalized.Length == 0)
+        {
+            return "Your Venue";
+        }
+
+        return normalized.Length == 1
+            ? normalized.ToUpperInvariant()
+            : char.ToUpperInvariant(normalized[0]) + normalized[1..];
     }
 
     private record MenuItemDto(Guid Id, string Name, decimal Price, string? Description, Guid CategoryId);

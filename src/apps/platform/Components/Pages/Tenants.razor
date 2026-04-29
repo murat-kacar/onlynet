@@ -10,18 +10,79 @@
 
 <RadzenComponents />
 
-<section class="page-hero">
+<SectionContent SectionName="platform-header">
     <div>
         <p class="eyebrow">@L["RegistryEyebrow"]</p>
-        <h1>@L["TenantsPageTitle"]</h1>
+        <h2>@L["TenantsPageTitle"]</h2>
         <p class="hero-copy">@L["TenantsHero"]</p>
     </div>
+</SectionContent>
+
+<SectionContent SectionName="platform-header-actions">
     <AuthorizeView Policy="Platform:Write">
-        <div class="hero-actions">
-            <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">@L["CreateTenant"]</button>
-        </div>
+        <button type="button" class="btn btn-primary" @onclick="OpenCreateTenantAsync">@L["CreateTenant"]</button>
     </AuthorizeView>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="platform-inspector">
+    @if (SelectedTenant is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["NoTenantSelected"]</h4>
+                <p class="detail-copy">@L["NoTenantSelectedCopy"]</p>
+            </section>
+        </div>
+    }
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["Selection"]</p>
+                        <h3>@SelectedTenant.DisplayName</h3>
+                    </div>
+                    <span class="@StatusClass(SelectedTenant.Status)">@LocalizedStatus(SelectedTenant.Status)</span>
+                </div>
+
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TenantCode"]</span>
+                        <span class="kv-value">@SelectedTenant.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["PrimaryDomain"]</span>
+                        <span class="kv-value">@SelectedTenant.PrimaryDomain</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["Language"]</span>
+                        <span class="kv-value">@SelectedTenant.LanguageCode</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["Currency"]</span>
+                        <span class="kv-value">@SelectedTenant.CurrencyCode</span>
+                    </div>
+                    <div class="kv-item form-span-2">
+                        <span class="kv-label">@L["TimeZone"]</span>
+                        <span class="kv-value">@SelectedTenant.TimeZone</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="context-card">
+                <p class="detail-title">@L["OperatorNotes"]</p>
+                <p class="detail-copy">@TenantStatusCopy(SelectedTenant)</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">@L["OpenFullRecord"]</button>
+                    <AuthorizeView Policy="Platform:Write">
+                        <button type="button" class="btn btn-secondary" @onclick="() => OpenEditTenantAsync(SelectedTenant.Id)">@L["EditSettings"]</button>
+                    </AuthorizeView>
+                </div>
+            </section>
+        </div>
+    }
+</SectionContent>
 
 @if (LoadError is not null)
 {
@@ -83,116 +144,56 @@ else
         }
         else
         {
-            <div class="inspector-layout">
-                <div class="surface-stack">
-                    <div class="toolbar-meta">
-                        <p>@FilterSummary</p>
-                        <p>@PagingSummary</p>
-                    </div>
-
-                    <div class="table-shell">
-                        <table class="table tenants-table">
-                            <thead>
-                                <tr>
-                                    <th>@L["TableTenant"]</th>
-                                    <th>@L["TableStatus"]</th>
-                                    <th>@L["TableLocale"]</th>
-                                    <th>@L["TableDomain"]</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var tenant in VisibleTenants)
-                                {
-                                    var isSelected = tenant.Id == SelectedTenant?.Id;
-
-                                    <tr class="@RowClass(isSelected)" @onclick="() => SelectTenant(tenant.Id)">
-                                        <td>
-                                            <div class="tenant-cell">
-                                                <p class="list-title">@tenant.DisplayName</p>
-                                                <p class="list-subtitle">@tenant.Code</p>
-                                            </div>
-                                        </td>
-                                        <td><span class="@StatusClass(tenant.Status)">@LocalizedStatus(tenant.Status)</span></td>
-                                        <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
-                                        <td>@tenant.PrimaryDomain</td>
-                                        <td class="actions-cell">
-                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectTenant(tenant.Id)">@L["Inspect"]</button>
-                                            <button type="button" class="btn btn-sm btn-primary" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(tenant.Id)">@L["Open"]</button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="table-footer">
-                        <p>@PagingSummary</p>
-                        <div class="pagination">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
-                            <span>@L["PageOf", CurrentPage, TotalPages]</span>
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
-                        </div>
-                    </div>
+            <div class="surface-stack">
+                <div class="toolbar-meta">
+                    <p>@FilterSummary</p>
+                    <p>@PagingSummary</p>
                 </div>
 
-                <aside class="detail-card">
-                    @if (SelectedTenant is null)
-                    {
-                        <div class="empty-state compact-empty">
-                            <h4>@L["NoTenantSelected"]</h4>
-                            <p>@L["NoTenantSelectedCopy"]</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="panel-header">
-                            <div>
-                                <p class="eyebrow">@L["Selection"]</p>
-                                <h3>@SelectedTenant.DisplayName</h3>
-                            </div>
-                            <span class="@StatusClass(SelectedTenant.Status)">@LocalizedStatus(SelectedTenant.Status)</span>
-                        </div>
+                <div class="table-shell">
+                    <table class="table tenants-table">
+                        <thead>
+                            <tr>
+                                <th>@L["TableTenant"]</th>
+                                <th>@L["TableStatus"]</th>
+                                <th>@L["TableLocale"]</th>
+                                <th>@L["TableDomain"]</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tenant in VisibleTenants)
+                            {
+                                var isSelected = tenant.Id == SelectedTenant?.Id;
 
-                        <div class="detail-stack">
-                            <div class="kv-grid">
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["TenantCode"]</span>
-                                    <span class="kv-value">@SelectedTenant.Code</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["PrimaryDomain"]</span>
-                                    <span class="kv-value">@SelectedTenant.PrimaryDomain</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["Language"]</span>
-                                    <span class="kv-value">@SelectedTenant.LanguageCode</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["Currency"]</span>
-                                    <span class="kv-value">@SelectedTenant.CurrencyCode</span>
-                                </div>
-                                <div class="kv-item form-span-2">
-                                    <span class="kv-label">@L["TimeZone"]</span>
-                                    <span class="kv-value">@SelectedTenant.TimeZone</span>
-                                </div>
-                            </div>
+                                <tr class="@RowClass(isSelected)" @onclick="() => SelectTenant(tenant.Id)">
+                                    <td>
+                                        <div class="tenant-cell">
+                                            <p class="list-title">@tenant.DisplayName</p>
+                                            <p class="list-subtitle">@tenant.Code</p>
+                                        </div>
+                                    </td>
+                                    <td><span class="@StatusClass(tenant.Status)">@LocalizedStatus(tenant.Status)</span></td>
+                                    <td>@tenant.LanguageCode · @tenant.CurrencyCode · @tenant.TimeZone</td>
+                                    <td>@tenant.PrimaryDomain</td>
+                                    <td class="actions-cell">
+                                        <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectTenant(tenant.Id)">@L["Inspect"]</button>
+                                        <button type="button" class="btn btn-sm btn-primary" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(tenant.Id)">@L["Open"]</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
 
-                            <section class="detail-section">
-                                <p class="detail-title">@L["OperatorNotes"]</p>
-                                <p class="detail-copy">@TenantStatusCopy(SelectedTenant)</p>
-                            </section>
-
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-primary" @onclick="() => NavigateToDetail(SelectedTenant.Id)">@L["OpenFullRecord"]</button>
-                                <AuthorizeView Policy="Platform:Write">
-                                    <button type="button" class="btn btn-secondary" @onclick="() => OpenEditTenantAsync(SelectedTenant.Id)">@L["EditSettings"]</button>
-                                    <button type="button" class="btn btn-secondary" @onclick="OpenCreateTenantAsync">@L["CreateAnother"]</button>
-                                </AuthorizeView>
-                            </div>
-                        </div>
-                    }
-                </aside>
+                <div class="table-footer">
+                    <p>@PagingSummary</p>
+                    <div class="pagination">
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPage" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
+                        <span>@L["PageOf", CurrentPage, TotalPages]</span>
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
+                    </div>
+                </div>
             </div>
         }
     </section>

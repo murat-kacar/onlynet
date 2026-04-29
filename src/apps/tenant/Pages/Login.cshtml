@@ -9,7 +9,13 @@
 <main class="auth-shell auth-shell-wide">
     <section class="auth-hero-card">
         <p class="eyebrow">@L["BrandEyebrow"]</p>
-        <h1>@L["TenantLoginTitle"]</h1>
+        <div class="brand-lockup">
+            <span class="brand-mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+            </span>
+            <h1>IoTable</h1>
+        </div>
         <p class="hero-copy">@L["TenantLoginHero"]</p>
 
         <div class="auth-metrics">
@@ -32,7 +38,7 @@
                 <p class="eyebrow">@L["Security"]</p>
                 <h2>@L["TenantLoginFormTitle"]</h2>
             </div>
-            <span class="status-pill success">demo1.cafetech.uk</span>
+            <span class="status-pill success">@Request.Host.Value</span>
         </div>
 
         <form method="post">

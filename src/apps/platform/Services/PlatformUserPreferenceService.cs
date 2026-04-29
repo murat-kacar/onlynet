@@ -12,15 +12,19 @@ public sealed class PlatformUserPreferenceService
     public const string DefaultDensity = "compact";
 
     private readonly IDbContextFactory<PlatformDbContext> _dbContextFactory;
+    private readonly PlatformUserIdentityService _identityService;
 
-    public PlatformUserPreferenceService(IDbContextFactory<PlatformDbContext> dbContextFactory)
+    public PlatformUserPreferenceService(
+        IDbContextFactory<PlatformDbContext> dbContextFactory,
+        PlatformUserIdentityService identityService)
     {
         _dbContextFactory = dbContextFactory;
+        _identityService = identityService;
     }
 
     public async Task<PlatformUserPreferenceModel> GetForPrincipalAsync(ClaimsPrincipal principal, CancellationToken ct = default)
     {
-        var userId = GetUserId(principal);
+        var userId = _identityService.GetStableUserId(principal);
         if (userId is null)
         {
             return Defaults();
@@ -44,7 +48,7 @@ public sealed class PlatformUserPreferenceService
 
     public async Task SaveForPrincipalAsync(ClaimsPrincipal principal, PlatformUserPreferenceModel model, CancellationToken ct = default)
     {
-        var userId = GetUserId(principal);
+        var userId = _identityService.GetStableUserId(principal);
         if (userId is null)
         {
             throw new InvalidOperationException("Authenticated platform user id is missing.");
@@ -97,12 +101,6 @@ public sealed class PlatformUserPreferenceService
             "comfortable" => "comfortable",
             _ => DefaultDensity,
         };
-
-    private static Guid? GetUserId(ClaimsPrincipal principal)
-    {
-        var raw = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(raw, out var userId) ? userId : null;
-    }
 }
 
 public sealed record PlatformUserPreferenceModel(

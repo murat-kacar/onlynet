@@ -8,13 +8,36 @@
 
 <PageTitle>@L["DashboardTitle"]</PageTitle>
 
-<section class="page-hero">
+<SectionContent SectionName="platform-header">
     <div>
         <p class="eyebrow">@L["OverviewEyebrow"]</p>
-        <h1>@L["DashboardTitle"]</h1>
+        <h2>@L["DashboardTitle"]</h2>
         <p class="hero-copy">@L["DashboardHero"]</p>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="platform-inspector">
+    <div class="console-context">
+        <section class="context-card">
+            <p class="eyebrow">@L["MetricTenants"]</p>
+            <p class="context-stat">@ActiveTenantCount</p>
+            <p class="detail-copy">@L["DashboardActiveProvisioning", ActiveTenantCount, ProvisioningTenantCount]</p>
+        </section>
+
+        <section class="context-card">
+            <p class="eyebrow">@L["AttentionEyebrow"]</p>
+            <h4>@L["WhatNeedsEyes"]</h4>
+            <p class="detail-copy">@L["FailedJobsCopy"]</p>
+            <p class="context-stat">@FailedJobCount</p>
+        </section>
+
+        <section class="context-card">
+            <p class="eyebrow">@L["MetricNewestTenant"]</p>
+            <h4>@NewestTenantLabel</h4>
+            <p class="detail-copy">@L["MetricNewestTenantCopy"]</p>
+        </section>
+    </div>
+</SectionContent>
 
 @if (LoadError is not null)
 {

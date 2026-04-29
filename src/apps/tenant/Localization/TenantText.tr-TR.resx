@@ -4,7 +4,7 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
-  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Tenant</value></data>
+  <data name="BrandEyebrow" xml:space="preserve"><value>IoTable Tenant</value></data>
   <data name="BrandCopy" xml:space="preserve"><value>Servis, mutfak akışı ve masa bazlı sipariş görünürlüğü için sakin bir operasyon yüzeyi.</value></data>
   <data name="NavMenu" xml:space="preserve"><value>Menü</value></data>
   <data name="NavCart" xml:space="preserve"><value>Sepet</value></data>
@@ -14,9 +14,15 @@
   <data name="NavSettings" xml:space="preserve"><value>Ayarlar</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
   <data name="ShellTitle" xml:space="preserve"><value>Servis Konsolu</value></data>
-  <data name="ShellFootnote" xml:space="preserve"><value>Demo runtime şu anda demo1.cafetech.uk alan adına bağlı.</value></data>
+  <data name="ShellFootnote" xml:space="preserve"><value>IoTable personel yüzeyleri kompakt, güvenilir ve canlı servis için hazır kalır.</value></data>
+  <data name="CollapseNavigation" xml:space="preserve"><value>Gezinmeyi daralt</value></data>
+  <data name="ExpandNavigation" xml:space="preserve"><value>Gezinmeyi genişlet</value></data>
+  <data name="HideContextPanel" xml:space="preserve"><value>Bağlam panelini gizle</value></data>
+  <data name="ShowContextPanel" xml:space="preserve"><value>Bağlam panelini göster</value></data>
+  <data name="ContextPanel" xml:space="preserve"><value>Bağlam paneli</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Oturum</value></data>
   <data name="AnonymousGuest" xml:space="preserve"><value>Misafir oturumu</value></data>
+  <data name="Selection" xml:space="preserve"><value>Seçim</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Ayarlar</value></data>
   <data name="SettingsHero" xml:space="preserve"><value>Bu hesap için operatör dili, konsol yoğunluğu ve yerel saat varsayılanları.</value></data>
   <data name="AccountEyebrow" xml:space="preserve"><value>Hesap</value></data>
@@ -58,7 +64,9 @@
   <data name="PasswordUpdatedSuccess" xml:space="preserve"><value>Parola güncellendi. Oturumunuz yenilendi.</value></data>
   <data name="PasswordChangeFailed" xml:space="preserve"><value>Parola değişimi başarısız oldu: {0}</value></data>
   <data name="MenuTitle" xml:space="preserve"><value>Menü</value></data>
-  <data name="MenuHero" xml:space="preserve"><value>Aktif menüyü tara, masa oturumunu gör ve sipariş akışını masaya yakın tut.</value></data>
+  <data name="CustomerMenuEyebrow" xml:space="preserve"><value>Misafir Menüsü</value></data>
+  <data name="CustomerMenuSlogan" xml:space="preserve"><value>Taze tabaklar, sakin tempo, masada kolay sipariş.</value></data>
+  <data name="MenuHero" xml:space="preserve"><value>{0} şu anda ne servis ediyor keşfet ve masa siparişini birkaç hızlı dokunuşla ileri gönder.</value></data>
   <data name="NoActiveSession" xml:space="preserve"><value>Henüz aktif oturum yok.</value></data>
   <data name="ScanQrToStart" xml:space="preserve"><value>Sipariş vermeden önce masa oturumunu açmak için bir QR kodu tara.</value></data>
   <data name="ViewCart" xml:space="preserve"><value>Sepeti Gör</value></data>
@@ -95,6 +103,8 @@
   <data name="LoadingTablesCopy" xml:space="preserve"><value>Güncel kat kayıtları tenant deposundan getiriliyor.</value></data>
   <data name="NoTables" xml:space="preserve"><value>Henüz masa yok</value></data>
   <data name="NoTablesCopy" xml:space="preserve"><value>Canlı servis çalışma alanını kullanmadan önce masa kayıtlarını ekleyin.</value></data>
+  <data name="NoTableSelected" xml:space="preserve"><value>Seçili masa yok</value></data>
+  <data name="NoTableSelectedCopy" xml:space="preserve"><value>Canlı oturum durumunu ve operatör aksiyonlarını görmek için bir masa seç.</value></data>
   <data name="Active" xml:space="preserve"><value>Aktif</value></data>
   <data name="Inactive" xml:space="preserve"><value>Pasif</value></data>
   <data name="OpenInspector" xml:space="preserve"><value>İncele</value></data>
@@ -109,6 +119,8 @@
   <data name="LoadingKitchenCopy" xml:space="preserve"><value>Açık siparişler mutfak okuma yüzeyinden getiriliyor.</value></data>
   <data name="NoKitchenOrders" xml:space="preserve"><value>Aktif mutfak siparişi yok</value></data>
   <data name="NoKitchenOrdersCopy" xml:space="preserve"><value>Masa oturumundan yeni sipariş gönderildiğinde burada görünür.</value></data>
+  <data name="NoOrderSelected" xml:space="preserve"><value>Seçili sipariş yok</value></data>
+  <data name="NoOrderSelectedCopy" xml:space="preserve"><value>Güncel mutfak bağlamını görmek için bir sipariş seç.</value></data>
   <data name="Start" xml:space="preserve"><value>Başlat</value></data>
   <data name="Ready" xml:space="preserve"><value>Hazır</value></data>
   <data name="KitchenDrawerTitle" xml:space="preserve"><value>Sipariş Detayı</value></data>

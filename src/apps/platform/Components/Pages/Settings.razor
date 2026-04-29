@@ -7,16 +7,52 @@
 @inject UserManager<IdentityUser<Guid>> UserManager
 @inject SignInManager<IdentityUser<Guid>> SignInManager
 @inject PlatformUserPreferenceService PreferenceService
+@inject PlatformUserIdentityService PlatformUserIdentityService
+@inject Microsoft.Extensions.Options.IOptions<PlatformIdentityOptions> IdentityOptionsAccessor
 
 <PageTitle>@L["SettingsTitle"]</PageTitle>
 
-<section class="page-hero">
+<SectionContent SectionName="platform-header">
     <div>
         <p class="eyebrow">@L["AccountEyebrow"]</p>
-        <h1>@L["SettingsTitle"]</h1>
+        <h2>@L["SettingsTitle"]</h2>
         <p class="hero-copy">@L["SettingsHero"]</p>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="platform-inspector">
+    <div class="console-context">
+        <section class="context-card">
+            <p class="eyebrow">@L["MetricAccount"]</p>
+            <h4>@DisplayEmail</h4>
+            <p class="detail-copy">@L["CurrentPlatformIdentity"]</p>
+        </section>
+
+        <section class="context-card">
+            <p class="eyebrow">@L["Preferences"]</p>
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <span class="kv-label">@L["Language"]</span>
+                    <span class="kv-value">@PreferenceModel.Language</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">@L["Density"]</span>
+                    <span class="kv-value">@PreferenceModel.Density</span>
+                </div>
+                <div class="kv-item form-span-2">
+                    <span class="kv-label">@L["TimeZone"]</span>
+                    <span class="kv-value">@PreferenceModel.TimeZone</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="context-card">
+            <p class="eyebrow">@L["Status"]</p>
+            <h4>@(ActiveTab == "security" ? L["Security"] : L["Preferences"])</h4>
+            <p class="detail-copy">@(ActiveTab == "security" ? L["PasswordPolicyCopy"].Value : L["SettingsScopeCopy"].Value)</p>
+        </section>
+    </div>
+</SectionContent>
 
 @if (LoadError is not null)
 {
@@ -74,36 +110,46 @@ else
                     <div class="alert alert-danger">@SecurityError</div>
                 }
 
-                <EditForm Model="@PasswordModel" OnValidSubmit="ChangePasswordAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                @if (ExternalIdentityEnabled)
+                {
+                    <section class="detail-section">
+                        <p class="detail-title">External Identity</p>
+                        <p class="detail-copy">Password rotation and MFA are managed by the identity provider for this environment.</p>
+                    </section>
+                }
+                else
+                {
+                    <EditForm Model="@PasswordModel" OnValidSubmit="ChangePasswordAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="form-grid">
-                        <div class="form-group form-span-2">
-                            <label>@L["CurrentPassword"]</label>
-                            <InputText @bind-Value="PasswordModel.CurrentPassword" type="password" class="form-control" />
-                            <ValidationMessage For="() => PasswordModel.CurrentPassword" />
+                        <div class="form-grid">
+                            <div class="form-group form-span-2">
+                                <label>@L["CurrentPassword"]</label>
+                                <InputText @bind-Value="PasswordModel.CurrentPassword" type="password" class="form-control" />
+                                <ValidationMessage For="() => PasswordModel.CurrentPassword" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>@L["NewPassword"]</label>
+                                <InputText @bind-Value="PasswordModel.NewPassword" type="password" class="form-control" />
+                                <ValidationMessage For="() => PasswordModel.NewPassword" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>@L["ConfirmPassword"]</label>
+                                <InputText @bind-Value="PasswordModel.ConfirmPassword" type="password" class="form-control" />
+                                <ValidationMessage For="() => PasswordModel.ConfirmPassword" />
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>@L["NewPassword"]</label>
-                            <InputText @bind-Value="PasswordModel.NewPassword" type="password" class="form-control" />
-                            <ValidationMessage For="() => PasswordModel.NewPassword" />
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" disabled="@IsSavingPassword">
+                                @(IsSavingPassword ? L["Updating"] : L["UpdatePassword"])
+                            </button>
                         </div>
-
-                        <div class="form-group">
-                            <label>@L["ConfirmPassword"]</label>
-                            <InputText @bind-Value="PasswordModel.ConfirmPassword" type="password" class="form-control" />
-                            <ValidationMessage For="() => PasswordModel.ConfirmPassword" />
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" disabled="@IsSavingPassword">
-                            @(IsSavingPassword ? L["Updating"] : L["UpdatePassword"])
-                        </button>
-                    </div>
-                </EditForm>
+                    </EditForm>
+                }
             </article>
 
             <article class="panel detail-panel">
@@ -233,6 +279,7 @@ else
     private string? SecuritySuccess;
     private PasswordChangeInput PasswordModel { get; set; } = new();
     private UserPreferenceInput PreferenceModel { get; set; } = new();
+    private bool ExternalIdentityEnabled => IdentityOptionsAccessor.Value.EnableExternalIdentity;
 
     private string PreferencePreview =>
         $"{PreferenceModel.TimeZone} · {FormatPreviewTime()}";
@@ -246,10 +293,11 @@ else
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var principal = authState.User;
-            MustRotatePassword = principal.HasClaim(claim => string.Equals(claim.Type, PasswordChangeRequiredMiddleware.MustChangePasswordClaim, StringComparison.Ordinal));
+            MustRotatePassword = !ExternalIdentityEnabled &&
+                principal.HasClaim(claim => string.Equals(claim.Type, PasswordChangeRequiredMiddleware.MustChangePasswordClaim, StringComparison.Ordinal));
 
-            var user = await UserManager.GetUserAsync(principal);
-            DisplayEmail = user?.Email ?? principal.Identity?.Name ?? "Operator";
+            var user = ExternalIdentityEnabled ? null : await UserManager.GetUserAsync(principal);
+            DisplayEmail = user?.Email ?? PlatformUserIdentityService.GetDisplayEmail(principal) ?? principal.Identity?.Name ?? "Operator";
             PreferenceModel = await LoadPreferenceModelAsync(principal);
         }
         catch (Exception ex)
@@ -274,6 +322,12 @@ else
 
         try
         {
+            if (ExternalIdentityEnabled)
+            {
+                SecurityError = "Password changes are managed by the identity provider in this environment.";
+                return;
+            }
+
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = await UserManager.GetUserAsync(authState.User);
             if (user is null)

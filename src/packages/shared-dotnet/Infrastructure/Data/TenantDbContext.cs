@@ -9,6 +9,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options)
     : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<TenantUserPreference> TenantUserPreferences => Set<TenantUserPreference>();
+    public DbSet<TenantAdminActivation> TenantAdminActivations => Set<TenantAdminActivation>();
     public DbSet<Station> Stations => Set<Station>();
     public DbSet<TableEntity> Tables => Set<TableEntity>();
     public DbSet<Category> Categories => Set<Category>();
@@ -44,6 +45,16 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options)
             e.Property(p => p.LanguageCode).HasMaxLength(10).IsRequired();
             e.Property(p => p.TimeZone).HasMaxLength(100).IsRequired();
             e.Property(p => p.Density).HasMaxLength(20).IsRequired();
+        });
+
+        builder.Entity<TenantAdminActivation>(e =>
+        {
+            e.ToTable("tenant_admin_activations");
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Email).HasMaxLength(320).IsRequired();
+            e.Property(a => a.TokenHash).HasMaxLength(64).IsRequired();
+            e.HasIndex(a => a.TokenHash).IsUnique();
+            e.HasIndex(a => a.UserId);
         });
 
         builder.Entity<TableEntity>(e =>

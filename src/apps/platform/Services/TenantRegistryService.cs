@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Domain.Entities.Platform;
 using TabFlow.Shared.Infrastructure.Data;
@@ -69,6 +70,18 @@ public sealed class TenantRegistryService : ITenantRegistryService
             request.IntendedOwnerEmail);
 
         _context.Tenants.Add(tenant);
+        _context.ProvisioningJobs.Add(ProvisioningJob.CreateTenantCreate(
+            tenant.Id,
+            JsonSerializer.Serialize(new
+            {
+                request.Code,
+                request.DisplayName,
+                request.PrimaryDomain,
+                request.LanguageCode,
+                request.CurrencyCode,
+                request.TimeZone,
+                request.IntendedOwnerEmail,
+            })));
         await _context.SaveChangesAsync(ct);
 
         return new TenantDto(

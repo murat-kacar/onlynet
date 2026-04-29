@@ -4,8 +4,8 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
-  <data name="AppTitle" xml:space="preserve"><value>TabFlow Platform</value></data>
-  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Platform</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>IoTable Platform</value></data>
+  <data name="BrandEyebrow" xml:space="preserve"><value>IoTable Platform</value></data>
   <data name="BrandCopy" xml:space="preserve"><value>Tenant yaşam döngüsü, provisioning akışı ve kontrol düzlemi görünürlüğü için çok kiracılı yönetim paneli.</value></data>
   <data name="NavOverview" xml:space="preserve"><value>Genel Bakış</value></data>
   <data name="NavTenants" xml:space="preserve"><value>Tenantlar</value></data>
@@ -15,6 +15,11 @@
   <data name="SidebarFootnote" xml:space="preserve"><value>Platform arayüzü artık identity ve provisioning okuma yüzeyleriyle aynı host üzerinde canlı.</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Kontrol Düzlemi</value></data>
   <data name="ShellTitle" xml:space="preserve"><value>Yönetim Konsolu</value></data>
+  <data name="CollapseNavigation" xml:space="preserve"><value>Gezinmeyi daralt</value></data>
+  <data name="ExpandNavigation" xml:space="preserve"><value>Gezinmeyi genişlet</value></data>
+  <data name="HideContextPanel" xml:space="preserve"><value>Bağlam panelini gizle</value></data>
+  <data name="ShowContextPanel" xml:space="preserve"><value>Bağlam panelini göster</value></data>
+  <data name="ContextPanel" xml:space="preserve"><value>Bağlam</value></data>
   <data name="OverviewEyebrow" xml:space="preserve"><value>Genel Bakış</value></data>
   <data name="DashboardTitle" xml:space="preserve"><value>Platform Panosu</value></data>
   <data name="DashboardHero" xml:space="preserve"><value>Tenant hacmi, provisioning baskısı ve en yeni kontrol düzlemi değişiklikleri için tarama odaklı görünüm.</value></data>
@@ -213,6 +218,9 @@
   <data name="FailureDetail" xml:space="preserve"><value>Hata Detayı</value></data>
   <data name="Result" xml:space="preserve"><value>Sonuç</value></data>
   <data name="Payload" xml:space="preserve"><value>Payload</value></data>
+  <data name="Created" xml:space="preserve"><value>Oluşturuldu</value></data>
+  <data name="NoPayloadRecorded" xml:space="preserve"><value>Bu iş için kayıtlı payload yok.</value></data>
+  <data name="NoResultRecorded" xml:space="preserve"><value>Bu iş için kayıtlı sonuç yok.</value></data>
   <data name="OpenTenant" xml:space="preserve"><value>Tenantı Aç</value></data>
   <data name="MatchingJobsSummary" xml:space="preserve"><value>{1} kuyruk kaydından {0} iş eşleşti</value></data>
   <data name="JobDetailLoadError" xml:space="preserve"><value>İş detayı yüklenemedi: {0}</value></data>

@@ -1,6 +1,6 @@
-@inject HttpClient Http
 @inject DialogService DialogService
 @inject IStringLocalizer<TenantText> L
+@inject ITableCommandService TableCommandService
 
 <div class="drawer-stack">
     @if (ErrorMessage is not null)
@@ -125,18 +125,21 @@
 
         try
         {
-            using var response = IsCreateMode
-                ? await Http.PostAsJsonAsync("/api/tables", new CreateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.SortOrder))
-                : await Http.PutAsJsonAsync($"/api/tables/{Table!.Id}", new UpdateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.IsActive, Model.SortOrder));
-
-            if (!response.IsSuccessStatusCode)
+            if (IsCreateMode)
             {
-                ErrorMessage = await ReadErrorAsync(response);
-                return;
+                await TableCommandService.CreateAsync(new CreateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.SortOrder));
+            }
+            else
+            {
+                await TableCommandService.UpdateAsync(Table!.Id, new UpdateTableRequest(Model.Name, Model.Code, Model.Color, Model.Type, Model.IsActive, Model.SortOrder));
             }
 
             await ReloadRequested.InvokeAsync();
             DialogService.Close(true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
         }
         finally
         {
@@ -156,15 +159,13 @@
 
         try
         {
-            using var response = await Http.DeleteAsync($"/api/tables/{Table.Id}");
-            if (!response.IsSuccessStatusCode)
-            {
-                ErrorMessage = await ReadErrorAsync(response);
-                return;
-            }
-
+            await TableCommandService.DeleteAsync(Table.Id);
             await ReloadRequested.InvokeAsync();
             DialogService.Close(true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
         }
         finally
         {
@@ -180,19 +181,6 @@
     private void RevealDeleteConfirm() => ShowDeleteConfirm = true;
     private void HideDeleteConfirm() => ShowDeleteConfirm = false;
 
-    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
-    {
-        try
-        {
-            var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
-            return payload?.Message ?? $"Request failed: {(int)response.StatusCode}";
-        }
-        catch
-        {
-            return $"Request failed: {(int)response.StatusCode}";
-        }
-    }
-
     public sealed record TableRecord(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder);
 
     private sealed class TableInput
@@ -204,8 +192,4 @@
         public bool IsActive { get; set; }
         public int SortOrder { get; set; }
     }
-
-    private sealed record CreateTableRequest(string Name, string Code, string Color, string Type, int SortOrder);
-    private sealed record UpdateTableRequest(string Name, string Code, string Color, string Type, bool IsActive, int SortOrder);
-    private sealed record ErrorPayload(string? Message);
 }

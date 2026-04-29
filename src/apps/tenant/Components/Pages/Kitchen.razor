@@ -1,20 +1,69 @@
 @page "/kitchen"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize(Policy = "Tenant:Read")]
-@inject HttpClient Http
 @inject IStringLocalizer<TenantText> L
 @inject DialogService DialogService
+@inject IKitchenReadService KitchenReadService
 
 <PageTitle>@L["KitchenTitle"]</PageTitle>
 <RadzenComponents />
 
-<section class="page-hero">
+<SectionContent SectionName="tenant-header">
     <div>
         <p class="eyebrow">@L["NavKitchen"]</p>
-        <h1>@L["KitchenTitle"]</h1>
+        <h2>@L["KitchenTitle"]</h2>
         <p class="hero-copy">@L["KitchenHero"]</p>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="tenant-inspector">
+    @if (SelectedOrder is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["NoOrderSelected"]</h4>
+                <p class="detail-copy">@L["NoOrderSelectedCopy"]</p>
+            </section>
+        </div>
+    }
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@SelectedOrder.TableLabel</p>
+                        <h3>#@SelectedOrder.Id.ToString()[..8]</h3>
+                    </div>
+                    <span class="status-pill warning">@($"{SelectedOrder.Items.Count} {L["TableItem"]}")</span>
+                </div>
+
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["SubmittedAt"]</span>
+                        <span class="kv-value">@SelectedOrder.SubmittedAt.LocalDateTime.ToString("g")</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableTotal"]</span>
+                        <span class="kv-value">@SelectedOrder.TotalAmount.ToString("C")</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(SelectedOrder.Note))
+                {
+                    <section class="detail-section">
+                        <p class="detail-title">@L["OrderNote"]</p>
+                        <p class="detail-copy">@SelectedOrder.Note</p>
+                    </section>
+                }
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(SelectedOrder)">@L["OpenInspector"]</button>
+                </div>
+            </section>
+        </div>
+    }
+</SectionContent>
 
 @if (Orders is null)
 {
@@ -35,7 +84,8 @@ else
     <section class="entity-grid">
         @foreach (var order in Orders)
         {
-            <article class="entity-card">
+            var isSelected = order.Id == SelectedOrderId;
+            <article class="entity-card @(isSelected ? "selected-surface" : null)" @onclick="() => SelectOrder(order.Id)">
                 <div class="entity-card-top">
                     <div>
                         <p class="eyebrow">@order.TableLabel</p>
@@ -70,11 +120,16 @@ else
 
 @code {
     private List<KitchenOrderDto>? Orders;
+    private Guid? SelectedOrderId;
+    private KitchenOrderDto? SelectedOrder => Orders?.FirstOrDefault(order => order.Id == SelectedOrderId) ?? Orders?.FirstOrDefault();
 
     protected override async Task OnInitializedAsync()
     {
-        Orders = await Http.GetFromJsonAsync<List<KitchenOrderDto>>("/api/kitchen/orders");
+        Orders = (await KitchenReadService.GetOrdersInProgressAsync()).ToList();
+        SelectedOrderId ??= Orders.FirstOrDefault()?.Id;
     }
+
+    private void SelectOrder(Guid orderId) => SelectedOrderId = orderId;
 
     private async Task OpenInspectorAsync(KitchenOrderDto order)
     {
@@ -100,6 +155,4 @@ else
             });
     }
 
-    private record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, DateTimeOffset SubmittedAt, string? Note, List<KitchenItemDto> Items);
-    private record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status, string? Note);
 }

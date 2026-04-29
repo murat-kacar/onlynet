@@ -4,7 +4,7 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, ...</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value></resheader>
-  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Tenant</value></data>
+  <data name="BrandEyebrow" xml:space="preserve"><value>IoTable Tenant</value></data>
   <data name="BrandCopy" xml:space="preserve"><value>Quiet operating surface for service, kitchen flow, and table-side order visibility.</value></data>
   <data name="NavMenu" xml:space="preserve"><value>Menu</value></data>
   <data name="NavCart" xml:space="preserve"><value>Cart</value></data>
@@ -14,9 +14,15 @@
   <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
   <data name="ShellTitle" xml:space="preserve"><value>Service Console</value></data>
-  <data name="ShellFootnote" xml:space="preserve"><value>Demo runtime currently bound to demo1.cafetech.uk.</value></data>
+  <data name="ShellFootnote" xml:space="preserve"><value>IoTable staff surfaces stay compact, trusted, and ready for live service.</value></data>
+  <data name="CollapseNavigation" xml:space="preserve"><value>Collapse navigation</value></data>
+  <data name="ExpandNavigation" xml:space="preserve"><value>Expand navigation</value></data>
+  <data name="HideContextPanel" xml:space="preserve"><value>Hide context panel</value></data>
+  <data name="ShowContextPanel" xml:space="preserve"><value>Show context panel</value></data>
+  <data name="ContextPanel" xml:space="preserve"><value>Context panel</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Signed in</value></data>
   <data name="AnonymousGuest" xml:space="preserve"><value>Guest session</value></data>
+  <data name="Selection" xml:space="preserve"><value>Selection</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
   <data name="SettingsHero" xml:space="preserve"><value>Operator language, console density, and local time defaults for this account.</value></data>
   <data name="AccountEyebrow" xml:space="preserve"><value>Account</value></data>
@@ -58,7 +64,9 @@
   <data name="PasswordUpdatedSuccess" xml:space="preserve"><value>Password updated. Your session has been refreshed.</value></data>
   <data name="PasswordChangeFailed" xml:space="preserve"><value>Password change failed: {0}</value></data>
   <data name="MenuTitle" xml:space="preserve"><value>Menu</value></data>
-  <data name="MenuHero" xml:space="preserve"><value>Browse the active menu, review session context, and keep ordering flow close to the table.</value></data>
+  <data name="CustomerMenuEyebrow" xml:space="preserve"><value>Guest Menu</value></data>
+  <data name="CustomerMenuSlogan" xml:space="preserve"><value>Fresh plates, calm pacing, table-side ease.</value></data>
+  <data name="MenuHero" xml:space="preserve"><value>Browse what {0} is serving right now and send the table order forward in a few quick taps.</value></data>
   <data name="NoActiveSession" xml:space="preserve"><value>No active session yet.</value></data>
   <data name="ScanQrToStart" xml:space="preserve"><value>Scan a QR code to open the table session before ordering.</value></data>
   <data name="ViewCart" xml:space="preserve"><value>View Cart</value></data>
@@ -95,6 +103,8 @@
   <data name="LoadingTablesCopy" xml:space="preserve"><value>Current floor records are being fetched from the tenant store.</value></data>
   <data name="NoTables" xml:space="preserve"><value>No tables available</value></data>
   <data name="NoTablesCopy" xml:space="preserve"><value>Seed table records before using the live service workspace.</value></data>
+  <data name="NoTableSelected" xml:space="preserve"><value>No table selected</value></data>
+  <data name="NoTableSelectedCopy" xml:space="preserve"><value>Select a table to inspect live session state and operator actions.</value></data>
   <data name="Active" xml:space="preserve"><value>Active</value></data>
   <data name="Inactive" xml:space="preserve"><value>Inactive</value></data>
   <data name="OpenInspector" xml:space="preserve"><value>Inspect</value></data>
@@ -109,6 +119,8 @@
   <data name="LoadingKitchenCopy" xml:space="preserve"><value>Open orders are being fetched from the kitchen read surface.</value></data>
   <data name="NoKitchenOrders" xml:space="preserve"><value>No active kitchen orders</value></data>
   <data name="NoKitchenOrdersCopy" xml:space="preserve"><value>New orders will appear here once a customer submits from the table session.</value></data>
+  <data name="NoOrderSelected" xml:space="preserve"><value>No order selected</value></data>
+  <data name="NoOrderSelectedCopy" xml:space="preserve"><value>Select an order to inspect its current kitchen context.</value></data>
   <data name="Start" xml:space="preserve"><value>Start</value></data>
   <data name="Ready" xml:space="preserve"><value>Ready</value></data>
   <data name="KitchenDrawerTitle" xml:space="preserve"><value>Order Detail</value></data>

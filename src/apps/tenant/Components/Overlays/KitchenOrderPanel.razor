@@ -1,6 +1,6 @@
-@inject HttpClient Http
 @inject DialogService DialogService
 @inject IStringLocalizer<TenantText> L
+@inject IKitchenReadService KitchenReadService
 
 <div class="drawer-stack">
     <div class="drawer-kv">
@@ -71,8 +71,12 @@
 
         try
         {
-            var response = await Http.PutAsJsonAsync($"/api/kitchen/items/{itemId}/status", new UpdateItemStatusRequest(status));
-            response.EnsureSuccessStatusCode();
+            var ok = await KitchenReadService.UpdateItemStatusAsync(itemId, status);
+            if (!ok)
+            {
+                ErrorMessage = "Status update could not be completed.";
+                return;
+            }
             await ReloadRequested.InvokeAsync();
             DialogService.Close(true);
         }
@@ -99,6 +103,5 @@
 
     public sealed record KitchenOrderDto(Guid Id, string TableLabel, decimal TotalAmount, DateTimeOffset SubmittedAt, string? Note, List<KitchenItemDto> Items);
     public sealed record KitchenItemDto(Guid Id, string ItemName, int Quantity, string Status, string? Note);
-    private sealed record UpdateItemStatusRequest(string Status);
     private sealed record KitchenAction(string Keyword, string Label);
 }

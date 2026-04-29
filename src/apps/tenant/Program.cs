@@ -15,6 +15,7 @@ using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Infrastructure.Data;
 using TabFlow.Shared.Infrastructure.Diagnostics;
 using TabFlow.Tenant.Cli;
+using TabFlow.Tenant.Middleware;
 using TabFlow.Tenant.Services;
 using TabFlow.Tenant.WebSocket;
 using TabFlow.Tenant.Hubs;
@@ -66,15 +67,32 @@ builder.Services.AddHostedService<EventSubscriptionService>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<TenantUserPreferenceService>();
+builder.Services.AddScoped<TenantAdminActivationService>();
 builder.Services.AddScoped<CustomerSessionBrowserStore>();
 
 builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<TenantDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequiredLength = 12;
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredUniqueChars = 4;
+    options.SignIn.RequireConfirmedEmail = true;
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/login";
@@ -215,6 +233,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<SecurityEnrollmentRequiredMiddleware>();
 app.UseAntiforgery();
 
 app.MapControllers();

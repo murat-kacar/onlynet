@@ -52,19 +52,26 @@ Role:
 Target feel:
 
 - premium operational control center
-- warmer and more operational than a generic SaaS panel
+- IoTable-branded workbench rather than generic SaaS chrome
+- compact, scan-first, and selection-driven
 
 Console surfaces run under Interactive Server
 ([`../../reference/architecture/render-modes.md`](../../reference/architecture/render-modes.md)).
-Component state lives server-side; forms, modals, and live indicators
-run without hand-written polling.
+Component state lives server-side; inspectors, overlays, and live
+indicators run without hand-written polling.
 
 Admin-console visual direction:
 
-- warm stone and paper-like neutrals rather than glossy SaaS chrome
-- white or near-white work surfaces with strong station accents
-- big, trustworthy headings and compact operational detail underneath
+- calm operator shell with a fixed top bar, left navigation rail, and right inspector
+- white or near-white work surfaces with strong state accents
+- compact operational detail under clear workspace titles
 - high-contrast status chips for device, station, and fallback warnings
+
+Admin-console interaction direction:
+
+- dense registries should prefer `table + inspector`
+- task-starting actions should prefer drawer or modal flows
+- route changes should be the exception, not the default
 
 The exact navigation baseline and overview content live in
 [`../../reference/architecture/runtime-surfaces.md`](../../reference/architecture/runtime-surfaces.md)

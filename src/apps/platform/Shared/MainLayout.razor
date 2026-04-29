@@ -4,11 +4,17 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject PlatformUserPreferenceService PreferenceService
 
-<div class="platform-shell" data-ui-density="@ShellDensity">
+<div class="platform-shell @(SidebarCollapsed ? "sidebar-collapsed" : null) @(InspectorCollapsed ? "inspector-collapsed" : null)" data-ui-density="@ShellDensity">
     <aside class="shell-sidebar">
         <div class="brand-block">
             <p class="eyebrow">@L["BrandEyebrow"]</p>
-            <h1>TabFlow</h1>
+            <div class="brand-lockup">
+                <span class="brand-mark" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                </span>
+                <h1>IoTable</h1>
+            </div>
             <p class="brand-copy">@L["BrandCopy"]</p>
         </div>
 
@@ -35,22 +41,52 @@
         </div>
     </aside>
 
-    <div class="shell-main">
-        <header class="shell-header">
-            <div>
-                <p class="eyebrow">@L["ShellEyebrow"]</p>
-                <h2>@L["ShellTitle"]</h2>
+    <div class="shell-stage">
+        <header class="shell-topbar">
+            <div class="topbar-start">
+                <button type="button" class="chrome-toggle" @onclick="ToggleSidebar" aria-label="@L[SidebarCollapsed ? "ExpandNavigation" : "CollapseNavigation"]">
+                    @(SidebarCollapsed ? ">" : "<")
+                </button>
+                <div class="shell-slot shell-slot-title">
+                    <SectionOutlet SectionName="platform-header" />
+                </div>
+                <div class="shell-slot-fallback">
+                    <p class="eyebrow">@L["ShellEyebrow"]</p>
+                    <h2>@L["ShellTitle"]</h2>
+                </div>
+            </div>
+
+            <div class="topbar-end">
+                <div class="shell-slot shell-slot-actions">
+                    <SectionOutlet SectionName="platform-header-actions" />
+                </div>
+                <button type="button" class="chrome-toggle" @onclick="ToggleInspector" aria-label="@L[InspectorCollapsed ? "ShowContextPanel" : "HideContextPanel"]">
+                    @(InspectorCollapsed ? "<" : ">")
+                </button>
             </div>
         </header>
 
-        <main class="shell-content">
-            @Body
-        </main>
+        <div class="shell-body">
+            <main class="shell-content">
+                @Body
+            </main>
+
+            <aside class="shell-inspector">
+                <div class="shell-inspector-header">
+                    <p class="eyebrow">@L["ContextPanel"]</p>
+                </div>
+                <div class="shell-inspector-content">
+                    <SectionOutlet SectionName="platform-inspector" />
+                </div>
+            </aside>
+        </div>
     </div>
 </div>
 
 @code {
     private string ShellDensity { get; set; } = PlatformUserPreferenceService.DefaultDensity;
+    private bool SidebarCollapsed { get; set; }
+    private bool InspectorCollapsed { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,4 +104,7 @@
             ShellDensity = PlatformUserPreferenceService.DefaultDensity;
         }
     }
+
+    private void ToggleSidebar() => SidebarCollapsed = !SidebarCollapsed;
+    private void ToggleInspector() => InspectorCollapsed = !InspectorCollapsed;
 }

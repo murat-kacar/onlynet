@@ -7,13 +7,141 @@
 
 <PageTitle>@L["JobsPageTitle"]</PageTitle>
 
-<section class="page-hero">
+<SectionContent SectionName="platform-header">
     <div>
         <p class="eyebrow">@L["OperationsEyebrow"]</p>
-        <h1>@L["JobsPageTitle"]</h1>
+        <h2>@L["JobsPageTitle"]</h2>
         <p class="hero-copy">@L["JobsHero"]</p>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="platform-inspector">
+    @if (IsLoadingDetail)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["LoadingJobDetail"]</h4>
+                <p class="detail-copy">@L["LoadingJobDetailCopy"]</p>
+            </section>
+        </div>
+    }
+    else if (DetailError is not null)
+    {
+        <div class="alert alert-danger">@DetailError</div>
+    }
+    else if (SelectedJob is null || SelectedJobDetail is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["NoJobSelected"]</h4>
+                <p class="detail-copy">@L["NoJobSelectedCopy"]</p>
+            </section>
+        </div>
+    }
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["Selection"]</p>
+                        <h3>@SelectedJob.Type</h3>
+                    </div>
+                    <span class="@StatusClass(SelectedJob.Status)">@LocalizedStatus(SelectedJob.Status)</span>
+                </div>
+
+                    <div class="kv-grid">
+                        <div class="kv-item">
+                            <span class="kv-label">@L["JobId"]</span>
+                            <span class="kv-value">@SelectedJob.Id</span>
+                        </div>
+                        <div class="kv-item">
+                            <span class="kv-label">@L["TableTenant"]</span>
+                            <span class="kv-value">@ShortId(SelectedJob.TenantId)</span>
+                        </div>
+                        <div class="kv-item">
+                            <span class="kv-label">@L["TableClaimedBy"]</span>
+                            <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? L["Unclaimed"] : SelectedJob.ClaimedBy)</span>
+                        </div>
+                        <div class="kv-item">
+                            <span class="kv-label">@L["Created"]</span>
+                            <span class="kv-value">@FormatDate(SelectedJob.CreatedAt)</span>
+                        </div>
+                        <div class="kv-item">
+                            <span class="kv-label">@L["TableUpdated"]</span>
+                            <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="() => NavigateToTenant(SelectedJob.TenantId)">@L["OpenTenant"]</button>
+                    </div>
+            </section>
+
+            <section class="context-card">
+                <div class="section-heading">
+                    <p class="detail-title">@L["ExecutionSteps"]</p>
+                    <span>@L["StepCount", SelectedJobDetail.Steps.Count]</span>
+                </div>
+                @if (SelectedJobDetail.Steps.Count == 0)
+                {
+                    <p class="detail-copy">@L["NoStepsRecorded"]</p>
+                }
+                else
+                {
+                    <div class="step-list">
+                        @foreach (var step in SelectedJobDetail.Steps.OrderBy(step => step.StartedAt))
+                        {
+                            <div class="step-item">
+                                <div>
+                                    <p class="list-title">@step.Name</p>
+                                    <p class="list-subtitle">@FormatDate(step.StartedAt)</p>
+                                </div>
+                                <span class="@StatusClass(step.Status)">@step.Status</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="context-card">
+                <div class="detail-stack">
+                    <section class="detail-section">
+                        <p class="detail-title">@L["Payload"]</p>
+                        @if (string.IsNullOrWhiteSpace(SelectedJobDetail.Payload))
+                        {
+                            <p class="detail-copy">@L["NoPayloadRecorded"]</p>
+                        }
+                        else
+                        {
+                            <pre class="detail-code">@SelectedJobDetail.Payload</pre>
+                        }
+                    </section>
+
+                    <section class="detail-section">
+                        <p class="detail-title">@L["Result"]</p>
+                        @if (string.IsNullOrWhiteSpace(SelectedJobDetail.Result))
+                        {
+                            <p class="detail-copy">@L["NoResultRecorded"]</p>
+                        }
+                        else
+                        {
+                            <pre class="detail-code">@SelectedJobDetail.Result</pre>
+                        }
+                    </section>
+
+                    @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
+                    {
+                        <section class="detail-section">
+                            <p class="detail-title">@L["FailureDetail"]</p>
+                            <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
+                        </section>
+                    }
+                </div>
+            </section>
+        </div>
+    }
+</SectionContent>
 
 @if (LoadError is not null)
 {
@@ -67,171 +195,63 @@ else
                 <p>@L["NoJobsInViewCopy"]</p>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" @onclick="ClearFilters">@L["ClearFilters"]</button>
-                    <a href="/tenants/new" class="btn btn-primary">@L["CreateTenant"]</a>
+                    <a href="/tenants" class="btn btn-primary">@L["CreateTenant"]</a>
                 </div>
             </div>
         }
         else
         {
-            <div class="inspector-layout">
-                <div class="surface-stack">
-                    <div class="toolbar-meta">
-                        <p>@FilterSummary</p>
-                        <p>@PagingSummary</p>
-                    </div>
-
-                    <div class="table-shell">
-                        <table class="table jobs-table">
-                            <thead>
-                                <tr>
-                                    <th>@L["TableJob"]</th>
-                                    <th>@L["TableStatus"]</th>
-                                    <th>@L["TableTenant"]</th>
-                                    <th>@L["TableClaimedBy"]</th>
-                                    <th>@L["TableUpdated"]</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var job in VisibleJobs)
-                                {
-                                    var isSelected = job.Id == SelectedJob?.Id;
-
-                                    <tr class="@RowClass(isSelected)" @onclick="() => SelectJobAsync(job.Id)">
-                                        <td>
-                                            <div class="tenant-cell">
-                                                <p class="list-title">@job.Type</p>
-                                                <p class="list-subtitle">@ShortId(job.Id)</p>
-                                            </div>
-                                        </td>
-                                        <td><span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span></td>
-                                        <td>@ShortId(job.TenantId)</td>
-                                        <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? L["Unclaimed"] : job.ClaimedBy)</td>
-                                        <td>@FormatDate(job.UpdatedAt)</td>
-                                        <td class="actions-cell">
-                                            <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectJobAsync(job.Id)">@L["Inspect"]</button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="table-footer">
-                        <p>@PagingSummary</p>
-                        <div class="pagination">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPageAsync" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
-                            <span>@L["PageOf", CurrentPage, TotalPages]</span>
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPageAsync" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
-                        </div>
-                    </div>
+            <div class="surface-stack">
+                <div class="toolbar-meta">
+                    <p>@FilterSummary</p>
+                    <p>@PagingSummary</p>
                 </div>
 
-                <aside class="detail-card">
-                    @if (IsLoadingDetail)
-                    {
-                        <div class="empty-state compact-empty">
-                            <h4>@L["LoadingJobDetail"]</h4>
-                            <p>@L["LoadingJobDetailCopy"]</p>
-                        </div>
-                    }
-                    else if (DetailError is not null)
-                    {
-                        <div class="alert alert-danger">@DetailError</div>
-                    }
-                    else if (SelectedJob is null || SelectedJobDetail is null)
-                    {
-                        <div class="empty-state compact-empty">
-                            <h4>@L["NoJobSelected"]</h4>
-                            <p>@L["NoJobSelectedCopy"]</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="panel-header">
-                            <div>
-                                <p class="eyebrow">@L["Selection"]</p>
-                                <h3>@SelectedJob.Type</h3>
-                            </div>
-                            <span class="@StatusClass(SelectedJob.Status)">@LocalizedStatus(SelectedJob.Status)</span>
-                        </div>
-
-                        <div class="detail-stack">
-                            <div class="kv-grid">
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["JobId"]</span>
-                                    <span class="kv-value">@SelectedJob.Id</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["TableTenant"] @L["JobId"]</span>
-                                    <span class="kv-value">@SelectedJob.TenantId</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["TableClaimedBy"]</span>
-                                    <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? L["Unclaimed"] : SelectedJob.ClaimedBy)</span>
-                                </div>
-                                <div class="kv-item">
-                                    <span class="kv-label">@L["TableUpdated"]</span>
-                                    <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
-                                </div>
-                            </div>
-
-                            <section class="detail-section">
-                                <div class="section-heading">
-                                    <p class="detail-title">@L["ExecutionSteps"]</p>
-                                    <span>@L["StepCount", SelectedJobDetail.Steps.Count]</span>
-                                </div>
-                                @if (SelectedJobDetail.Steps.Count == 0)
-                                {
-                                    <p class="detail-copy">@L["NoStepsRecorded"]</p>
-                                }
-                                else
-                                {
-                                    <div class="step-list">
-                                        @foreach (var step in SelectedJobDetail.Steps.OrderBy(step => step.StartedAt))
-                                        {
-                                            <div class="step-item">
-                                                <div>
-                                                    <p class="list-title">@step.Name</p>
-                                                    <p class="list-subtitle">@FormatDate(step.StartedAt)</p>
-                                                </div>
-                                                <span class="@StatusClass(step.Status)">@step.Status</span>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </section>
-
-                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
+                <div class="table-shell">
+                    <table class="table jobs-table">
+                        <thead>
+                            <tr>
+                                <th>@L["TableJob"]</th>
+                                <th>@L["TableStatus"]</th>
+                                <th>@L["TableTenant"]</th>
+                                <th>@L["TableClaimedBy"]</th>
+                                <th>@L["TableUpdated"]</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var job in VisibleJobs)
                             {
-                                <section class="detail-section">
-                                    <p class="detail-title">@L["FailureDetail"]</p>
-                                    <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
-                                </section>
-                            }
+                                var isSelected = job.Id == SelectedJob?.Id;
 
-                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Result))
-                            {
-                                <section class="detail-section">
-                                    <p class="detail-title">@L["Result"]</p>
-                                    <pre class="detail-code">@SelectedJobDetail.Result</pre>
-                                </section>
+                                <tr class="@RowClass(isSelected)" @onclick="() => SelectJobAsync(job.Id)">
+                                    <td>
+                                        <div class="tenant-cell">
+                                            <p class="list-title">@job.Type</p>
+                                            <p class="list-subtitle">@ShortId(job.Id)</p>
+                                        </div>
+                                    </td>
+                                    <td><span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span></td>
+                                    <td>@ShortId(job.TenantId)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(job.ClaimedBy) ? L["Unclaimed"] : job.ClaimedBy)</td>
+                                    <td>@FormatDate(job.UpdatedAt)</td>
+                                    <td class="actions-cell">
+                                        <button type="button" class="btn btn-sm btn-secondary" @onclick:stopPropagation="true" @onclick="() => SelectJobAsync(job.Id)">@L["Inspect"]</button>
+                                    </td>
+                                </tr>
                             }
+                        </tbody>
+                    </table>
+                </div>
 
-                            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.Payload))
-                            {
-                                <section class="detail-section">
-                                    <p class="detail-title">@L["Payload"]</p>
-                                    <pre class="detail-code">@SelectedJobDetail.Payload</pre>
-                                </section>
-                            }
-
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo($"/tenants/{SelectedJob.TenantId}")'>@L["OpenTenant"]</button>
-                            </div>
-                        </div>
-                    }
-                </aside>
+                <div class="table-footer">
+                    <p>@PagingSummary</p>
+                    <div class="pagination">
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="PreviousPageAsync" disabled="@(CurrentPage == 1)">@L["Previous"]</button>
+                        <span>@L["PageOf", CurrentPage, TotalPages]</span>
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="NextPageAsync" disabled="@(CurrentPage >= TotalPages)">@L["Next"]</button>
+                    </div>
+                </div>
             </div>
         }
     </section>
@@ -441,6 +461,9 @@ else
         string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
 
     private static string ShortId(Guid id) => id.ToString("N")[..8];
+
+    private void NavigateToTenant(Guid tenantId) =>
+        NavigationManager.NavigateTo($"/tenants/{tenantId}");
 
     private static string FormatDate(DateTimeOffset value) =>
         value.ToString("yyyy-MM-dd HH:mm");

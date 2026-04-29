@@ -7,16 +7,43 @@
 @inject UserManager<IdentityUser<Guid>> UserManager
 @inject SignInManager<IdentityUser<Guid>> SignInManager
 @inject TenantUserPreferenceService PreferenceService
+@using TabFlow.Shared.Domain
 
 <PageTitle>@L["SettingsTitle"]</PageTitle>
 
-<section class="page-hero">
+<SectionContent SectionName="tenant-header">
     <div>
         <p class="eyebrow">@L["AccountEyebrow"]</p>
-        <h1>@L["SettingsTitle"]</h1>
+        <h2>@L["SettingsTitle"]</h2>
         <p class="hero-copy">@L["SettingsHero"]</p>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="tenant-inspector">
+    <div class="console-context">
+        <section class="context-card">
+            <p class="eyebrow">@L["MetricAccount"]</p>
+            <h4>@DisplayEmail</h4>
+            <p class="detail-copy">@L["StoredForAccount"]</p>
+        </section>
+        <section class="context-card">
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <span class="kv-label">@L["Language"]</span>
+                    <span class="kv-value">@PreferenceModel.Language</span>
+                </div>
+                <div class="kv-item">
+                    <span class="kv-label">@L["Density"]</span>
+                    <span class="kv-value">@PreferenceModel.Density</span>
+                </div>
+                <div class="kv-item form-span-2">
+                    <span class="kv-label">@L["TimeZone"]</span>
+                    <span class="kv-value">@PreferenceModel.TimeZone</span>
+                </div>
+            </div>
+        </section>
+    </div>
+</SectionContent>
 
 @if (LoadError is not null)
 {
@@ -185,18 +212,61 @@ else
                 <div class="panel-header">
                     <div>
                         <p class="eyebrow">@L["Security"]</p>
-                        <h3>@L["SessionDefaults"]</h3>
+                        <h3>Two-Factor Authentication</h3>
                     </div>
                 </div>
                 <div class="detail-stack">
                     <section class="detail-section">
-                        <p class="detail-title">@L["PasswordPolicy"]</p>
-                        <p class="detail-copy">@L["PasswordPolicyCopy"]</p>
+                        <p class="detail-title">Status</p>
+                        <p class="detail-copy">@(IsTwoFactorEnabled ? "Authenticator app verified for this account." : "Finish authenticator setup before leaving this session.")</p>
                     </section>
-                    <section class="detail-section">
-                        <p class="detail-title">@L["SessionBehavior"]</p>
-                        <p class="detail-copy">@L["SessionBehaviorCopy"]</p>
-                    </section>
+
+                    @if (SecurityError is not null)
+                    {
+                        <div class="alert alert-danger">@SecurityError</div>
+                    }
+
+                    @if (MfaSuccess is not null)
+                    {
+                        <div class="alert alert-success">@MfaSuccess</div>
+                    }
+
+                    @if (!IsTwoFactorEnabled)
+                    {
+                        <EditForm Model="@MfaModel" OnValidSubmit="EnableTwoFactorAsync">
+                            <div class="form-grid">
+                                <div class="kv-item form-span-2">
+                                    <span class="kv-label">Authenticator Key</span>
+                                    <span class="kv-value">@FormattedAuthenticatorKey</span>
+                                </div>
+                                <div class="form-group form-span-2">
+                                    <label>Verification Code</label>
+                                    <InputText @bind-Value="MfaModel.VerificationCode" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" disabled="@IsSavingMfa">
+                                    @(IsSavingMfa ? "Verifying" : "Enable Two-Factor")
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+
+                    @if (RecoveryCodes.Count > 0)
+                    {
+                        <section class="detail-section">
+                            <p class="detail-title">Recovery Codes</p>
+                            <div class="step-list">
+                                @foreach (var recoveryCode in RecoveryCodes)
+                                {
+                                    <div class="step-item">
+                                        <p class="list-title">@recoveryCode</p>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
                 </div>
             </article>
         </section>
@@ -212,14 +282,21 @@ else
 
     private bool IsSavingPassword;
     private bool IsSavingPreferences;
+    private bool IsSavingMfa;
     private string ActiveTab { get; set; } = "preferences";
     private string? DisplayEmail;
     private string? LoadError;
     private string? PreferenceSuccess;
     private string? SecurityError;
     private string? SecuritySuccess;
+    private string? MfaSuccess;
+    private string? FormattedAuthenticatorKey;
+    private bool IsTwoFactorEnabled;
+    private IdentityUser<Guid>? CurrentUser;
     private PasswordChangeInput PasswordModel { get; set; } = new();
+    private MfaEnrollmentInput MfaModel { get; set; } = new();
     private UserPreferenceInput PreferenceModel { get; set; } = new();
+    private List<string> RecoveryCodes { get; set; } = [];
 
     private string PreferencePreview =>
         $"{PreferenceModel.TimeZone} · {FormatPreviewTime()}";
@@ -233,8 +310,8 @@ else
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var principal = authState.User;
-            var user = await UserManager.GetUserAsync(principal);
-            DisplayEmail = user?.Email ?? principal.Identity?.Name ?? "Operator";
+            CurrentUser = await UserManager.GetUserAsync(principal);
+            DisplayEmail = CurrentUser?.Email ?? principal.Identity?.Name ?? "Operator";
 
             var preference = await PreferenceService.GetForPrincipalAsync(principal);
             PreferenceModel = new UserPreferenceInput
@@ -243,6 +320,8 @@ else
                 TimeZone = preference.TimeZone,
                 Density = preference.Density,
             };
+
+            await LoadSecurityStateAsync();
         }
         catch (Exception ex)
         {
@@ -256,6 +335,7 @@ else
         PreferenceSuccess = null;
         SecuritySuccess = null;
         SecurityError = null;
+        MfaSuccess = null;
     }
 
     private async Task SavePreferencesAsync()
@@ -296,8 +376,7 @@ else
 
         try
         {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(authState.User);
+            var user = CurrentUser;
             if (user is null)
             {
                 SecurityError = L["AccountMissingError"];
@@ -331,6 +410,82 @@ else
         }
     }
 
+    private async Task LoadSecurityStateAsync()
+    {
+        if (CurrentUser is null)
+        {
+            return;
+        }
+
+        IsTwoFactorEnabled = await UserManager.GetTwoFactorEnabledAsync(CurrentUser);
+        if (IsTwoFactorEnabled)
+        {
+            FormattedAuthenticatorKey = null;
+            return;
+        }
+
+        var key = await UserManager.GetAuthenticatorKeyAsync(CurrentUser);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            await UserManager.ResetAuthenticatorKeyAsync(CurrentUser);
+            key = await UserManager.GetAuthenticatorKeyAsync(CurrentUser);
+        }
+
+        FormattedAuthenticatorKey = FormatAuthenticatorKey(key ?? string.Empty);
+    }
+
+    private async Task EnableTwoFactorAsync()
+    {
+        IsSavingMfa = true;
+        SecurityError = null;
+        MfaSuccess = null;
+
+        try
+        {
+            if (CurrentUser is null)
+            {
+                SecurityError = L["AccountMissingError"];
+                return;
+            }
+
+            var verificationCode = (MfaModel.VerificationCode ?? string.Empty)
+                .Replace(" ", string.Empty, StringComparison.Ordinal)
+                .Replace("-", string.Empty, StringComparison.Ordinal);
+
+            var isValid = await UserManager.VerifyTwoFactorTokenAsync(
+                CurrentUser,
+                UserManager.Options.Tokens.AuthenticatorTokenProvider,
+                verificationCode);
+
+            if (!isValid)
+            {
+                SecurityError = "The authenticator code is not valid.";
+                return;
+            }
+
+            await UserManager.SetTwoFactorEnabledAsync(CurrentUser, true);
+            var claims = await UserManager.GetClaimsAsync(CurrentUser);
+            foreach (var claim in claims.Where(claim => string.Equals(claim.Type, IdentityClaimTypes.MfaSetupRequired, StringComparison.Ordinal)))
+            {
+                await UserManager.RemoveClaimAsync(CurrentUser, claim);
+            }
+
+            RecoveryCodes = (await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(CurrentUser, 8) ?? Array.Empty<string>()).ToList();
+            await SignInManager.RefreshSignInAsync(CurrentUser);
+            MfaModel = new MfaEnrollmentInput();
+            MfaSuccess = "Two-factor authentication is now enabled.";
+            await LoadSecurityStateAsync();
+        }
+        catch (Exception ex)
+        {
+            SecurityError = ex.Message;
+        }
+        finally
+        {
+            IsSavingMfa = false;
+        }
+    }
+
     private string TabClass(string tab) =>
         ActiveTab == tab ? "tab-chip active" : "tab-chip";
 
@@ -356,6 +511,28 @@ else
 
         [Required]
         public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    private static string FormatAuthenticatorKey(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(" ", Enumerable.Range(0, (value.Length + 3) / 4)
+            .Select(index =>
+            {
+                var start = index * 4;
+                var length = Math.Min(4, value.Length - start);
+                return value.Substring(start, length).ToLowerInvariant();
+            }));
+    }
+
+    private sealed class MfaEnrollmentInput
+    {
+        [Required]
+        public string VerificationCode { get; set; } = string.Empty;
     }
 
     private sealed class UserPreferenceInput

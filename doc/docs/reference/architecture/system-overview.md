@@ -7,6 +7,9 @@ with Blazor Web App.
 
 This document is the primary architecture snapshot for the repository.
 
+User-facing product branding is `IoTable`. Internal source names,
+assemblies, and namespaces remain `TabFlow`.
+
 ## System Shape
 
 The diagram below shows the top-level processes and the direction of
@@ -61,12 +64,13 @@ Notes:
 | Web framework | ASP.NET Core 10 with Blazor Web App |
 | Data access | EF Core 10 with Npgsql |
 | Storage | PostgreSQL 17 |
-| Authentication | ASP.NET Core Identity (cookie scheme) |
+| Authentication | Keycloak via OIDC clients in ASP.NET Core hosts |
 | Real-time fan-out | In-process `System.Threading.Channels` event bus |
 | Firmware | ESP32-C3 Arduino sketch generated per table |
 
 The stack choice is recorded in
-[`./decisions.md`](./decisions.md) under AD-0002, AD-0007, and AD-0008.
+[`./decisions.md`](./decisions.md) under AD-0002, AD-0007, AD-0008, and
+AD-0016.
 
 ## Source Tree
 
@@ -107,7 +111,7 @@ The platform host.
 
 Owns:
 
-- Platform admin authentication and identity storage
+- Platform admin authorization and local operator preferences
 - Tenant registry
 - Tenant domain assignment
 - Tenant status and regional settings
@@ -124,6 +128,7 @@ The tenant host. One instance per tenant, bound to one tenant database.
 Owns:
 
 - Tenant schema bootstrap through EF Core migrations
+- Tenant-local authorization mapping and operator preferences
 - Tenant profile and public catalog surfaces
 - Table and device state
 - QR token lifecycle, table session lifecycle, and customer access tickets
@@ -142,6 +147,17 @@ topology, and per-surface product notes live in
 [`./runtime-surfaces.md`](./runtime-surfaces.md). That document is the
 single authority; every other reference to a specific route, role, or
 surface reads back into it.
+
+Operator-facing surfaces follow a shared `Three-Pane Console Shell`
+pattern:
+
+- a collapsible left navigation rail
+- a fixed top bar that names the current workspace
+- a center work surface
+- a collapsible right inspector for contextual detail and secondary action
+
+This shell is part of the platform and tenant admin product contract,
+not page-local decoration.
 
 Render-mode strategy is recorded in
 [`./render-modes.md`](./render-modes.md). Product reasoning around

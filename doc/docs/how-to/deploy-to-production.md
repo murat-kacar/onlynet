@@ -29,6 +29,13 @@ separate API and UI processes is out of scope for the baseline
 
 Operators may choose any layout that honours these separations.
 
+## Identity Infrastructure
+
+Workforce identity is externalized. Production deployments are expected to
+provide a reachable identity provider and host-owned OIDC client secrets.
+For the current baseline, see
+[`./configure-keycloak-for-platform.md`](./configure-keycloak-for-platform.md).
+
 ## Reverse Proxy
 
 A reverse proxy terminates TLS and routes by host to the target
@@ -100,6 +107,8 @@ At minimum, after any deployment:
 - `GET /health/ready` on the platform host returns `200`.
 - `GET /health/ready` on at least one tenant host returns `200`.
 - Platform admin sign-in page returns `200`.
+- External identity discovery, when enabled, is reachable from the platform
+  host.
 - Tenant customer entry page returns `200` on a known tenant domain.
 - Expected static assets are reachable.
 - The platform worker is up and polling the provisioning queue.

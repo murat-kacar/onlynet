@@ -34,6 +34,8 @@ and the consequences that follow.
 - [AD-0013 GitHub Actions As The Continuous Integration Platform](#ad-0013-github-actions-as-the-continuous-integration-platform)
 - [AD-0014 Coding Standards Live In `.editorconfig` And `Directory.Build.props`](#ad-0014-coding-standards-live-in-editorconfig-and-directorybuildprops)
 - [AD-0015 English-First For Internal Contracts](#ad-0015-english-first-for-internal-contracts)
+- [AD-0016 Externalize Workforce Identity To Keycloak](#ad-0016-externalize-workforce-identity-to-keycloak)
+- [AD-0017 Operator Consoles Use A Three-Pane Shell](#ad-0017-operator-consoles-use-a-three-pane-shell)
 
 ---
 
@@ -278,7 +280,7 @@ Tradeoffs:
 
 ### Status
 
-Accepted.
+Superseded by [AD-0016](#ad-0016-externalize-workforce-identity-to-keycloak).
 
 ### Context
 
@@ -338,6 +340,135 @@ Tradeoffs:
 
 - [`../../explanation/concepts/authorization.md`](../../explanation/concepts/authorization.md)
 - [`../../explanation/concepts/customer-session-model.md`](../../explanation/concepts/customer-session-model.md)
+
+---
+
+## AD-0016 Externalize Workforce Identity To Keycloak
+
+### Status
+
+Accepted.
+
+### Context
+
+TabFlow is being positioned for payment, financial operations, and regulated
+review. The application currently carries too much responsibility for
+workforce authentication: password lifecycle, MFA readiness, bootstrap flows,
+and session policy are all too close to product code.
+
+That is workable for an early internal product. It is not the right long-term
+security posture for a platform that expects formal review, stronger access
+control, and lower auth-surface risk.
+
+### Decision
+
+Keycloak becomes the v1 identity provider for workforce users.
+
+- Platform and tenant hosts authenticate human operators through OpenID
+  Connect.
+- Both hosts act as ASP.NET Core OIDC clients and keep server-side cookie
+  sessions locally.
+- Application code keeps authorization policy evaluation, tenant scoping,
+  business audit, and customer/device auth contracts.
+- The application must not depend on Keycloak-specific adapters when standard
+  OIDC support is enough.
+
+### Consequences
+
+Positive:
+
+- password, MFA, recovery, and interactive login policy move into a mature IAM
+  product
+- the application auth surface shrinks
+- future external federation becomes much easier
+- the app-to-IdP contract stays standards-based, which keeps a later move to
+  Duende or another OIDC-compliant provider realistic
+
+Tradeoffs:
+
+- Keycloak becomes critical infrastructure
+- tenant membership and role claims must be mapped carefully into internal
+  policy claims
+- local ASP.NET Core Identity flows for workforce users become transitional
+  debt and must be removed in phases
+
+### Implementation Note
+
+The repository is currently allowed to keep local ASP.NET Core Identity
+enabled in non-production development environments while platform and tenant
+UI work continues. This is a temporary delivery bridge, not a change in
+target architecture.
+
+### Related
+
+- [`./identity-architecture.md`](./identity-architecture.md)
+- [`../../explanation/concepts/authorization.md`](../../explanation/concepts/authorization.md)
+- [`../../explanation/concepts/threat-model.md`](../../explanation/concepts/threat-model.md)
+
+---
+
+## AD-0017 Operator Consoles Use A Three-Pane Shell
+
+### Status
+
+Accepted.
+
+### Context
+
+Platform operators and tenant staff spend most of their time moving between
+lists, detail, and short operational actions. The repository already chose a
+compact, scan-first console direction, but that direction needs a stable shell
+contract or each page will drift into its own local header, its own detail
+placement, and its own action rhythm.
+
+Operator surfaces are not content sites. They are work surfaces. Navigation,
+workspace identity, and contextual detail must stay visible without forcing a
+full route change for every inspection step.
+
+### Decision
+
+Operator-facing consoles standardize on a shared `Three-Pane Console Shell`.
+
+The shell contains:
+
+- a collapsible left navigation rail for primary movement
+- a fixed top bar for the current workspace title and primary action area
+- a center pane for the active work surface
+- a collapsible right inspector for contextual detail, selection state, and
+  secondary action
+
+Related interaction rules:
+
+- dashboards summarize system state and should not duplicate sidebar
+  navigation
+- create and edit flows prefer drawers or modals
+- tables and dense registries use the inspector for row detail whenever the
+  task does not require a full dedicated route
+
+### Consequences
+
+Positive:
+
+- platform and tenant operator surfaces present one consistent mental model
+- selection-heavy workflows keep context instead of bouncing between pages
+- brand identity becomes structural, not just visual
+- page authors can reuse one shell contract instead of inventing one-off
+  chrome
+
+Tradeoffs:
+
+- pages must project title, actions, and inspector content into the shared
+  shell, which adds a small amount of structure to every route
+- not every detail belongs in the inspector; teams must still decide when a
+  task deserves its own route
+- responsive behavior must be maintained carefully so the shell remains usable
+  on smaller desktop widths
+
+### Related
+
+- [`../design-system.md`](../design-system.md)
+- [`../branding.md`](../branding.md)
+- [`./system-overview.md`](./system-overview.md)
 
 ---
 

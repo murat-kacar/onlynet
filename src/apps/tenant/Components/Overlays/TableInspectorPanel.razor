@@ -1,7 +1,7 @@
 @using TabFlow.Shared.Application.Services
-@inject HttpClient Http
 @inject DialogService DialogService
 @inject IStringLocalizer<TenantText> L
+@inject ICustomerSessionService CustomerSessionService
 
 <div class="drawer-stack">
     <div class="drawer-kv">
@@ -133,9 +133,7 @@
     {
         await RunActionAsync(async () =>
         {
-            var response = await Http.PostAsJsonAsync($"/api/tables/{Workspace.Id}/checkout-proof", new { });
-            response.EnsureSuccessStatusCode();
-            CheckoutProof = await response.Content.ReadFromJsonAsync<CheckoutProofDto>();
+            CheckoutProof = await CustomerSessionService.IssueCheckoutProofAsync(Workspace.Id);
         });
     }
 
@@ -148,8 +146,7 @@
 
         await RunActionAsync(async () =>
         {
-            var response = await Http.PostAsync($"/api/sessions/{Workspace.Session.SessionId}/close", null);
-            response.EnsureSuccessStatusCode();
+            await CustomerSessionService.CloseSessionAsync(Workspace.Session.SessionId);
             DialogService.Close(true);
         });
     }

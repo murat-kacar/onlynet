@@ -11,12 +11,15 @@
 
 <RadzenComponents />
 
-<section class="page-hero">
+<SectionContent SectionName="platform-header">
     <div>
         <p class="eyebrow">@L["TenantRecordEyebrow"]</p>
-        <h1>@(Tenant?.DisplayName ?? L["TenantDetailFallbackTitle"])</h1>
+        <h2>@(Tenant?.DisplayName ?? L["TenantDetailFallbackTitle"])</h2>
         <p class="hero-copy">@L["TenantDetailHero"]</p>
     </div>
+</SectionContent>
+
+<SectionContent SectionName="platform-header-actions">
     <div class="hero-actions">
         <a href="/tenants" class="btn btn-secondary">@L["Back"]</a>
         <AuthorizeView Policy="Platform:Write">
@@ -26,7 +29,58 @@
             }
         </AuthorizeView>
     </div>
-</section>
+</SectionContent>
+
+<SectionContent SectionName="platform-inspector">
+    @if (Tenant is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["TenantNotFound"]</h4>
+                <p class="detail-copy">@L["TenantNotFoundCopy"]</p>
+            </section>
+        </div>
+    }
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["IdentityEyebrow"]</p>
+                        <h3>@L["RegistrySummary"]</h3>
+                    </div>
+                    <span class="@StatusClass(Tenant.Status)">@LocalizedStatus(Tenant.Status)</span>
+                </div>
+
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TenantCode"]</span>
+                        <span class="kv-value">@Tenant.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["PrimaryDomain"]</span>
+                        <span class="kv-value">@Tenant.PrimaryDomain</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["AdminEmail"]</span>
+                        <span class="kv-value">@Tenant.IntendedOwnerEmail</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TimeZone"]</span>
+                        <span class="kv-value">@Tenant.TimeZone</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="context-card">
+                <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                <h4>@L["RelatedJobs"]</h4>
+                <p class="detail-copy">@L["JobsMetricCopy", FailedJobs, OpenJobs]</p>
+            </section>
+        </div>
+    }
+</SectionContent>
 
 @if (LoadError is not null)
 {
@@ -79,7 +133,7 @@ else
                     <span class="kv-value">@Tenant.PrimaryDomain</span>
                 </div>
                 <div class="kv-item">
-                    <span class="kv-label">@L["OwnerEmail"]</span>
+                    <span class="kv-label">@L["AdminEmail"]</span>
                     <span class="kv-value">@Tenant.IntendedOwnerEmail</span>
                 </div>
                 <div class="kv-item">

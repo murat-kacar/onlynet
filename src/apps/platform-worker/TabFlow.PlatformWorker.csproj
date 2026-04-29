@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\packages\shared-dotnet\TabFlow.Shared.csproj" />
+    <ProjectReference Include="..\..\infra\postgres\TabFlow.Migrations.csproj" />
   </ItemGroup>
 </Project>

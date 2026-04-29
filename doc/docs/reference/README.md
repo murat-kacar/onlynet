@@ -15,6 +15,7 @@ Use this section for:
 Reference entrypoints:
 
 - [`./architecture/README.md`](./architecture/README.md)
+- [`./architecture/identity-architecture.md`](./architecture/identity-architecture.md)
 - [`./architecture/technology-inventory.md`](./architecture/technology-inventory.md)
 - [`./api/README.md`](./api/README.md)
 - [`./database/README.md`](./database/README.md)
@@ -24,3 +25,9 @@ Reference entrypoints:
 - [`./glossary.md`](./glossary.md)
 - [`./acceptance-criteria.md`](./acceptance-criteria.md)
 - [`./tunable-parameters.md`](./tunable-parameters.md)
+
+For operator-surface design, start with:
+
+- [`./branding.md`](./branding.md)
+- [`./design-system.md`](./design-system.md)
+- [`./architecture/decisions.md`](./architecture/decisions.md) (`AD-0017`)

@@ -44,7 +44,7 @@ public class ChangePasswordModel : PageModel
         if (result.Succeeded)
         {
             await _signInManager.RefreshSignInAsync(user);
-            return RedirectToPage("/Index");
+            return Redirect("/tables");
         }
 
         foreach (var error in result.Errors)

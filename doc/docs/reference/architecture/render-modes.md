@@ -52,8 +52,9 @@ the current surface family.
 
 Every platform surface is `Interactive Server`. The platform admin
 audience is small, desktop-based, and always online. Interactive Server
-minimizes the code needed for CRUD screens, modals, and job monitoring.
-The reconnect cost is negligible because client count is low.
+minimizes the code needed for inspector-driven registries, overlay-based
+CRUD screens, and live job monitoring. The reconnect cost is negligible
+because client count is low.
 
 ### Tenant Host
 
@@ -63,7 +64,7 @@ Render mode is assigned by surface family:
 | --- | --- | --- |
 | Public customer (welcome, QR landing, menu and cart) | Static SSR | Mobile data, short session, wide fanout, no interactive payoff to justify SignalR per phone |
 | Authentication (login, change-password) | Static SSR | Single-form surfaces |
-| Admin console | Interactive Server | Forms, modals, drag-and-drop, live metrics |
+| Admin console | Interactive Server | Inspector-driven registries, overlays, drag-and-drop, live metrics |
 | Floor and cash workspace | Interactive Server with server push | Live table state, push-driven updates, rich interaction |
 | Waiter PDA | Interactive Server | Mobile staff device on tenant Wi-Fi; Interactive Server gives the same code ergonomics as the console surfaces |
 | Station board | Interactive Server with server push | Push-driven fulfillment display; urgency, new-ticket alerts, status progression |

@@ -8,6 +8,7 @@ troubleshooting a known class of issue.
 
 Current how-to guides:
 
+- [`./configure-keycloak-for-platform.md`](./configure-keycloak-for-platform.md)
 - [`./bootstrap-platform.md`](./bootstrap-platform.md)
 - [`./provision-tenant.md`](./provision-tenant.md)
 - [`./deploy-to-production.md`](./deploy-to-production.md)

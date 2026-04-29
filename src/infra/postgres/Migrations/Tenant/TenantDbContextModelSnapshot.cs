@@ -591,6 +591,44 @@ namespace TabFlow.Migrations.Migrations.Tenant
                     b.ToTable("tables", (string)null);
                 });
 
+            modelBuilder.Entity("TabFlow.Shared.Domain.Entities.Tenant.TenantAdminActivation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("tenant_admin_activations", (string)null);
+                });
+
             modelBuilder.Entity("TabFlow.Shared.Domain.Entities.Tenant.TenantAuditEntry", b =>
                 {
                     b.Property<Guid>("Id")

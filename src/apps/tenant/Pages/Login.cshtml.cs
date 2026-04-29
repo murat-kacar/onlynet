@@ -36,6 +36,11 @@ public class LoginModel : PageModel
             return LocalRedirect(string.IsNullOrWhiteSpace(ReturnUrl) ? "/tables" : ReturnUrl);
         }
 
+        if (result.RequiresTwoFactor)
+        {
+            return RedirectToPage("/LoginWith2Fa", new { ReturnUrl });
+        }
+
         ModelState.AddModelError(string.Empty, _localizer["InvalidLoginAttempt"]);
         return Page();
     }

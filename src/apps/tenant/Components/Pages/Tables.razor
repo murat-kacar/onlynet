@@ -1,27 +1,75 @@
 @page "/tables"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize(Policy = "Tenant:Read")]
-@inject HttpClient Http
 @inject IStringLocalizer<TenantText> L
 @inject DialogService DialogService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITableReadService TableReadService
 
 <PageTitle>@L["TablesTitle"]</PageTitle>
 <RadzenComponents />
 
-<section class="page-hero">
+<SectionContent SectionName="tenant-header">
     <div>
         <p class="eyebrow">@L["NavTables"]</p>
-        <h1>@L["TablesTitle"]</h1>
+        <h2>@L["TablesTitle"]</h2>
         <p class="hero-copy">@L["TablesHero"]</p>
     </div>
+</SectionContent>
+
+<SectionContent SectionName="tenant-header-actions">
     @if (CanWrite)
     {
-        <div class="hero-actions">
-            <button type="button" class="btn btn-primary" @onclick="OpenCreateAsync">@L["CreateTable"]</button>
+        <button type="button" class="btn btn-primary" @onclick="OpenCreateAsync">@L["CreateTable"]</button>
+    }
+</SectionContent>
+
+<SectionContent SectionName="tenant-inspector">
+    @if (SelectedTable is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["NoTableSelected"]</h4>
+                <p class="detail-copy">@L["NoTableSelectedCopy"]</p>
+            </section>
         </div>
     }
-</section>
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["Selection"]</p>
+                        <h3>@SelectedTable.Name</h3>
+                    </div>
+                    <span class="status-pill @(SelectedTable.HasOpenSession ? "warning" : (SelectedTable.IsActive ? "success" : "neutral"))">
+                        @(SelectedTable.HasOpenSession ? L["SessionLive"] : (SelectedTable.IsActive ? L["Active"] : L["Inactive"]))
+                    </span>
+                </div>
+
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableCode"]</span>
+                        <span class="kv-value">@SelectedTable.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["OpenSessionState"]</span>
+                        <span class="kv-value">@(SelectedTable.HasOpenSession ? L["Live"] : L["Inactive"])</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(SelectedTable.Id)">@L["OpenInspector"]</button>
+                    @if (CanWrite)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="() => OpenEditorAsync(SelectedTable.Id)">@L["EditTable"]</button>
+                    }
+                </div>
+            </section>
+        </div>
+    }
+</SectionContent>
 
 @if (TableList is null)
 {
@@ -42,7 +90,8 @@ else
     <section class="entity-grid">
         @foreach (var table in TableList)
         {
-            <article class="entity-card">
+            var isSelected = table.Id == SelectedTableId;
+            <article class="entity-card @(isSelected ? "selected-surface" : null)" @onclick="() => SelectTable(table.Id)">
                 <div class="entity-card-top">
                     <div>
                         <p class="eyebrow">@(table.HasOpenSession ? L["SessionLive"] : (table.IsActive ? L["Active"] : L["Inactive"]))</p>
@@ -83,6 +132,8 @@ else
 @code {
     private List<TableDto>? TableList;
     private bool CanWrite;
+    private Guid? SelectedTableId;
+    private TableDto? SelectedTable => TableList?.FirstOrDefault(table => table.Id == SelectedTableId) ?? TableList?.FirstOrDefault();
 
     protected override async Task OnInitializedAsync()
     {
@@ -91,9 +142,11 @@ else
         await ReloadAsync();
     }
 
+    private void SelectTable(Guid tableId) => SelectedTableId = tableId;
+
     private async Task OpenInspectorAsync(Guid tableId)
     {
-        var workspace = await Http.GetFromJsonAsync<TableWorkspaceDto>($"/api/tables/{tableId}/workspace");
+        var workspace = await TableReadService.GetTableWorkspaceAsync(tableId);
         if (workspace is null)
         {
             return;
@@ -117,7 +170,8 @@ else
 
     private async Task ReloadAsync()
     {
-        TableList = await Http.GetFromJsonAsync<List<TableDto>>("/api/tables");
+        TableList = (await TableReadService.GetTablesAsync()).ToList();
+        SelectedTableId ??= TableList.FirstOrDefault()?.Id;
         StateHasChanged();
     }
 
@@ -139,7 +193,7 @@ else
 
     private async Task OpenEditorAsync(Guid tableId)
     {
-        var detail = await Http.GetFromJsonAsync<TableDetailRecord>($"/api/tables/{tableId}");
+        var detail = await TableReadService.GetTableAsync(tableId);
         if (detail is null)
         {
             return;
@@ -167,10 +221,5 @@ else
             });
     }
 
-    private record TableDto(Guid Id, string Name, string Code, bool IsActive, int SortOrder, bool HasOpenSession);
-    private record TableDetailRecord(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool IsOccupied);
-    private record TableWorkspaceDto(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder, bool HasOpenSession, TableSessionWorkspaceDto? Session);
-    private record TableSessionWorkspaceDto(Guid SessionId, Guid TableId, DateTimeOffset OpenedAt, int TicketCount, IReadOnlyList<TableCartItemDto> CartItems, IReadOnlyList<TableSessionOrderDto> Orders);
-    private record TableCartItemDto(Guid Id, string ItemName, int Quantity, decimal UnitPrice, string? Note);
-    private record TableSessionOrderDto(Guid Id, decimal TotalAmount, DateTimeOffset SubmittedAt, int ItemCount);
+    private sealed record TableRecord(Guid Id, string Name, string Code, string Color, string Type, bool IsActive, int SortOrder);
 }

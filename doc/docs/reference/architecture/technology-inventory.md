@@ -25,9 +25,10 @@ inventory, not the ADR.
 | Data access | EF Core 10 |
 | PostgreSQL provider | Npgsql |
 | Storage | PostgreSQL 17 |
-| Authentication | ASP.NET Core Identity |
+| Authentication | Keycloak (external IdP) + ASP.NET Core OIDC client |
 | Observability | OpenTelemetry + Serilog |
 | Admin UI components | Radzen Blazor |
+| Shell composition | Blazor `SectionOutlet` / `SectionContent` |
 | Frontend scripting | TypeScript-first |
 | Node toolchain | Node 24 LTS |
 | Package manager | `pnpm` |
@@ -213,6 +214,12 @@ UI/runtime registrations:
 - `AddRazorPages()`
 - `AddControllers()`
 - `AddRazorComponents().AddInteractiveServerComponents()`
+
+Shell implementation notes:
+
+- shared three-pane operator shell lives in [`src/apps/platform/Shared/MainLayout.razor`](/opt/onlynet/src/apps/platform/Shared/MainLayout.razor)
+- pages project title, header actions, and inspector content through Blazor section outlets
+- shell state owns sidebar collapse and inspector collapse behavior
 
 Observability/runtime infrastructure:
 

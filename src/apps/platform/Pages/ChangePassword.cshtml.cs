@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 using TabFlow.Platform.Middleware;
+using TabFlow.Platform.Services;
 
 namespace TabFlow.Platform.Pages;
 
@@ -17,13 +19,16 @@ public class ChangePasswordModel : PageModel
 
     private readonly UserManager<IdentityUser<Guid>> _userManager;
     private readonly SignInManager<IdentityUser<Guid>> _signInManager;
+    private readonly PlatformIdentityOptions _identityOptions;
 
     public ChangePasswordModel(
         UserManager<IdentityUser<Guid>> userManager,
-        SignInManager<IdentityUser<Guid>> signInManager)
+        SignInManager<IdentityUser<Guid>> signInManager,
+        IOptions<PlatformIdentityOptions> identityOptions)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _identityOptions = identityOptions.Value;
     }
 
     [BindProperty]
@@ -37,6 +42,11 @@ public class ChangePasswordModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (_identityOptions.EnableExternalIdentity)
+        {
+            return LocalRedirect("/settings?tab=security");
+        }
+
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
         {

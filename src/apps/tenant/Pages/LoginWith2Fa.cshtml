@@ -1,0 +1,31 @@
+@page "/login-2fa"
+@model LoginWith2FaModel
+@{ ViewData["Title"] = "Two-Factor Authentication"; }
+
+<section class="auth-shell">
+    <div class="auth-hero">
+        <p class="eyebrow">Security Check</p>
+        <h1>Verify Sign-In</h1>
+        <p class="hero-copy">Enter the code from your authenticator app to continue.</p>
+    </div>
+
+    <div class="auth-panel">
+        <form method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div class="form-grid">
+                <div class="form-group form-span-2">
+                    <label asp-for="TwoFactorCode">Authenticator Code</label>
+                    <input asp-for="TwoFactorCode" class="form-control" autocomplete="one-time-code" />
+                </div>
+            </div>
+
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Verify</button>
+                <a class="btn btn-secondary" href="/login">Back</a>
+            </div>
+        </form>
+    </div>
+</section>

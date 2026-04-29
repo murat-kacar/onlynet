@@ -12,8 +12,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, ...</value>
   </resheader>
-  <data name="AppTitle" xml:space="preserve"><value>TabFlow Platform</value></data>
-  <data name="BrandEyebrow" xml:space="preserve"><value>CafeTech Platform</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>IoTable Platform</value></data>
+  <data name="BrandEyebrow" xml:space="preserve"><value>IoTable Platform</value></data>
   <data name="BrandCopy" xml:space="preserve"><value>Multi-tenant admin panel for tenant lifecycle, provisioning flow, and control-plane visibility.</value></data>
   <data name="NavOverview" xml:space="preserve"><value>Overview</value></data>
   <data name="NavTenants" xml:space="preserve"><value>Tenants</value></data>
@@ -23,6 +23,11 @@
   <data name="SidebarFootnote" xml:space="preserve"><value>Platform UI is now live on the same host as identity and provisioning read surfaces.</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Control Plane</value></data>
   <data name="ShellTitle" xml:space="preserve"><value>Management Console</value></data>
+  <data name="CollapseNavigation" xml:space="preserve"><value>Collapse navigation</value></data>
+  <data name="ExpandNavigation" xml:space="preserve"><value>Expand navigation</value></data>
+  <data name="HideContextPanel" xml:space="preserve"><value>Hide context panel</value></data>
+  <data name="ShowContextPanel" xml:space="preserve"><value>Show context panel</value></data>
+  <data name="ContextPanel" xml:space="preserve"><value>Context</value></data>
   <data name="OverviewEyebrow" xml:space="preserve"><value>Overview</value></data>
   <data name="DashboardTitle" xml:space="preserve"><value>Platform Dashboard</value></data>
   <data name="DashboardHero" xml:space="preserve"><value>A scan-first view of tenant volume, provisioning pressure, and the newest control-plane changes.</value></data>
@@ -221,6 +226,9 @@
   <data name="FailureDetail" xml:space="preserve"><value>Failure Detail</value></data>
   <data name="Result" xml:space="preserve"><value>Result</value></data>
   <data name="Payload" xml:space="preserve"><value>Payload</value></data>
+  <data name="Created" xml:space="preserve"><value>Created</value></data>
+  <data name="NoPayloadRecorded" xml:space="preserve"><value>No payload has been recorded for this job.</value></data>
+  <data name="NoResultRecorded" xml:space="preserve"><value>No result has been recorded for this job.</value></data>
   <data name="OpenTenant" xml:space="preserve"><value>Open Tenant</value></data>
   <data name="MatchingJobsSummary" xml:space="preserve"><value>{0} matching jobs from {1} queue records</value></data>
   <data name="JobDetailLoadError" xml:space="preserve"><value>Job detail failed to load: {0}</value></data>
