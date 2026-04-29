@@ -6,35 +6,40 @@
 
 <div class="platform-shell @(SidebarCollapsed ? "sidebar-collapsed" : null) @(InspectorCollapsed ? "inspector-collapsed" : null)" data-ui-density="@ShellDensity">
     <aside class="shell-sidebar">
-        <div class="brand-block">
-            <p class="eyebrow">@L["BrandEyebrow"]</p>
-            <div class="brand-lockup">
-                <span class="brand-mark" aria-hidden="true">
-                    <span></span>
-                    <span></span>
-                </span>
-                <h1>IoTable</h1>
+        <div class="sidebar-header">
+            <div class="brand-block">
+                <p class="eyebrow">@L["BrandEyebrow"]</p>
+                <div class="brand-lockup">
+                    <span class="brand-mark" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                    </span>
+                    <h1>IoTable</h1>
+                </div>
+                <p class="brand-copy">@L["BrandCopy"]</p>
             </div>
-            <p class="brand-copy">@L["BrandCopy"]</p>
         </div>
 
-        <nav class="shell-nav" aria-label="Platform">
-            <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
-                @L["NavOverview"]
-            </NavLink>
-            <NavLink href="/tenants" class="nav-link">
-                @L["NavTenants"]
-            </NavLink>
-            <NavLink href="/jobs" class="nav-link">
-                @L["NavJobs"]
-            </NavLink>
-            <NavLink href="/audit" class="nav-link">
-                @L["NavAudit"]
-            </NavLink>
-            <NavLink href="/settings" class="nav-link">
-                @L["NavSettings"]
-            </NavLink>
-        </nav>
+        <div class="sidebar-section">
+            <p class="sidebar-section-label">@L["ShellTitle"]</p>
+            <nav class="shell-nav" aria-label="Platform">
+                <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
+                    @L["NavOverview"]
+                </NavLink>
+                <NavLink href="/tenants" class="nav-link">
+                    @L["NavTenants"]
+                </NavLink>
+                <NavLink href="/jobs" class="nav-link">
+                    @L["NavJobs"]
+                </NavLink>
+                <NavLink href="/audit" class="nav-link">
+                    @L["NavAudit"]
+                </NavLink>
+                <NavLink href="/settings" class="nav-link">
+                    @L["NavSettings"]
+                </NavLink>
+            </nav>
+        </div>
 
         <div class="sidebar-footnote">
             <p>@L["SidebarFootnote"]</p>
@@ -45,7 +50,7 @@
         <header class="shell-topbar">
             <div class="topbar-start">
                 <button type="button" class="chrome-toggle" @onclick="ToggleSidebar" aria-label="@L[SidebarCollapsed ? "ExpandNavigation" : "CollapseNavigation"]">
-                    @(SidebarCollapsed ? ">" : "<")
+                    <span aria-hidden="true">@(!SidebarCollapsed ? "<<" : ">>")</span>
                 </button>
                 <div class="shell-slot shell-slot-title">
                     <SectionOutlet SectionName="platform-header" />
@@ -61,7 +66,7 @@
                     <SectionOutlet SectionName="platform-header-actions" />
                 </div>
                 <button type="button" class="chrome-toggle" @onclick="ToggleInspector" aria-label="@L[InspectorCollapsed ? "ShowContextPanel" : "HideContextPanel"]">
-                    @(InspectorCollapsed ? "<" : ">")
+                    <span aria-hidden="true">[]</span>
                 </button>
             </div>
         </header>

@@ -15,6 +15,10 @@
     </div>
 </SectionContent>
 
+<SectionContent SectionName="platform-header-actions">
+    <a href="/tenants" class="btn btn-secondary">@L["CreateTenant"]</a>
+</SectionContent>
+
 <SectionContent SectionName="platform-inspector">
     @if (IsLoadingDetail)
     {
@@ -50,32 +54,32 @@
                     <span class="@StatusClass(SelectedJob.Status)">@LocalizedStatus(SelectedJob.Status)</span>
                 </div>
 
-                    <div class="kv-grid">
-                        <div class="kv-item">
-                            <span class="kv-label">@L["JobId"]</span>
-                            <span class="kv-value">@SelectedJob.Id</span>
-                        </div>
-                        <div class="kv-item">
-                            <span class="kv-label">@L["TableTenant"]</span>
-                            <span class="kv-value">@ShortId(SelectedJob.TenantId)</span>
-                        </div>
-                        <div class="kv-item">
-                            <span class="kv-label">@L["TableClaimedBy"]</span>
-                            <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? L["Unclaimed"] : SelectedJob.ClaimedBy)</span>
-                        </div>
-                        <div class="kv-item">
-                            <span class="kv-label">@L["Created"]</span>
-                            <span class="kv-value">@FormatDate(SelectedJob.CreatedAt)</span>
-                        </div>
-                        <div class="kv-item">
-                            <span class="kv-label">@L["TableUpdated"]</span>
-                            <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
-                        </div>
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["JobId"]</span>
+                        <span class="kv-value">@ShortId(SelectedJob.Id)</span>
                     </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableTenant"]</span>
+                        <span class="kv-value">@ShortId(SelectedJob.TenantId)</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableClaimedBy"]</span>
+                        <span class="kv-value">@(string.IsNullOrWhiteSpace(SelectedJob.ClaimedBy) ? L["Unclaimed"] : SelectedJob.ClaimedBy)</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["Created"]</span>
+                        <span class="kv-value">@FormatDate(SelectedJob.CreatedAt)</span>
+                    </div>
+                    <div class="kv-item form-span-2">
+                        <span class="kv-label">@L["TableUpdated"]</span>
+                        <span class="kv-value">@FormatDate(SelectedJob.UpdatedAt)</span>
+                    </div>
+                </div>
 
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" @onclick="() => NavigateToTenant(SelectedJob.TenantId)">@L["OpenTenant"]</button>
-                    </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => NavigateToTenant(SelectedJob.TenantId)">@L["OpenTenant"]</button>
+                </div>
             </section>
 
             <section class="context-card">
@@ -104,6 +108,14 @@
                 }
             </section>
 
+            @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
+            {
+                <section class="context-card">
+                    <p class="detail-title">@L["FailureDetail"]</p>
+                    <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
+                </section>
+            }
+
             <section class="context-card">
                 <div class="detail-stack">
                     <section class="detail-section">
@@ -129,14 +141,6 @@
                             <pre class="detail-code">@SelectedJobDetail.Result</pre>
                         }
                     </section>
-
-                    @if (!string.IsNullOrWhiteSpace(SelectedJobDetail.FailureDetail))
-                    {
-                        <section class="detail-section">
-                            <p class="detail-title">@L["FailureDetail"]</p>
-                            <pre class="detail-code">@SelectedJobDetail.FailureDetail</pre>
-                        </section>
-                    }
                 </div>
             </section>
         </div>
@@ -156,21 +160,67 @@ else if (JobList is null)
 }
 else
 {
-    <section class="stats-grid compact-stats">
-        <article class="metric-card">
-            <p class="metric-label">@L["Jobs"]</p>
-            <p class="metric-value">@JobList.Count</p>
-            <p class="metric-footnote">@L["OpenInQueueCopy", OpenJobs]</p>
+    <section class="dashboard-overview-grid">
+        <article class="overview-surface overview-surface-primary">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                    <h3>@L["Jobs"]</h3>
+                </div>
+                <span class="status-pill neutral">@JobList.Count</span>
+            </div>
+
+            <div class="overview-stat-row">
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@JobList.Count</p>
+                    <p class="overview-stat-label">@L["Jobs"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@OpenJobs</p>
+                    <p class="overview-stat-label">@L["FilterOpen"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@FailedJobs</p>
+                    <p class="overview-stat-label">@L["StatusFailed"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["MatchingJobsSummary", FilteredJobs.Count, JobList.Count]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["StatusFailed"]</p>
-            <p class="metric-value">@FailedJobs</p>
-            <p class="metric-footnote">@L["NeedAttentionCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["AttentionEyebrow"]</p>
+                    <h3>@L["StatusFailed"]</h3>
+                </div>
+                <span class="status-pill danger">@FailedJobs</span>
+            </div>
+
+            <div class="overview-inline-metrics">
+                <div>
+                    <p class="overview-inline-value">@FailedJobs</p>
+                    <p class="overview-inline-label">@L["StatusFailed"]</p>
+                </div>
+                <div>
+                    <p class="overview-inline-value">@ClaimedJobs</p>
+                    <p class="overview-inline-label">@L["Claimed"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["NeedAttentionCopy"]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["Claimed"]</p>
-            <p class="metric-value">@ClaimedJobs</p>
-            <p class="metric-footnote">@L["ClaimedCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["Claimed"]</p>
+                    <h3>@L["Claimed"]</h3>
+                </div>
+                <span class="status-pill warning">@ClaimedJobs</span>
+            </div>
+
+            <p class="surface-copy">@L["ClaimedCopy"]</p>
         </article>
     </section>
 
@@ -203,7 +253,7 @@ else
         {
             <div class="surface-stack">
                 <div class="toolbar-meta">
-                    <p>@FilterSummary</p>
+                    <p>@L["MatchingJobsSummary", FilteredJobs.Count, JobList.Count]</p>
                     <p>@PagingSummary</p>
                 </div>
 
@@ -223,7 +273,6 @@ else
                             @foreach (var job in VisibleJobs)
                             {
                                 var isSelected = job.Id == SelectedJob?.Id;
-
                                 <tr class="@RowClass(isSelected)" @onclick="() => SelectJobAsync(job.Id)">
                                     <td>
                                         <div class="tenant-cell">
@@ -271,6 +320,7 @@ else
     private int OpenJobs => JobList?.Count(j => !IsStatus(j.Status, "completed")) ?? 0;
     private int FailedJobs => JobList?.Count(j => IsStatus(j.Status, "failed")) ?? 0;
     private int ClaimedJobs => JobList?.Count(j => !string.IsNullOrWhiteSpace(j.ClaimedBy)) ?? 0;
+
     private IReadOnlyList<JobDto> FilteredJobs =>
         (JobList ?? [])
             .Where(MatchesSearch)
@@ -287,9 +337,6 @@ else
         VisibleJobs.FirstOrDefault(job => job.Id == SelectedJobId) ?? VisibleJobs.FirstOrDefault();
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredJobs.Count / (double)PageSize));
-
-    private string FilterSummary =>
-        L["MatchingJobsSummary", FilteredJobs.Count, JobList?.Count ?? 0];
 
     private string PagingSummary
     {
@@ -331,15 +378,13 @@ else
                (job.ClaimedBy?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
-    private bool MatchesFilter(JobDto job)
-    {
-        return StatusFilter switch
+    private bool MatchesFilter(JobDto job) =>
+        StatusFilter switch
         {
             "open" => !IsStatus(job.Status, "completed"),
             "failed" => IsStatus(job.Status, "failed"),
             _ => true,
         };
-    }
 
     private async Task SetStatusFilter(string filter)
     {
@@ -480,8 +525,7 @@ else
             return "status-pill danger";
         }
         if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(status, "provisioning", StringComparison.OrdinalIgnoreCase))
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
         {
             return "status-pill warning";
         }

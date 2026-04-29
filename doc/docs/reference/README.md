@@ -22,6 +22,7 @@ Reference entrypoints:
 - [`./firmware.md`](./firmware.md)
 - [`./branding.md`](./branding.md)
 - [`./design-system.md`](./design-system.md)
+- [`./frontend-rewrite-charter.md`](./frontend-rewrite-charter.md)
 - [`./glossary.md`](./glossary.md)
 - [`./acceptance-criteria.md`](./acceptance-criteria.md)
 - [`./tunable-parameters.md`](./tunable-parameters.md)
@@ -30,4 +31,5 @@ For operator-surface design, start with:
 
 - [`./branding.md`](./branding.md)
 - [`./design-system.md`](./design-system.md)
+- [`./frontend-rewrite-charter.md`](./frontend-rewrite-charter.md)
 - [`./architecture/decisions.md`](./architecture/decisions.md) (`AD-0017`)

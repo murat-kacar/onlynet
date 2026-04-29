@@ -88,7 +88,7 @@
 {
     <div class="alert alert-danger">@LoadError</div>
 }
-else if (TenantList == null)
+else if (TenantList is null)
 {
     <section class="empty-state">
         <h3>@L["LoadingTenantRegistry"]</h3>
@@ -97,21 +97,67 @@ else if (TenantList == null)
 }
 else
 {
-    <section class="stats-grid compact-stats">
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricVisibleTenants"]</p>
-            <p class="metric-value">@FilteredTenants.Count</p>
-            <p class="metric-footnote">@L["VisibleTenantsPageCopy", VisibleTenants.Count]</p>
+    <section class="dashboard-overview-grid">
+        <article class="overview-surface overview-surface-primary">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["RegistryEyebrow"]</p>
+                    <h3>@L["MetricVisibleTenants"]</h3>
+                </div>
+                <span class="status-pill neutral">@FilteredTenants.Count</span>
+            </div>
+
+            <div class="overview-stat-row">
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@TenantList.Count</p>
+                    <p class="overview-stat-label">@L["MetricTenants"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@ActiveTenants</p>
+                    <p class="overview-stat-label">@L["MetricActive"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@ProvisioningTenants</p>
+                    <p class="overview-stat-label">@L["MetricProvisioning"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["MatchingTenantsSummary", FilteredTenants.Count, TenantList.Count]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricActive"]</p>
-            <p class="metric-value">@TenantList.Count(t => IsStatus(t.Status, "active"))</p>
-            <p class="metric-footnote">@L["ActiveTenantsCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["AttentionEyebrow"]</p>
+                    <h3>@L["NeedsAttention"]</h3>
+                </div>
+                <span class="status-pill warning">@ProvisioningTenants</span>
+            </div>
+
+            <div class="overview-inline-metrics">
+                <div>
+                    <p class="overview-inline-value">@ProvisioningTenants</p>
+                    <p class="overview-inline-label">@L["MetricProvisioning"]</p>
+                </div>
+                <div>
+                    <p class="overview-inline-value">@ActiveTenants</p>
+                    <p class="overview-inline-label">@L["MetricActive"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["ProvisioningTenantsCopy"]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricProvisioning"]</p>
-            <p class="metric-value">@TenantList.Count(t => !IsStatus(t.Status, "active"))</p>
-            <p class="metric-footnote">@L["ProvisioningTenantsCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["MetricNewestTenant"]</p>
+                    <h3>@NewestTenantLabel</h3>
+                </div>
+                <span class="status-pill neutral">@LatestTenantStatus</span>
+            </div>
+
+            <p class="surface-copy">@LatestTenantDomain</p>
         </article>
     </section>
 
@@ -146,7 +192,7 @@ else
         {
             <div class="surface-stack">
                 <div class="toolbar-meta">
-                    <p>@FilterSummary</p>
+                    <p>@L["MatchingTenantsSummary", FilteredTenants.Count, TenantList.Count]</p>
                     <p>@PagingSummary</p>
                 </div>
 
@@ -165,7 +211,6 @@ else
                             @foreach (var tenant in VisibleTenants)
                             {
                                 var isSelected = tenant.Id == SelectedTenant?.Id;
-
                                 <tr class="@RowClass(isSelected)" @onclick="() => SelectTenant(tenant.Id)">
                                     <td>
                                         <div class="tenant-cell">
@@ -225,9 +270,12 @@ else
         VisibleTenants.FirstOrDefault(t => t.Id == SelectedTenantId) ?? VisibleTenants.FirstOrDefault();
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredTenants.Count / (double)PageSize));
-
-    private string FilterSummary =>
-        L["MatchingTenantsSummary", FilteredTenants.Count, TenantList?.Count ?? 0];
+    private int ActiveTenants => TenantList?.Count(t => IsStatus(t.Status, "active")) ?? 0;
+    private int ProvisioningTenants => TenantList?.Count(t => !IsStatus(t.Status, "active")) ?? 0;
+    private TenantDto? LatestTenant => TenantList?.OrderByDescending(t => t.DisplayName).FirstOrDefault();
+    private string NewestTenantLabel => LatestTenant?.DisplayName ?? L["None"];
+    private string LatestTenantStatus => LatestTenant is null ? L["StatusNeutral"] : LocalizedStatus(LatestTenant.Status);
+    private string LatestTenantDomain => LatestTenant?.PrimaryDomain ?? "-";
 
     private string PagingSummary
     {
@@ -257,10 +305,8 @@ else
         }
     }
 
-    private void NavigateToDetail(Guid id)
-    {
+    private void NavigateToDetail(Guid id) =>
         NavigationManager.NavigateTo($"/tenants/{id}");
-    }
 
     private async Task OpenCreateTenantAsync()
     {
@@ -303,15 +349,13 @@ else
                tenant.PrimaryDomain.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool MatchesFilter(TenantDto tenant)
-    {
-        return StatusFilter switch
+    private bool MatchesFilter(TenantDto tenant) =>
+        StatusFilter switch
         {
             "active" => IsStatus(tenant.Status, "active"),
             "other" => !IsStatus(tenant.Status, "active"),
             _ => true,
         };
-    }
 
     private void SetStatusFilter(string filter)
     {
@@ -335,10 +379,8 @@ else
         EnsureSelection();
     }
 
-    private void SelectTenant(Guid tenantId)
-    {
+    private void SelectTenant(Guid tenantId) =>
         SelectedTenantId = tenantId;
-    }
 
     private void PreviousPage()
     {
@@ -373,53 +415,14 @@ else
         SelectedTenantId = selected?.Id;
     }
 
-    private async Task RefreshTenantListAsync(Guid? selectedTenantId = null)
+    private async Task RefreshTenantListAsync(Guid? focusTenantId = null)
     {
         TenantList = (await TenantRegistryService.GetTenantsAsync()).ToList();
-
-        if (selectedTenantId.HasValue)
+        if (focusTenantId.HasValue)
         {
-            SearchTerm = string.Empty;
-            StatusFilter = "all";
-            var selectedIndex = TenantList
-                .OrderBy(t => t.DisplayName)
-                .Select((tenant, index) => new { tenant.Id, index })
-                .FirstOrDefault(item => item.Id == selectedTenantId.Value)
-                ?.index;
-
-            if (selectedIndex.HasValue)
-            {
-                CurrentPage = (selectedIndex.Value / PageSize) + 1;
-                SelectedTenantId = selectedTenantId;
-            }
+            SelectedTenantId = focusTenantId;
         }
-
-        EnsureSelection();
-        await InvokeAsync(StateHasChanged);
     }
-
-    private static DialogOptions CreateDialogOptions() => new()
-    {
-        ShowClose = true,
-        CloseDialogOnOverlayClick = false,
-        Width = "min(720px, calc(100vw - 32px))",
-        Height = "auto",
-        Style = "width:min(720px, calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);",
-        CssClass = "platform-modal-dialog",
-        WrapperCssClass = "platform-modal-dialog-wrapper",
-        ContentCssClass = "platform-modal-dialog-content",
-    };
-
-    private static SideDialogOptions EditDialogOptions() => new()
-    {
-        Position = DialogPosition.Right,
-        ShowMask = true,
-        CloseDialogOnOverlayClick = false,
-        Width = "520px",
-        CssClass = "platform-side-dialog",
-        WrapperCssClass = "platform-side-dialog-wrapper",
-        ContentCssClass = "platform-side-dialog-content",
-    };
 
     private string FilterButtonClass(string filter) =>
         StatusFilter == filter ? "filter-chip active" : "filter-chip";
@@ -427,10 +430,8 @@ else
     private static string RowClass(bool isSelected) =>
         isSelected ? "data-row selected" : "data-row";
 
-    private string TenantStatusCopy(TenantDto tenant) =>
-        IsStatus(tenant.Status, "active")
-            ? L["TenantActiveNote"]
-            : L["TenantNotActiveNote"];
+    private static bool IsStatus(string? value, string expected) =>
+        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
 
     private string LocalizedStatus(string status) =>
         status.ToLowerInvariant() switch
@@ -444,9 +445,6 @@ else
             _ => L["StatusNeutral"],
         };
 
-    private static bool IsStatus(string? value, string expected) =>
-        string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
-
     private static string StatusClass(string status)
     {
         if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
@@ -459,10 +457,45 @@ else
             return "status-pill danger";
         }
         if (string.Equals(status, "claimed", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+            string.Equals(status, "running", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "provisioning", StringComparison.OrdinalIgnoreCase))
         {
             return "status-pill warning";
         }
         return "status-pill neutral";
     }
+
+    private string TenantStatusCopy(TenantDto tenant)
+    {
+        if (IsStatus(tenant.Status, "active"))
+        {
+            return L["ActiveTenantsCopy"];
+        }
+
+        return L["ProvisioningTenantsCopy"];
+    }
+
+    private static DialogOptions CreateDialogOptions() => new()
+    {
+        CssClass = "platform-modal-dialog",
+        WrapperCssClass = "platform-modal-wrapper",
+        ContentCssClass = "platform-modal-content",
+        Width = "min(820px, calc(100vw - 48px))",
+        Height = "auto",
+        Draggable = false,
+        Resizable = false,
+        CloseDialogOnEsc = true,
+        CloseDialogOnOverlayClick = false,
+    };
+
+    private static SideDialogOptions EditDialogOptions() => new()
+    {
+        Position = DialogPosition.Right,
+        ShowMask = true,
+        CloseDialogOnOverlayClick = false,
+        Width = "520px",
+        CssClass = "platform-side-dialog",
+        WrapperCssClass = "platform-side-dialog-wrapper",
+        ContentCssClass = "platform-side-dialog-content",
+    };
 }

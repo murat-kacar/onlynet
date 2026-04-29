@@ -18,6 +18,7 @@ Operator-console shell decisions live primarily in:
 - [`./decisions.md`](./decisions.md) (`AD-0017`)
 - [`../design-system.md`](../design-system.md)
 - [`../branding.md`](../branding.md)
+- [`../frontend-rewrite-charter.md`](../frontend-rewrite-charter.md)
 
 Supporting concepts live in
 [`../../explanation/concepts/`](../../explanation/concepts/README.md).

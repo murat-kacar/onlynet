@@ -16,27 +16,42 @@
     </div>
 </SectionContent>
 
+<SectionContent SectionName="platform-header-actions">
+    <a href="/tenants" class="btn btn-secondary">@L["Registry"]</a>
+</SectionContent>
+
 <SectionContent SectionName="platform-inspector">
-    <div class="console-context">
-        <section class="context-card">
-            <p class="eyebrow">@L["MetricTenants"]</p>
-            <p class="context-stat">@ActiveTenantCount</p>
-            <p class="detail-copy">@L["DashboardActiveProvisioning", ActiveTenantCount, ProvisioningTenantCount]</p>
-        </section>
+    @if (Tenants is not null && Jobs is not null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <p class="eyebrow">@L["AttentionEyebrow"]</p>
+                <h4>@L["WhatNeedsEyes"]</h4>
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["FailedJobs"]</span>
+                        <span class="kv-value">@FailedJobCount</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["PendingTenants"]</span>
+                        <span class="kv-value">@ProvisioningTenantCount</span>
+                    </div>
+                </div>
+            </section>
 
-        <section class="context-card">
-            <p class="eyebrow">@L["AttentionEyebrow"]</p>
-            <h4>@L["WhatNeedsEyes"]</h4>
-            <p class="detail-copy">@L["FailedJobsCopy"]</p>
-            <p class="context-stat">@FailedJobCount</p>
-        </section>
+            <section class="context-card">
+                <p class="eyebrow">@L["MetricNewestTenant"]</p>
+                <h4>@NewestTenantLabel</h4>
+                <p class="detail-copy">@L["MetricNewestTenantCopy"]</p>
+            </section>
 
-        <section class="context-card">
-            <p class="eyebrow">@L["MetricNewestTenant"]</p>
-            <h4>@NewestTenantLabel</h4>
-            <p class="detail-copy">@L["MetricNewestTenantCopy"]</p>
-        </section>
-    </div>
+            <section class="context-card">
+                <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                <h4>@L["QueueSnapshot"]</h4>
+                <p class="detail-copy">@L["OpenInQueueCopy", OpenJobCount]</p>
+            </section>
+        </div>
+    }
 </SectionContent>
 
 @if (LoadError is not null)
@@ -52,30 +67,82 @@ else if (Tenants is null || Jobs is null)
 }
 else
 {
-    <section class="stats-grid">
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricTenants"]</p>
-            <p class="metric-value">@Tenants.Count</p>
-            <p class="metric-footnote">@L["DashboardActiveProvisioning", ActiveTenantCount, ProvisioningTenantCount]</p>
+    <section class="dashboard-overview-grid">
+        <article class="overview-surface overview-surface-primary">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["OverviewEyebrow"]</p>
+                    <h3>@L["MetricTenants"]</h3>
+                </div>
+                <span class="status-pill neutral">@L["Registry"]</span>
+            </div>
+
+            <div class="overview-stat-row">
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@Tenants.Count</p>
+                    <p class="overview-stat-label">@L["MetricTenants"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@ActiveTenantCount</p>
+                    <p class="overview-stat-label">@L["StatusActive"]</p>
+                </div>
+                <div class="overview-stat-block">
+                    <p class="overview-stat-value">@ProvisioningTenantCount</p>
+                    <p class="overview-stat-label">@L["StatusProvisioning"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["DashboardActiveProvisioning", ActiveTenantCount, ProvisioningTenantCount]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricOpenJobs"]</p>
-            <p class="metric-value">@OpenJobCount</p>
-            <p class="metric-footnote">@L["DashboardFailedClaimed", FailedJobCount, ClaimedJobCount]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["ProvisioningEyebrow"]</p>
+                    <h3>@L["MetricOpenJobs"]</h3>
+                </div>
+                <span class="@StatusClass(FailedJobCount > 0 ? "failed" : "running")">@OpenJobCount</span>
+            </div>
+
+            <div class="overview-inline-metrics">
+                <div>
+                    <p class="overview-inline-value">@FailedJobCount</p>
+                    <p class="overview-inline-label">@L["StatusFailed"]</p>
+                </div>
+                <div>
+                    <p class="overview-inline-value">@ClaimedJobCount</p>
+                    <p class="overview-inline-label">@L["Claimed"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["DashboardFailedClaimed", FailedJobCount, ClaimedJobCount]</p>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricRegions"]</p>
-            <p class="metric-value">@DistinctTimeZones</p>
-            <p class="metric-footnote">@L["DashboardCurrenciesLanguages", DistinctCurrencies, DistinctLanguages]</p>
-        </article>
-        <article class="metric-card accent-card">
-            <p class="metric-label">@L["MetricNewestTenant"]</p>
-            <p class="metric-value metric-value-sm">@NewestTenantLabel</p>
-            <p class="metric-footnote">@L["MetricNewestTenantCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["MetricRegions"]</p>
+                    <h3>@L["MetricRegions"]</h3>
+                </div>
+                <span class="status-pill neutral">@DistinctTimeZones</span>
+            </div>
+
+            <div class="overview-inline-metrics">
+                <div>
+                    <p class="overview-inline-value">@DistinctCurrencies</p>
+                    <p class="overview-inline-label">FX</p>
+                </div>
+                <div>
+                    <p class="overview-inline-value">@DistinctLanguages</p>
+                    <p class="overview-inline-label">@L["Language"]</p>
+                </div>
+            </div>
+
+            <p class="surface-copy">@L["DashboardCurrenciesLanguages", DistinctCurrencies, DistinctLanguages]</p>
         </article>
     </section>
 
-    <section class="dashboard-grid platform-dashboard-grid">
+    <section class="dashboard-workbench-grid">
         <article class="panel">
             <div class="panel-header">
                 <div>
@@ -94,15 +161,15 @@ else
             }
             else
             {
-                <div class="stack-list">
+                <div class="workbench-list">
                     @foreach (var job in RecentJobs)
                     {
-                        <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo("/jobs")'>
-                            <div>
+                        <button type="button" class="workbench-row" @onclick='() => NavigationManager.NavigateTo("/jobs")'>
+                            <div class="workbench-row-main">
                                 <p class="list-title">@job.Type</p>
-                                <p class="list-subtitle">@L["RecentJobForTenant", ShortId(job.Id), ResolveTenant(job.TenantId)]</p>
+                                <p class="list-subtitle">@ResolveTenant(job.TenantId)</p>
                             </div>
-                            <div class="list-meta">
+                            <div class="workbench-row-meta">
                                 <span class="@StatusClass(job.Status)">@LocalizedStatus(job.Status)</span>
                                 <span>@RelativeTime(job.UpdatedAt)</span>
                             </div>
@@ -130,15 +197,15 @@ else
             }
             else
             {
-                <div class="stack-list">
+                <div class="workbench-list">
                     @foreach (var tenant in RecentTenants)
                     {
-                        <button type="button" class="list-row-button" @onclick='() => NavigationManager.NavigateTo($"/tenants/{tenant.Id}")'>
-                            <div>
+                        <button type="button" class="workbench-row" @onclick='() => NavigationManager.NavigateTo($"/tenants/{tenant.Id}")'>
+                            <div class="workbench-row-main">
                                 <p class="list-title">@tenant.DisplayName</p>
                                 <p class="list-subtitle">@tenant.PrimaryDomain</p>
                             </div>
-                            <div class="list-meta">
+                            <div class="workbench-row-meta">
                                 <span class="@StatusClass(tenant.Status)">@LocalizedStatus(tenant.Status)</span>
                                 <span>@tenant.CurrencyCode · @tenant.LanguageCode</span>
                             </div>
@@ -147,27 +214,20 @@ else
                 </div>
             }
         </article>
+    </section>
 
-        <article class="panel">
-            <div class="panel-header">
-                <div>
-                    <p class="eyebrow">@L["AttentionEyebrow"]</p>
-                    <h3>@L["WhatNeedsEyes"]</h3>
-                </div>
-            </div>
-
-            <div class="attention-grid">
-                <div class="attention-card">
-                    <p class="attention-label">@L["FailedJobs"]</p>
-                    <p class="attention-value">@FailedJobCount</p>
-                    <p class="attention-copy">@L["FailedJobsCopy"]</p>
-                </div>
-                <div class="attention-card">
-                    <p class="attention-label">@L["PendingTenants"]</p>
-                    <p class="attention-value">@ProvisioningTenantCount</p>
-                    <p class="attention-copy">@L["PendingTenantsCopy"]</p>
-                </div>
-            </div>
+    <section class="attention-strip">
+        <article class="attention-surface">
+            <p class="eyebrow">@L["AttentionEyebrow"]</p>
+            <h3>@L["FailedJobs"]</h3>
+            <p class="attention-surface-value">@FailedJobCount</p>
+            <p class="surface-copy">@L["FailedJobsCopy"]</p>
+        </article>
+        <article class="attention-surface">
+            <p class="eyebrow">@L["AttentionEyebrow"]</p>
+            <h3>@L["PendingTenants"]</h3>
+            <p class="attention-surface-value">@ProvisioningTenantCount</p>
+            <p class="surface-copy">@L["PendingTenantsCopy"]</p>
         </article>
     </section>
 }

@@ -60,21 +60,52 @@
 }
 else
 {
-    <section class="stats-grid compact-stats">
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricAccount"]</p>
-            <p class="metric-value metric-value-sm">@DisplayEmail</p>
-            <p class="metric-footnote">@L["CurrentPlatformIdentity"]</p>
+    <section class="dashboard-overview-grid">
+        <article class="overview-surface overview-surface-primary">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["MetricAccount"]</p>
+                    <h3>@DisplayEmail</h3>
+                </div>
+                <span class="status-pill neutral">@L["CurrentPlatformIdentity"]</span>
+            </div>
+            <p class="surface-copy">@L["StoredForAccount"]</p>
+            <div class="overview-inline-metrics">
+                <span>@L["Language"]: @PreferenceModel.Language</span>
+                <span>@L["TimeZone"]: @PreferenceModel.TimeZone</span>
+            </div>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["MetricUiLanguage"]</p>
-            <p class="metric-value metric-value-sm">@PreferenceModel.Language</p>
-            <p class="metric-footnote">@L["StoredForAccount"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["Status"]</p>
+                    <h3>@(ActiveTab == "security" ? L["Security"] : L["Preferences"])</h3>
+                </div>
+                @if (MustRotatePassword)
+                {
+                    <span class="status-pill warning">@L["Required"]</span>
+                }
+            </div>
+            <p class="surface-copy">@(ActiveTab == "security" ? L["PasswordPolicyCopy"] : L["SettingsScopeCopy"])</p>
+            <div class="overview-inline-metrics">
+                <span>@L["Density"]: @PreferenceModel.Density</span>
+                <span>@L["TimeZonePreview"]: @PreferencePreview</span>
+            </div>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["TimeZone"]</p>
-            <p class="metric-value metric-value-sm">@PreferenceModel.TimeZone</p>
-            <p class="metric-footnote">@PreferencePreview</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["Preview"]</p>
+                    <h3>@L["SessionDefaults"]</h3>
+                </div>
+            </div>
+            <p class="surface-copy">@L["SettingsScopeCopy"]</p>
+            <div class="overview-inline-metrics">
+                <span>@L["MetricUiLanguage"]: @PreferenceModel.Language</span>
+                <span>@L["Density"]: @PreferenceModel.Density</span>
+            </div>
         </article>
     </section>
 
@@ -87,176 +118,154 @@ else
 
     @if (ActiveTab == "security")
     {
-        <section class="detail-layout">
-            <article class="panel detail-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">@L["Security"]</p>
-                        <h3>@L["PasswordRotation"]</h3>
-                    </div>
-                    @if (MustRotatePassword)
-                    {
-                        <span class="status-pill warning">@L["Required"]</span>
-                    }
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">@L["Security"]</p>
+                    <h3>@L["PasswordRotation"]</h3>
                 </div>
-
-                @if (SecuritySuccess is not null)
+                @if (MustRotatePassword)
                 {
-                    <div class="alert alert-success">@SecuritySuccess</div>
+                    <span class="status-pill warning">@L["Required"]</span>
                 }
+            </div>
 
-                @if (SecurityError is not null)
-                {
-                    <div class="alert alert-danger">@SecurityError</div>
-                }
+            @if (SecuritySuccess is not null)
+            {
+                <div class="alert alert-success">@SecuritySuccess</div>
+            }
 
-                @if (ExternalIdentityEnabled)
-                {
-                    <section class="detail-section">
-                        <p class="detail-title">External Identity</p>
-                        <p class="detail-copy">Password rotation and MFA are managed by the identity provider for this environment.</p>
-                    </section>
-                }
-                else
-                {
-                    <EditForm Model="@PasswordModel" OnValidSubmit="ChangePasswordAsync">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
+            @if (SecurityError is not null)
+            {
+                <div class="alert alert-danger">@SecurityError</div>
+            }
 
-                        <div class="form-grid">
-                            <div class="form-group form-span-2">
-                                <label>@L["CurrentPassword"]</label>
-                                <InputText @bind-Value="PasswordModel.CurrentPassword" type="password" class="form-control" />
-                                <ValidationMessage For="() => PasswordModel.CurrentPassword" />
-                            </div>
+            @if (ExternalIdentityEnabled)
+            {
+                <section class="detail-section">
+                    <p class="detail-title">External Identity</p>
+                    <p class="detail-copy">Password rotation and MFA are managed by the identity provider for this environment.</p>
+                </section>
+            }
+            else
+            {
+                <EditForm Model="@PasswordModel" OnValidSubmit="ChangePasswordAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
 
-                            <div class="form-group">
-                                <label>@L["NewPassword"]</label>
-                                <InputText @bind-Value="PasswordModel.NewPassword" type="password" class="form-control" />
-                                <ValidationMessage For="() => PasswordModel.NewPassword" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>@L["ConfirmPassword"]</label>
-                                <InputText @bind-Value="PasswordModel.ConfirmPassword" type="password" class="form-control" />
-                                <ValidationMessage For="() => PasswordModel.ConfirmPassword" />
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" disabled="@IsSavingPassword">
-                                @(IsSavingPassword ? L["Updating"] : L["UpdatePassword"])
-                            </button>
-                        </div>
-                    </EditForm>
-                }
-            </article>
-
-            <article class="panel detail-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">@L["Status"]</p>
-                        <h3>@L["SecurityNotes"]</h3>
-                    </div>
-                </div>
-
-                <div class="detail-stack">
-                    <section class="detail-section">
-                        <p class="detail-title">@L["PasswordPolicy"]</p>
-                        <p class="detail-copy">@L["PasswordPolicyCopy"]</p>
-                    </section>
-
-                    <section class="detail-section">
-                        <p class="detail-title">@L["SessionBehavior"]</p>
-                        <p class="detail-copy">@L["SessionBehaviorCopy"]</p>
-                    </section>
-                </div>
-            </article>
-        </section>
-    }
-    else
-    {
-        <section class="detail-layout">
-            <article class="panel detail-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">@L["Preferences"]</p>
-                        <h3>@L["OperatorDefaults"]</h3>
-                    </div>
-                </div>
-
-                @if (PreferenceSuccess is not null)
-                {
-                    <div class="alert alert-success">@PreferenceSuccess</div>
-                }
-
-                <EditForm Model="@PreferenceModel" OnValidSubmit="SavePreferencesAsync">
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label>@L["MetricUiLanguage"]</label>
-                            <InputSelect @bind-Value="PreferenceModel.Language" class="form-control">
-                                <option value="en-GB">@L["EnglishUk"]</option>
-                                <option value="tr-TR">@L["Turkish"]</option>
-                            </InputSelect>
-                        </div>
-
-                        <div class="form-group">
-                            <label>@L["Density"]</label>
-                            <InputSelect @bind-Value="PreferenceModel.Density" class="form-control">
-                                <option value="compact">@L["Compact"]</option>
-                                <option value="comfortable">@L["Comfortable"]</option>
-                            </InputSelect>
-                        </div>
-
                         <div class="form-group form-span-2">
-                            <label>@L["OperatorTimeZone"]</label>
-                            <InputSelect @bind-Value="PreferenceModel.TimeZone" class="form-control">
-                                <option value="UTC">UTC</option>
-                                <option value="Europe/London">Europe/London</option>
-                                <option value="Europe/Istanbul">Europe/Istanbul</option>
-                                <option value="America/New_York">America/New_York</option>
-                            </InputSelect>
+                            <label>@L["CurrentPassword"]</label>
+                            <InputText @bind-Value="PasswordModel.CurrentPassword" type="password" class="form-control" />
+                            <ValidationMessage For="() => PasswordModel.CurrentPassword" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>@L["NewPassword"]</label>
+                            <InputText @bind-Value="PasswordModel.NewPassword" type="password" class="form-control" />
+                            <ValidationMessage For="() => PasswordModel.NewPassword" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>@L["ConfirmPassword"]</label>
+                            <InputText @bind-Value="PasswordModel.ConfirmPassword" type="password" class="form-control" />
+                            <ValidationMessage For="() => PasswordModel.ConfirmPassword" />
                         </div>
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" disabled="@IsSavingPreferences">
-                            @(IsSavingPreferences ? L["Saving"] : L["SavePreferences"])
+                        <button type="submit" class="btn btn-primary" disabled="@IsSavingPassword">
+                            @(IsSavingPassword ? L["Updating"] : L["UpdatePassword"])
                         </button>
                     </div>
                 </EditForm>
-            </article>
+            }
 
-            <article class="panel detail-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">@L["Preview"]</p>
-                        <h3>@L["SessionDefaults"]</h3>
+            <div class="detail-stack">
+                <section class="detail-section">
+                    <p class="detail-title">@L["PasswordPolicy"]</p>
+                    <p class="detail-copy">@L["PasswordPolicyCopy"]</p>
+                </section>
+
+                <section class="detail-section">
+                    <p class="detail-title">@L["SessionBehavior"]</p>
+                    <p class="detail-copy">@L["SessionBehaviorCopy"]</p>
+                </section>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">@L["Preferences"]</p>
+                    <h3>@L["OperatorDefaults"]</h3>
+                </div>
+            </div>
+
+            @if (PreferenceSuccess is not null)
+            {
+                <div class="alert alert-success">@PreferenceSuccess</div>
+            }
+
+            <EditForm Model="@PreferenceModel" OnValidSubmit="SavePreferencesAsync">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>@L["MetricUiLanguage"]</label>
+                        <InputSelect @bind-Value="PreferenceModel.Language" class="form-control">
+                            <option value="en-GB">@L["EnglishUk"]</option>
+                            <option value="tr-TR">@L["Turkish"]</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group">
+                        <label>@L["Density"]</label>
+                        <InputSelect @bind-Value="PreferenceModel.Density" class="form-control">
+                            <option value="compact">@L["Compact"]</option>
+                            <option value="comfortable">@L["Comfortable"]</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group form-span-2">
+                        <label>@L["OperatorTimeZone"]</label>
+                        <InputSelect @bind-Value="PreferenceModel.TimeZone" class="form-control">
+                            <option value="UTC">UTC</option>
+                            <option value="Europe/London">Europe/London</option>
+                            <option value="Europe/Istanbul">Europe/Istanbul</option>
+                            <option value="America/New_York">America/New_York</option>
+                        </InputSelect>
                     </div>
                 </div>
 
-                <div class="detail-stack">
-                    <div class="kv-grid">
-                        <div class="kv-item">
-                            <span class="kv-label">@L["Language"]</span>
-                            <span class="kv-value">@PreferenceModel.Language</span>
-                        </div>
-                        <div class="kv-item">
-                            <span class="kv-label">@L["Density"]</span>
-                            <span class="kv-value">@PreferenceModel.Density</span>
-                        </div>
-                        <div class="kv-item form-span-2">
-                            <span class="kv-label">@L["TimeZonePreview"]</span>
-                            <span class="kv-value">@PreferencePreview</span>
-                        </div>
-                    </div>
-
-                    <section class="detail-section">
-                        <p class="detail-title">@L["Scope"]</p>
-                        <p class="detail-copy">@L["SettingsScopeCopy"]</p>
-                    </section>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" disabled="@IsSavingPreferences">
+                        @(IsSavingPreferences ? L["Saving"] : L["SavePreferences"])
+                    </button>
                 </div>
-            </article>
+            </EditForm>
+
+            <div class="detail-stack">
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["Language"]</span>
+                        <span class="kv-value">@PreferenceModel.Language</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["Density"]</span>
+                        <span class="kv-value">@PreferenceModel.Density</span>
+                    </div>
+                    <div class="kv-item form-span-2">
+                        <span class="kv-label">@L["TimeZonePreview"]</span>
+                        <span class="kv-value">@PreferencePreview</span>
+                    </div>
+                </div>
+
+                <section class="detail-section">
+                    <p class="detail-title">@L["Scope"]</p>
+                    <p class="detail-copy">@L["SettingsScopeCopy"]</p>
+                </section>
+            </div>
         </section>
     }
 }

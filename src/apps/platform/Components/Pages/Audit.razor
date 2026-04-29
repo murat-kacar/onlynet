@@ -91,21 +91,54 @@
 }
 else
 {
-    <section class="stats-grid compact-stats">
-        <article class="metric-card">
-            <p class="metric-label">@L["Entries"]</p>
-            <p class="metric-value">@FilteredEntries.Count</p>
-            <p class="metric-footnote">@L["EntriesVisibleCopy"]</p>
+    <section class="dashboard-overview-grid">
+        <article class="overview-surface overview-surface-primary">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["ComplianceEyebrow"]</p>
+                    <h3>@L["Entries"]</h3>
+                </div>
+                <span class="status-pill neutral">@FilterSummary</span>
+            </div>
+            <p class="surface-copy">@L["EntriesVisibleCopy"]</p>
+            <div class="overview-stat-row">
+                <div>
+                    <span class="metric-label">@L["Entries"]</span>
+                    <strong class="metric-value">@FilteredEntries.Count</strong>
+                </div>
+                <div>
+                    <span class="metric-label">@L["Actors"]</span>
+                    <strong class="metric-value">@DistinctActors</strong>
+                </div>
+            </div>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["Actors"]</p>
-            <p class="metric-value">@DistinctActors</p>
-            <p class="metric-footnote">@L["ActorsCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["Actions"]</p>
+                    <h3>@DistinctActions</h3>
+                </div>
+            </div>
+            <p class="surface-copy">@L["ActionsCopy"]</p>
+            <div class="overview-inline-metrics">
+                <span>@L["Auth"]: @AuthEntriesCount</span>
+                <span>@L["TableTenant"]: @TenantEntriesCount</span>
+            </div>
         </article>
-        <article class="metric-card">
-            <p class="metric-label">@L["Actions"]</p>
-            <p class="metric-value">@DistinctActions</p>
-            <p class="metric-footnote">@L["ActionsCopy"]</p>
+
+        <article class="overview-surface">
+            <div class="surface-heading">
+                <div>
+                    <p class="eyebrow">@L["Selection"]</p>
+                    <h3>@(SelectedEntry?.Action ?? L["NoEventSelected"])</h3>
+                </div>
+            </div>
+            <p class="surface-copy">@(SelectedEntry is null ? L["NoEventSelectedCopy"] : FormatDate(SelectedEntry.CreatedAt))</p>
+            <div class="overview-inline-metrics">
+                <span>@L["TableActor"]: @(SelectedEntry?.ActorEmail ?? "-")</span>
+                <span>@L["ResourceType"]: @(SelectedEntry?.ResourceType ?? "-")</span>
+            </div>
         </article>
     </section>
 
@@ -197,6 +230,8 @@ else
     private string? LoadError;
     private int DistinctActors => FilteredEntries.Select(entry => entry.ActorEmail).Distinct(StringComparer.OrdinalIgnoreCase).Count();
     private int DistinctActions => FilteredEntries.Select(entry => entry.Action).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    private int AuthEntriesCount => FilteredEntries.Count(entry => entry.Action.StartsWith("auth.", StringComparison.OrdinalIgnoreCase));
+    private int TenantEntriesCount => FilteredEntries.Count(entry => entry.Action.StartsWith("tenant.", StringComparison.OrdinalIgnoreCase));
     private int SelectedActorEntryCount =>
         SelectedEntry is null
             ? 0
