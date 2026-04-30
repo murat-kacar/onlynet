@@ -18,3 +18,4 @@ Current concept set:
 - [`./implementation-patterns.md`](./implementation-patterns.md)
 - [`./ui-stakeholder-surface-analysis.md`](./ui-stakeholder-surface-analysis.md)
 - [`./frontend-ui-alignment-review.md`](./frontend-ui-alignment-review.md)
+- [`./frontend-ui-implementation-plan.md`](./frontend-ui-implementation-plan.md)
