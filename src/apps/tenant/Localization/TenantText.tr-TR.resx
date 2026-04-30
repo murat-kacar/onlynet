@@ -10,6 +10,7 @@
   <data name="NavCart" xml:space="preserve"><value>Sepet</value></data>
   <data name="NavScanQr" xml:space="preserve"><value>Tara</value></data>
   <data name="NavTables" xml:space="preserve"><value>Masalar</value></data>
+  <data name="NavService" xml:space="preserve"><value>Servis</value></data>
   <data name="NavKitchen" xml:space="preserve"><value>Mutfak</value></data>
   <data name="NavSettings" xml:space="preserve"><value>Ayarlar</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
@@ -105,6 +106,19 @@
   <data name="NoTablesCopy" xml:space="preserve"><value>Canlı servis çalışma alanını kullanmadan önce masa kayıtlarını ekleyin.</value></data>
   <data name="NoTableSelected" xml:space="preserve"><value>Seçili masa yok</value></data>
   <data name="NoTableSelectedCopy" xml:space="preserve"><value>Canlı oturum durumunu ve operatör aksiyonlarını görmek için bir masa seç.</value></data>
+  <data name="TablesNoTableSelectedCopy" xml:space="preserve"><value>Yapılandırmasını incelemek için bir masa kurulum kaydı seç.</value></data>
+  <data name="TableSetup" xml:space="preserve"><value>Masa kurulumu</value></data>
+  <data name="ServiceTitle" xml:space="preserve"><value>Servis</value></data>
+  <data name="ServiceHero" xml:space="preserve"><value>Masa durumu, dikkat sinyalleri ve ödeme aksiyonları etrafında kurulan canlı kat ve kasa çalışma alanı.</value></data>
+  <data name="ServiceNoTableSelectedCopy" xml:space="preserve"><value>Canlı servis bağlamını bu panelde açmak için bir masa seç.</value></data>
+  <data name="LoadingService" xml:space="preserve"><value>Servis katı yükleniyor</value></data>
+  <data name="LoadingServiceCopy" xml:space="preserve"><value>Canlı masa durumu tenant çalışma alanından getiriliyor.</value></data>
+  <data name="LoadingTableWorkspace" xml:space="preserve"><value>Masa çalışma alanı yükleniyor...</value></data>
+  <data name="TableDeepLinkMissingTitle" xml:space="preserve"><value>Masa bulunamadı</value></data>
+  <data name="TableDeepLinkMissingCopy" xml:space="preserve"><value>{0} numaralı masayla eşleşen kayıt yok. Servis gridinden başka bir masa seç.</value></data>
+  <data name="ServiceNoSessionCopy" xml:space="preserve"><value>Bu masa için açık müşteri oturumu yok. Servis çalışma alanı bir sonraki QR katılımı için hazır kalır.</value></data>
+  <data name="AvailableForService" xml:space="preserve"><value>Müsait</value></data>
+  <data name="ReadyForService" xml:space="preserve"><value>Hazır</value></data>
   <data name="Active" xml:space="preserve"><value>Aktif</value></data>
   <data name="Inactive" xml:space="preserve"><value>Pasif</value></data>
   <data name="OpenInspector" xml:space="preserve"><value>İncele</value></data>

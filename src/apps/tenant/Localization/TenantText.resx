@@ -10,6 +10,7 @@
   <data name="NavCart" xml:space="preserve"><value>Cart</value></data>
   <data name="NavScanQr" xml:space="preserve"><value>Scan</value></data>
   <data name="NavTables" xml:space="preserve"><value>Tables</value></data>
+  <data name="NavService" xml:space="preserve"><value>Service</value></data>
   <data name="NavKitchen" xml:space="preserve"><value>Kitchen</value></data>
   <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
   <data name="ShellEyebrow" xml:space="preserve"><value>Tenant Runtime</value></data>
@@ -105,6 +106,19 @@
   <data name="NoTablesCopy" xml:space="preserve"><value>Seed table records before using the live service workspace.</value></data>
   <data name="NoTableSelected" xml:space="preserve"><value>No table selected</value></data>
   <data name="NoTableSelectedCopy" xml:space="preserve"><value>Select a table to inspect live session state and operator actions.</value></data>
+  <data name="TablesNoTableSelectedCopy" xml:space="preserve"><value>Select a table setup record to inspect its configuration.</value></data>
+  <data name="TableSetup" xml:space="preserve"><value>Table setup</value></data>
+  <data name="ServiceTitle" xml:space="preserve"><value>Service</value></data>
+  <data name="ServiceHero" xml:space="preserve"><value>Live floor and cash workspace built around table state, attention, and checkout actions.</value></data>
+  <data name="ServiceNoTableSelectedCopy" xml:space="preserve"><value>Select a table to open its live service context in this panel.</value></data>
+  <data name="LoadingService" xml:space="preserve"><value>Loading service floor</value></data>
+  <data name="LoadingServiceCopy" xml:space="preserve"><value>Live table state is being fetched from the tenant workspace.</value></data>
+  <data name="LoadingTableWorkspace" xml:space="preserve"><value>Loading table workspace...</value></data>
+  <data name="TableDeepLinkMissingTitle" xml:space="preserve"><value>Table not found</value></data>
+  <data name="TableDeepLinkMissingCopy" xml:space="preserve"><value>No table matched table number {0}. Select another table from the service grid.</value></data>
+  <data name="ServiceNoSessionCopy" xml:space="preserve"><value>No customer session is open for this table. The service workspace stays ready for the next QR join.</value></data>
+  <data name="AvailableForService" xml:space="preserve"><value>Available</value></data>
+  <data name="ReadyForService" xml:space="preserve"><value>Ready</value></data>
   <data name="Active" xml:space="preserve"><value>Active</value></data>
   <data name="Inactive" xml:space="preserve"><value>Inactive</value></data>
   <data name="OpenInspector" xml:space="preserve"><value>Inspect</value></data>

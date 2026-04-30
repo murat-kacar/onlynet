@@ -1,0 +1,353 @@
+@page "/service"
+@page "/table/{TableNumber:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@attribute [Authorize(Policy = "Tenant:Read")]
+@inject IStringLocalizer<TenantText> L
+@inject ITableReadService TableReadService
+@inject ICustomerSessionService CustomerSessionService
+
+<PageTitle>@L["ServiceTitle"]</PageTitle>
+
+<SectionContent SectionName="tenant-header">
+    <div>
+        <p class="eyebrow">@L["NavService"]</p>
+        <h2>@L["ServiceTitle"]</h2>
+        <p class="hero-copy">@L["ServiceHero"]</p>
+    </div>
+</SectionContent>
+
+<SectionContent SectionName="tenant-header-actions">
+    @if (SelectedTable is not null)
+    {
+        <span class="status-pill @(SelectedTable.HasOpenSession ? "warning" : "neutral")">
+            @(SelectedTable.HasOpenSession ? L["SessionLive"] : L["NoActiveSession"])
+        </span>
+    }
+</SectionContent>
+
+<SectionContent SectionName="tenant-inspector">
+    @if (MissingDeepLink)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["TableDeepLinkMissingTitle"]</h4>
+                <p class="detail-copy">@L["TableDeepLinkMissingCopy", TableNumber.GetValueOrDefault()]</p>
+            </section>
+        </div>
+    }
+    else if (SelectedTable is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@L["NoTableSelected"]</h4>
+                <p class="detail-copy">@L["ServiceNoTableSelectedCopy"]</p>
+            </section>
+        </div>
+    }
+    else if (SelectedWorkspace is null)
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <h4>@SelectedTable.Name</h4>
+                <p class="detail-copy">@L["LoadingTableWorkspace"]</p>
+            </section>
+        </div>
+    }
+    else
+    {
+        <div class="console-context">
+            <section class="context-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">@L["Selection"]</p>
+                        <h3>@SelectedWorkspace.Name</h3>
+                    </div>
+                    <span class="status-pill @(SelectedWorkspace.HasOpenSession ? "warning" : "neutral")">
+                        @(SelectedWorkspace.HasOpenSession ? L["SessionLive"] : L["NoActiveSession"])
+                    </span>
+                </div>
+
+                <div class="kv-grid">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableCode"]</span>
+                        <span class="kv-value">@SelectedWorkspace.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["StationType"]</span>
+                        <span class="kv-value">@SelectedWorkspace.Type</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["OpenSessionState"]</span>
+                        <span class="kv-value">@(SelectedWorkspace.HasOpenSession ? L["Live"] : L["Inactive"])</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["SortOrder"]</span>
+                        <span class="kv-value">@SelectedWorkspace.SortOrder</span>
+                    </div>
+                </div>
+            </section>
+
+            @if (ActionError is not null)
+            {
+                <div class="alert alert-danger">@ActionError</div>
+            }
+
+            @if (SelectedWorkspace.Session is null)
+            {
+                <section class="context-card">
+                    <h4>@L["NoActiveSession"]</h4>
+                    <p class="detail-copy">@L["ServiceNoSessionCopy"]</p>
+                </section>
+            }
+            else
+            {
+                <section class="context-card">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">@L["SessionSummary"]</p>
+                            <h3>#@SelectedWorkspace.Session.SessionId.ToString()[..8]</h3>
+                        </div>
+                    </div>
+
+                    <div class="kv-grid">
+                        <div class="kv-item">
+                            <span class="kv-label">@L["OpenedAt"]</span>
+                            <span class="kv-value">@SelectedWorkspace.Session.OpenedAt.LocalDateTime.ToString("g")</span>
+                        </div>
+                        <div class="kv-item">
+                            <span class="kv-label">@L["LinkedGuests"]</span>
+                            <span class="kv-value">@SelectedWorkspace.Session.TicketCount</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" disabled="@IsBusy" @onclick="IssueCheckoutProofAsync">
+                            @(IsBusy ? L["Generating"] : L["IssueCheckoutProof"])
+                        </button>
+                    </div>
+                </section>
+
+                @if (CheckoutProof is not null)
+                {
+                    <section class="context-card">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">@L["CheckoutProof"]</p>
+                                <h3>@CheckoutProof.TokenValue</h3>
+                            </div>
+                            <span class="status-pill warning">@L["ExpiresAt"] @CheckoutProof.ExpiresAt.LocalDateTime.ToString("t")</span>
+                        </div>
+                        <p class="detail-copy">@L["CheckoutProofCopy"]</p>
+                    </section>
+                }
+
+                <section class="context-card">
+                    <p class="detail-title">@L["CartPreview"]</p>
+                    @if (SelectedWorkspace.Session.CartItems.Count == 0)
+                    {
+                        <p class="detail-copy">@L["TableWorkspaceCartEmpty"]</p>
+                    }
+                    else
+                    {
+                        @foreach (var item in SelectedWorkspace.Session.CartItems)
+                        {
+                            <div class="drawer-item-row">
+                                <div class="drawer-item-copy">
+                                    <strong>@item.ItemName x@item.Quantity</strong>
+                                    <span class="kv-label">@item.UnitPrice.ToString("C")</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.Note))
+                                    {
+                                        <span class="kv-label">@item.Note</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </section>
+
+                <section class="context-card">
+                    <p class="detail-title">@L["SubmittedOrders"]</p>
+                    @if (SelectedWorkspace.Session.Orders.Count == 0)
+                    {
+                        <p class="detail-copy">@L["TableWorkspaceOrdersEmpty"]</p>
+                    }
+                    else
+                    {
+                        @foreach (var order in SelectedWorkspace.Session.Orders)
+                        {
+                            <div class="drawer-item-row">
+                                <div class="drawer-item-copy">
+                                    <strong>#@order.Id.ToString()[..8]</strong>
+                                    <span class="kv-label">@order.SubmittedAt.LocalDateTime.ToString("g")</span>
+                                    <span class="kv-label">@order.ItemCount @L["TableItem"] · @order.TotalAmount.ToString("C")</span>
+                                </div>
+                                <div class="drawer-item-actions">
+                                    <a class="btn btn-secondary btn-sm" href="/order/@order.Id">@L["ViewOrder"]</a>
+                                </div>
+                            </div>
+                        }
+                    }
+                </section>
+            }
+        </div>
+    }
+</SectionContent>
+
+@if (TableList is null)
+{
+    <section class="empty-state">
+        <h3>@L["LoadingService"]</h3>
+        <p>@L["LoadingServiceCopy"]</p>
+    </section>
+}
+else if (TableList.Count == 0)
+{
+    <section class="empty-state">
+        <h3>@L["NoTables"]</h3>
+        <p>@L["NoTablesCopy"]</p>
+    </section>
+}
+else
+{
+    <section class="entity-grid">
+        @foreach (var table in TableList)
+        {
+            var isSelected = table.Id == SelectedTableId;
+            <article class="entity-card @(isSelected ? "selected-surface" : null)" @onclick="() => SelectTableAsync(table.Id)">
+                <div class="entity-card-top">
+                    <div>
+                        <p class="eyebrow">@(table.HasOpenSession ? L["SessionLive"] : L["AvailableForService"])</p>
+                        <h3>@table.Name</h3>
+                    </div>
+                    <span class="status-pill @(table.HasOpenSession ? "warning" : (table.IsActive ? "success" : "neutral"))">
+                        @(table.HasOpenSession ? L["Live"] : (table.IsActive ? L["ReadyForService"] : L["Inactive"]))
+                    </span>
+                </div>
+
+                <div class="kv-grid compact-kv">
+                    <div class="kv-item">
+                        <span class="kv-label">@L["TableCode"]</span>
+                        <span class="kv-value">@table.Code</span>
+                    </div>
+                    <div class="kv-item">
+                        <span class="kv-label">@L["OpenSessionState"]</span>
+                        <span class="kv-value">@(table.HasOpenSession ? L["Live"] : L["Inactive"])</span>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int? TableNumber { get; set; }
+
+    private List<TableDto>? TableList;
+    private Guid? SelectedTableId;
+    private TableWorkspaceDto? SelectedWorkspace;
+    private CheckoutProofDto? CheckoutProof;
+    private string? ActionError;
+    private bool IsBusy;
+    private bool MissingDeepLink;
+
+    private TableDto? SelectedTable => TableList?.FirstOrDefault(table => table.Id == SelectedTableId);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadTablesAsync();
+        await ApplyRouteSelectionAsync();
+    }
+
+    private async Task LoadTablesAsync()
+    {
+        TableList = (await TableReadService.GetTablesAsync()).ToList();
+    }
+
+    private async Task ApplyRouteSelectionAsync()
+    {
+        MissingDeepLink = false;
+
+        if (TableList is null || TableList.Count == 0)
+        {
+            SelectedTableId = null;
+            SelectedWorkspace = null;
+            return;
+        }
+
+        if (TableNumber is not null)
+        {
+            var tableNumber = TableNumber.Value.ToString(CultureInfo.InvariantCulture);
+            var routeTable = TableList.FirstOrDefault(table =>
+                string.Equals(table.Code, tableNumber, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(table.Name, tableNumber, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(table.Name, $"Table {tableNumber}", StringComparison.OrdinalIgnoreCase));
+
+            if (routeTable is null)
+            {
+                SelectedTableId = null;
+                SelectedWorkspace = null;
+                MissingDeepLink = true;
+                return;
+            }
+
+            SelectedTableId = routeTable.Id;
+        }
+        else
+        {
+            SelectedTableId ??= TableList.FirstOrDefault(table => table.HasOpenSession)?.Id
+                ?? TableList.FirstOrDefault(table => table.IsActive)?.Id
+                ?? TableList.First().Id;
+        }
+
+        await LoadSelectedWorkspaceAsync();
+    }
+
+    private async Task SelectTableAsync(Guid tableId)
+    {
+        SelectedTableId = tableId;
+        MissingDeepLink = false;
+        CheckoutProof = null;
+        ActionError = null;
+        await LoadSelectedWorkspaceAsync();
+    }
+
+    private async Task LoadSelectedWorkspaceAsync()
+    {
+        SelectedWorkspace = SelectedTableId is null
+            ? null
+            : await TableReadService.GetTableWorkspaceAsync(SelectedTableId.Value);
+    }
+
+    private async Task IssueCheckoutProofAsync()
+    {
+        if (SelectedWorkspace is null)
+        {
+            return;
+        }
+
+        await RunActionAsync(async () =>
+        {
+            CheckoutProof = await CustomerSessionService.IssueCheckoutProofAsync(SelectedWorkspace.Id);
+        });
+    }
+
+    private async Task RunActionAsync(Func<Task> operation)
+    {
+        IsBusy = true;
+        ActionError = null;
+
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            ActionError = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}

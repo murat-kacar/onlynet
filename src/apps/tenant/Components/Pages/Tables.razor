@@ -30,7 +30,7 @@
         <div class="console-context">
             <section class="context-card">
                 <h4>@L["NoTableSelected"]</h4>
-                <p class="detail-copy">@L["NoTableSelectedCopy"]</p>
+                <p class="detail-copy">@L["TablesNoTableSelectedCopy"]</p>
             </section>
         </div>
     }
@@ -44,7 +44,7 @@
                         <h3>@SelectedTable.Name</h3>
                     </div>
                     <span class="status-pill @(SelectedTable.HasOpenSession ? "warning" : (SelectedTable.IsActive ? "success" : "neutral"))">
-                        @(SelectedTable.HasOpenSession ? L["SessionLive"] : (SelectedTable.IsActive ? L["Active"] : L["Inactive"]))
+                        @(SelectedTable.IsActive ? L["Active"] : L["Inactive"])
                     </span>
                 </div>
 
@@ -54,13 +54,12 @@
                         <span class="kv-value">@SelectedTable.Code</span>
                     </div>
                     <div class="kv-item">
-                        <span class="kv-label">@L["OpenSessionState"]</span>
-                        <span class="kv-value">@(SelectedTable.HasOpenSession ? L["Live"] : L["Inactive"])</span>
+                        <span class="kv-label">@L["SortOrder"]</span>
+                        <span class="kv-value">@SelectedTable.SortOrder</span>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(SelectedTable.Id)">@L["OpenInspector"]</button>
                     @if (CanWrite)
                     {
                         <button type="button" class="btn btn-primary" @onclick="() => OpenEditorAsync(SelectedTable.Id)">@L["EditTable"]</button>
@@ -94,11 +93,11 @@ else
             <article class="entity-card @(isSelected ? "selected-surface" : null)" @onclick="() => SelectTable(table.Id)">
                 <div class="entity-card-top">
                     <div>
-                        <p class="eyebrow">@(table.HasOpenSession ? L["SessionLive"] : (table.IsActive ? L["Active"] : L["Inactive"]))</p>
+                        <p class="eyebrow">@L["TableSetup"]</p>
                         <h3>@table.Name</h3>
                     </div>
-                    <span class="status-pill @(table.HasOpenSession ? "warning" : (table.IsActive ? "success" : "neutral"))">
-                        @(table.HasOpenSession ? L["SessionLive"] : (table.IsActive ? L["Active"] : L["Inactive"]))
+                    <span class="status-pill @(table.IsActive ? "success" : "neutral")">
+                        @(table.IsActive ? L["Active"] : L["Inactive"])
                     </span>
                 </div>
 
@@ -108,15 +107,12 @@ else
                         <span class="kv-value">@table.Code</span>
                     </div>
                     <div class="kv-item">
-                        <span class="kv-label">@L["OpenSessionState"]</span>
-                        <span class="kv-value">@(table.HasOpenSession ? L["Live"] : L["Inactive"])</span>
+                        <span class="kv-label">@L["SortOrder"]</span>
+                        <span class="kv-value">@table.SortOrder</span>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="() => OpenInspectorAsync(table.Id)">
-                        @L["OpenInspector"]
-                    </button>
                     @if (CanWrite)
                     {
                         <button type="button" class="btn btn-secondary" @onclick="() => OpenEditorAsync(table.Id)">
@@ -143,30 +139,6 @@ else
     }
 
     private void SelectTable(Guid tableId) => SelectedTableId = tableId;
-
-    private async Task OpenInspectorAsync(Guid tableId)
-    {
-        var workspace = await TableReadService.GetTableWorkspaceAsync(tableId);
-        if (workspace is null)
-        {
-            return;
-        }
-
-        await DialogService.OpenSideAsync(
-            $"{L["TableDrawerTitle"]} · {workspace.Name}",
-            typeof(TableInspectorPanel),
-            new Dictionary<string, object?>
-            {
-                [nameof(TableInspectorPanel.Workspace)] = workspace,
-                [nameof(TableInspectorPanel.ReloadRequested)] = EventCallback.Factory.Create(this, ReloadAsync)
-            },
-            new SideDialogOptions
-            {
-                Position = DialogPosition.Right,
-                Width = "480px",
-                ShowMask = true
-            });
-    }
 
     private async Task ReloadAsync()
     {
