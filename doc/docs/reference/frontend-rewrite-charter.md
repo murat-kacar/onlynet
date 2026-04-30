@@ -38,10 +38,12 @@ The rewrite may replace these layers without hesitation:
 
 ## Core Product Rule
 
-`★★★★★ inspector-first, overlay-for-actions`
+`Three-Pane Operational Console: inspector-first, overlay-for-actions`
 
 That means:
 
+- operator modules share a fixed top bar, collapsible left navigation,
+  center work surface, and collapsible right inspector
 - selection-driven work defaults to the right inspector
 - task-starting work defaults to a modal or drawer
 - route changes are reserved for large, standalone workflows

@@ -84,6 +84,5 @@ ADR on the same idea. Be precise: "if X drops below Y" rather than
 
 ## Status Today
 
-No approaches have been formally abandoned yet. This file is a stub
-README that activates the moment the first ledger entry transitions
-to `[ABANDONED]` and cites a note here.
+TabFlow v1.0.0 starts with no abandoned approaches recorded. This
+README defines the format for the first `[ABANDONED]` ledger note.

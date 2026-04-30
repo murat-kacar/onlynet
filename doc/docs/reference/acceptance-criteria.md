@@ -96,8 +96,10 @@ fresh trailing number rather than reuse a retired one.
   close a bill.
 - **AC-044** Closing a bill MUST invalidate every active customer
   session on that table.
-- **AC-045** Bill split, merge, and reassign operations MUST preserve
-  the one-open-bill-per-table invariant for every table involved.
+- **AC-045** Future bill split, merge, and reassign operations MUST
+  preserve the one-open-bill-per-table invariant for every table
+  involved. These actions are outside the v1.0.0 UI contract; close
+  bill is the only bill lifecycle action exposed in v1.0.0.
 
 ## Station Board
 

@@ -7,7 +7,7 @@ namespace TabFlow.Tenant.Services;
 /// <summary>
 /// EF Core implementation of <see cref="ITableReadService"/>. Owns
 /// the <see cref="TenantDbContext"/> reads that `TablesController`
-/// used to perform inline. Introduced in PR #29 under TD-0022 step 1.
+/// uses so the controller stays a transport adapter.
 /// </summary>
 public sealed class TableReadService : ITableReadService
 {

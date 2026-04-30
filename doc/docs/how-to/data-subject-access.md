@@ -143,7 +143,7 @@ with this shape (fields trimmed for brevity):
   "request_id": "dsr-NNNN",
   "subject_identifier": "0bf1...",
   "tenant_code": "demo",
-  "exported_at": "2026-04-26T12:00:00Z",
+  "exported_at": "2026-04-30T12:00:00Z",
   "platform": {
     "AspNetUsers": [...],
     "platform_audit_log": [...]

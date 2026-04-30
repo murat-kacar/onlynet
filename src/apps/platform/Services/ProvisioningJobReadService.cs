@@ -7,8 +7,8 @@ namespace TabFlow.Platform.Services;
 /// <summary>
 /// EF Core implementation of
 /// <see cref="IProvisioningJobReadService"/>. Owns the
-/// <see cref="PlatformDbContext"/> reads that `JobsController` used
-/// to perform inline. Introduced in PR #29 under TD-0022 step 1.
+/// <see cref="PlatformDbContext"/> reads behind
+/// <c>JobsController</c> so the controller stays a transport adapter.
 /// </summary>
 public sealed class ProvisioningJobReadService : IProvisioningJobReadService
 {

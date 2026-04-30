@@ -13,7 +13,7 @@ and the surrounding architecture references rather than here.
 | Surface | Audience | Reference |
 | --- | --- | --- |
 | Tenant public endpoints (`/api/public/**`, `/health/**`, `/ws/**`) | Customers, ESP32 devices | [`./tenant-api.md`](./tenant-api.md) |
-| Internal admin endpoints (`/api/tenants`, `/api/jobs`, `/api/cart`, `/api/sessions`, `/api/orders`) | Platform admin UI, tenant staff UI | [`./internal-api.md`](./internal-api.md) |
+| Internal admin endpoints (`/api/tenants`, `/api/jobs`, `/api/tables`, `/api/sessions`, `/api/orders`, `/api/kitchen`) | Platform admin UI, tenant staff UI | [`./internal-api.md`](./internal-api.md) |
 | Error code vocabulary | All HTTP surfaces | [`./error-codes.md`](./error-codes.md) |
 | Health probe responses | Supervisor, release gate | [`../architecture/health-checks.md`](../architecture/health-checks.md) |
 
@@ -28,7 +28,7 @@ land in [`/doc/apidocs/`](/doc/apidocs/), not here.
 - Additive, non-breaking changes are allowed within the current major.
 - Breaking changes introduce a new major surface in parallel, for
   example `/api/v2/public/**`, and the old major stays online through a
-  deprecation window.
+  documented compatibility window.
 
 ## OpenAPI Artefacts
 

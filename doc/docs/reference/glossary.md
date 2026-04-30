@@ -122,8 +122,10 @@ surfaces react immediately.
 
 ### Bill
 
-The open or closed customer check for a table session. Supports move,
-merge, split, and close actions from the floor and cash workspace.
+The open or closed customer check for a table session. The v1.0.0 UI
+exposes close bill only. Move, merge, and split are future bill-lifecycle
+capabilities and must not appear as available actions in the first
+release UI.
 
 ## Device Layer
 
@@ -255,6 +257,23 @@ A decision whose reversal is cheap — typically internal helpers,
 unreleased UI changes, build scripts. Two-way decisions are tried,
 measured, and reverted if wrong. When in doubt, a decision is treated
 as one-way.
+
+### Conventional Fit
+
+The degree to which a change follows broadly accepted, current, and
+recognisable practice for its problem type, framework, and audience.
+
+### Global Fit
+
+The degree to which a locally-correct change also agrees with the
+product's wider contracts, naming, structure, architecture, and
+operational model.
+
+### Strongest Nearby Example
+
+The best already-available reference point in the repository,
+framework guidance, or adjacent product surface that solves a similar
+problem more clearly, more conventionally, or with lower complexity.
 
 ### Spike
 

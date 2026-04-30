@@ -78,16 +78,14 @@ Customer surfaces never open a SignalR connection. Staff surfaces do.
 
 ## Implementation Status
 
-PR #25 migrated the platform and tenant hosts from standalone
-Blazor Server (`AddServerSideBlazor()` + `MapBlazorHub()` +
-`_Host.cshtml`) to the Blazor Web App composition
-(`AddRazorComponents().AddInteractiveServerComponents()` +
-`MapRazorComponents<App>().AddInteractiveServerRenderMode()`),
-which is the precondition for any per-component `@rendermode`
-directive to take effect (TD-0027 closed).
+The platform and tenant hosts use the Blazor Web App composition:
+`AddRazorComponents().AddInteractiveServerComponents()` with
+`MapRazorComponents<App>().AddInteractiveServerRenderMode()`. That
+composition is the precondition for per-component `@rendermode`
+directives.
 
-On top of that, the 9 staff-facing pages assigned to Interactive
-Server above carry the directive today (TD-0016 step 1):
+The 9 staff-facing pages assigned to Interactive Server above carry the
+directive today:
 
 - **Platform host:** `Dashboard.razor`, `Tenants.razor`,
   `TenantsNew.razor`, `TenantsDetail.razor`, `Jobs.razor`,
@@ -108,9 +106,8 @@ pages) is tracked under
 The release-gate smoke check that asserts each route renders with
 the expected interactivity marker
 (`_framework/blazor.web.js` present or absent) is
-[TD-0016 step 2](/doc/buildlog/tech-debt-ledger.md#td-0016),
-blocked on TD-0010 step 6 (Playwright bootstrap for the E2E /
-Smoke tier).
+[TD-0016](/doc/buildlog/tech-debt-ledger.md#td-0016), blocked on
+[TD-0010](/doc/buildlog/tech-debt-ledger.md#td-0010).
 
 ## Authoring Rules
 

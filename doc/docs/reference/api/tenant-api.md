@@ -30,10 +30,8 @@ GET /health/live
 GET /health/ready
 ```
 
-- `/health` returns service metadata (host role, build version, commit
-  SHA, and tenant code when applicable). It is the catch-all endpoint
-  used by humans and service-discovery tooling; it has no
-  dependency checks and no readiness semantics.
+- `/health` is an alias for liveness. It runs no dependency checks and
+  exists for callers that use the bare health path.
 - `/health/live` returns liveness (the process is running and able to
   handle HTTP). No external dependency check. Used by container and
   systemd probes to decide whether to restart the process.
@@ -42,7 +40,9 @@ GET /health/ready
   does not yet have a usable database connection. Used by load
   balancers to decide whether to send traffic.
 
-Responses are plain JSON. Probes are unauthenticated.
+Responses use the shared `application/health+json` shape documented in
+[`../architecture/health-checks.md`](../architecture/health-checks.md).
+Probes are unauthenticated.
 
 ## Public Endpoints
 
@@ -57,80 +57,45 @@ the page GET validates the token, opens the table session, issues the
 access cookie, and redirects to `/menu` in one round trip. There is no
 separate HTTP endpoint that duplicates that work.
 
-### Tenant Profile
-
-```http
-GET /api/public/profile
-```
-
-Returns:
-
-- `code`
-- `displayName`
-- `primaryDomain`
-- `languageCode`
-- `currencyCode`
-- `timeZone`
-
-Anonymous. Safe to cache per tenant host.
-
-> **Migration status (TD-0021).** The `/api/public/profile` route is
-> not yet implemented; a per-tenant profile surface ships only when
-> a real consumer requires it. Today the customer-facing Blazor
-> components read tenant profile data through the in-process
-> services rather than through HTTP.
-
 ### Public Catalog
 
 ```http
 GET /api/public/catalog
+GET /api/public/catalog/category/{categoryId}
 ```
 
-Returns:
-
-- Tenant summary
-- Active categories
-- Available menu items
+Returns available menu items, optionally filtered by category.
 
 Anonymous. The payload is scoped to customer-relevant fields only.
 Internal routing and pricing-construction fields stay server-side.
 
-> **Migration status (TD-0021, PR #30).** The customer-tier catalog
-> surface now ships at `/api/public/catalog` and
-> `/api/public/catalog/category/{categoryId}` per
-> [`PublicCatalogController`](/src/apps/tenant/Controllers/Api/PublicCatalogController.cs);
-> `Menu.razor` calls the new prefix. The legacy `/api/menu` and
-> `/api/menu/category/{categoryId}` routes on
-> [`MenuController`](/src/apps/tenant/Controllers/Api/MenuController.cs)
-> stay operational during the deprecation window TD-0021 step 3
-> declares (one minor release per AD-0011) and are removed in a
-> follow-up PR that returns HTTP 410 from the legacy routes.
+Legacy `/api/menu` and `/api/menu/category/{categoryId}` routes stay
+operational only through the temporary compatibility window tracked by
+[TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021).
 
 ### Customer Session
 
 ```http
-GET /api/public/session
+POST /api/public/session/open
+GET /api/public/session/{ticketId}
 ```
 
-Returns the current session state for the cookie-bearing browser,
-including the active table label and the current cart summary.
+`POST /api/public/session/open` opens a customer session from a fresh QR
+token and sets the `tabflow_session_device` HttpOnly cookie.
+
+`GET /api/public/session/{ticketId}` returns the current session state
+for the cookie-bearing browser, including the active table label and the
+current cart summary.
 
 A customer-initiated logout endpoint is intentionally not exposed.
 Access tickets become invalid automatically when the parent table
 session closes; a browser-side logout would not add operational value.
 
-> **Migration status (TD-0021, PR #30).** The customer-tier session
-> surface now ships at `/api/public/session/open` (POST, opens a
-> customer session from a fresh QR token) and
-> `/api/public/session/{ticketId}` (GET, returns the session state
-> for the cookie-bearing browser) per
-> [`PublicSessionController`](/src/apps/tenant/Controllers/Api/PublicSessionController.cs);
-> `ScanQr.razor` calls the new prefix. The legacy
-> `/api/sessions/open` and `/api/sessions/{ticketId}` routes on
-> [`SessionsController`](/src/apps/tenant/Controllers/Api/SessionsController.cs)
-> stay operational during the deprecation window TD-0021 step 3
-> declares; the staff-tier `POST /api/sessions/{sessionId}/close`
-> action is unaffected and stays under `Tenant:Write`.
+Legacy `/api/sessions/open` and `/api/sessions/{ticketId}` routes stay
+operational only through the temporary compatibility window tracked by
+[TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021). The staff-tier
+`POST /api/sessions/{sessionId}/close` action is unaffected and stays in
+[`./internal-api.md`](./internal-api.md).
 
 ### Customer Order Submission
 
@@ -266,9 +231,10 @@ Per-endpoint error codes:
   `invalid_request`, `session_expired`, `checkout_proof_missing`,
   `checkout_proof_invalid`, `checkout_proof_expired`, `cart_empty`,
   `catalog_stale`, `order_duplicate`, `rate_limited`.
-- `GET /api/public/session`: `session_expired`.
+- `POST /api/public/session/open`: `token_used`, `token_expired`,
+  `rate_limited`.
+- `GET /api/public/session/{ticketId}`: `session_expired`.
 - `GET /api/public/catalog`: `rate_limited` on abusive probes.
-- `GET /api/public/profile`: `rate_limited` on abusive probes.
 - `GET /ws/tables/{tableNumber}`: handshake failure surfaces a close
   code with `code` in the close reason; see the WebSocket family in
   [`./error-codes.md`](./error-codes.md).
@@ -284,6 +250,9 @@ The following endpoint families are not part of the external tenant API:
 - `/api/admin/**` is not exposed. Admin and staff surfaces interact with
   the domain through Blazor components, not through an internal HTTP
   layer.
+- `/api/public/profile` is not exposed. Tenant profile data is currently
+  read by server-side code; a public profile endpoint ships only when a
+  real client needs it.
 - `/api/public/token/verify` is not a separate endpoint. Token join runs
   inside the `/g/{token}` Static SSR page; checkout proof is inlined into
   `POST /api/public/orders`.

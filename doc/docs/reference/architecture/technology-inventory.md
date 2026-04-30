@@ -25,7 +25,7 @@ inventory, not the ADR.
 | Data access | EF Core 10 |
 | PostgreSQL provider | Npgsql |
 | Storage | PostgreSQL 17 |
-| Authentication | Keycloak (external IdP) + ASP.NET Core OIDC client |
+| Authentication | Platform host: ASP.NET Core Identity with optional Keycloak/OIDC bridge; tenant host: ASP.NET Core Identity development bridge pending AD-0016 migration |
 | Observability | OpenTelemetry + Serilog |
 | Admin UI components | Radzen Blazor |
 | Shell composition | Blazor `SectionOutlet` / `SectionContent` |
@@ -39,17 +39,17 @@ inventory, not the ADR.
 
 NuGet package versions are centrally pinned in:
 
-- [`/Directory.Packages.props`](/opt/onlynet/Directory.Packages.props)
+- [`/Directory.Packages.props`](/Directory.Packages.props)
 
 Repository-wide .NET build defaults are centrally pinned in:
 
-- [`/Directory.Build.props`](/opt/onlynet/Directory.Build.props)
+- [`/Directory.Build.props`](/Directory.Build.props)
 
 Node and package-manager expectations are pinned in:
 
-- [`/package.json`](/opt/onlynet/package.json)
-- [`/.nvmrc`](/opt/onlynet/.nvmrc)
-- [`/.node-version`](/opt/onlynet/.node-version)
+- [`/package.json`](/package.json)
+- [`/.nvmrc`](/.nvmrc)
+- [`/.node-version`](/.node-version)
 
 ## Project Inventory
 
@@ -61,7 +61,7 @@ Primary role:
 
 Project file:
 
-- [`TabFlow.Platform.csproj`](/opt/onlynet/src/apps/platform/TabFlow.Platform.csproj)
+- [`TabFlow.Platform.csproj`](/src/apps/platform/TabFlow.Platform.csproj)
 
 Important package surface:
 
@@ -79,7 +79,7 @@ Important package surface:
 
 Project dependencies:
 
-- [`TabFlow.Shared`](/opt/onlynet/src/packages/shared-dotnet/TabFlow.Shared.csproj)
+- [`TabFlow.Shared`](/src/packages/shared-dotnet/TabFlow.Shared.csproj)
 
 ### `src/apps/tenant`
 
@@ -89,7 +89,7 @@ Primary role:
 
 Project file:
 
-- [`TabFlow.Tenant.csproj`](/opt/onlynet/src/apps/tenant/TabFlow.Tenant.csproj)
+- [`TabFlow.Tenant.csproj`](/src/apps/tenant/TabFlow.Tenant.csproj)
 
 Important package surface:
 
@@ -109,12 +109,12 @@ Important package surface:
 
 Project dependencies:
 
-- [`TabFlow.Shared`](/opt/onlynet/src/packages/shared-dotnet/TabFlow.Shared.csproj)
+- [`TabFlow.Shared`](/src/packages/shared-dotnet/TabFlow.Shared.csproj)
 
 Frontend build notes:
 
-- TypeScript source lives under [`Interop/`](/opt/onlynet/src/apps/tenant/Interop)
-- emitted JavaScript lives under [`wwwroot/js/`](/opt/onlynet/src/apps/tenant/wwwroot/js)
+- TypeScript source lives under [`Interop/`](/src/apps/tenant/Interop)
+- emitted JavaScript lives under [`wwwroot/js/`](/src/apps/tenant/wwwroot/js)
 - `dotnet build` compiles the registered `TypeScriptCompile` items
 
 ### `src/apps/platform-worker`
@@ -125,7 +125,7 @@ Primary role:
 
 Project file:
 
-- [`TabFlow.PlatformWorker.csproj`](/opt/onlynet/src/apps/platform-worker/TabFlow.PlatformWorker.csproj)
+- [`TabFlow.PlatformWorker.csproj`](/src/apps/platform-worker/TabFlow.PlatformWorker.csproj)
 
 Important package surface:
 
@@ -137,7 +137,7 @@ Important package surface:
 
 Project dependencies:
 
-- [`TabFlow.Shared`](/opt/onlynet/src/packages/shared-dotnet/TabFlow.Shared.csproj)
+- [`TabFlow.Shared`](/src/packages/shared-dotnet/TabFlow.Shared.csproj)
 
 ### `src/packages/shared-dotnet`
 
@@ -147,7 +147,7 @@ Primary role:
 
 Project file:
 
-- [`TabFlow.Shared.csproj`](/opt/onlynet/src/packages/shared-dotnet/TabFlow.Shared.csproj)
+- [`TabFlow.Shared.csproj`](/src/packages/shared-dotnet/TabFlow.Shared.csproj)
 
 Important package surface:
 
@@ -169,7 +169,7 @@ Primary role:
 
 Project file:
 
-- [`TabFlow.Migrations.csproj`](/opt/onlynet/src/infra/postgres/TabFlow.Migrations.csproj)
+- [`TabFlow.Migrations.csproj`](/src/infra/postgres/TabFlow.Migrations.csproj)
 
 ## Dependency Injection Inventory
 
@@ -181,7 +181,7 @@ registrations, not just lifetime guidance.
 
 Source:
 
-- [`src/apps/platform/Program.cs`](/opt/onlynet/src/apps/platform/Program.cs)
+- [`src/apps/platform/Program.cs`](/src/apps/platform/Program.cs)
 
 `DbContext` registrations:
 
@@ -195,6 +195,7 @@ Scoped services:
 - `ITenantRegistryService -> TenantRegistryService`
 - `IProvisioningJobReadService -> ProvisioningJobReadService`
 - `PlatformUserPreferenceService`
+- `PlatformClaimsTransformation`
 - `HttpClient` rooted to `NavigationManager.BaseUri`
 
 Identity/auth registrations:
@@ -217,7 +218,7 @@ UI/runtime registrations:
 
 Shell implementation notes:
 
-- shared three-pane operator shell lives in [`src/apps/platform/Shared/MainLayout.razor`](/opt/onlynet/src/apps/platform/Shared/MainLayout.razor)
+- shared three-pane operator shell lives in [`src/apps/platform/Shared/MainLayout.razor`](/src/apps/platform/Shared/MainLayout.razor)
 - pages project title, header actions, and inspector content through Blazor section outlets
 - shell state owns sidebar collapse and inspector collapse behavior
 
@@ -236,7 +237,7 @@ Middleware wired in host pipeline:
 
 Source:
 
-- [`src/apps/tenant/Program.cs`](/opt/onlynet/src/apps/tenant/Program.cs)
+- [`src/apps/tenant/Program.cs`](/src/apps/tenant/Program.cs)
 
 `DbContext` registrations:
 
@@ -253,8 +254,13 @@ Scoped services:
 - `ICustomerSessionService -> CustomerSessionService`
 - `ICartService -> CartService`
 - `IOrderService -> OrderService`
+- `ITableReadService -> TableReadService`
+- `ITableCommandService -> TableCommandService`
+- `IMenuReadService -> MenuReadService`
+- `IKitchenReadService -> KitchenReadService`
 - `SignalRService`
 - `TenantUserPreferenceService`
+- `TenantAdminActivationService`
 - `CustomerSessionBrowserStore`
 - `HttpClient` rooted to `NavigationManager.BaseUri`
 
@@ -290,7 +296,7 @@ Observability/runtime infrastructure:
 
 Source:
 
-- [`src/apps/platform-worker/Program.cs`](/opt/onlynet/src/apps/platform-worker/Program.cs)
+- [`src/apps/platform-worker/Program.cs`](/src/apps/platform-worker/Program.cs)
 
 Registrations:
 

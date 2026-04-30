@@ -11,8 +11,8 @@ namespace TabFlow.Analyzers.Tests;
 /// runs the analyser, and asserts which diagnostics fire.
 ///
 /// Per the test taxonomy these tests live in the Unit tier (no DB,
-/// no file system, no network). They close the regression-test
-/// half of TD-0022 step 4.
+/// no file system, no network). They cover the controller-boundary
+/// analyzer rule.
 /// </summary>
 [Trait("Category", "Unit")]
 public sealed class ControllerDbContextAnalyzerTests

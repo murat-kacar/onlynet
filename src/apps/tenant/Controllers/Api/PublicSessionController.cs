@@ -22,8 +22,8 @@ namespace TabFlow.Tenant.Controllers.Api;
 ///
 /// Legacy customer-tier routes
 /// (`POST /api/sessions/open`, `GET /api/sessions/{ticketId}`) stay
-/// operational during the deprecation window declared in TD-0021
-/// step 3.
+/// operational during the temporary compatibility window tracked by
+/// TD-0021.
 /// </summary>
 [ApiController]
 [Route("api/public/session")]
@@ -68,7 +68,13 @@ public sealed class PublicSessionController : ControllerBase
     [HttpGet("{ticketId:guid}")]
     public async Task<ActionResult<CustomerSessionState>> GetSessionState(Guid ticketId, CancellationToken ct)
     {
-        var state = await _service.GetSessionStateAsync(ticketId, ct);
+        var deviceCookie = Request.Cookies[CustomerSessionCookie.Name];
+        if (string.IsNullOrEmpty(deviceCookie))
+        {
+            return Forbid();
+        }
+
+        var state = await _service.GetSessionStateAsync(ticketId, deviceCookie, ct);
         return state is null ? NotFound() : Ok(state);
     }
 }

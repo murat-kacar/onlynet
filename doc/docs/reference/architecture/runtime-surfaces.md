@@ -38,7 +38,7 @@ Each host is a Blazor Web App backed by ASP.NET Core 10. See
 | --- | --- |
 | `owner` | Tenant owner. Full control including role assignment. |
 | `manager` | Tenant administrator. Menu, floor layout, stations, staff users below owner, reports. |
-| `cashier` | Service floor and cashier surfaces. Orders, bills, table operations. |
+| `cashier` | Live service floor and cashier surfaces. Orders, close bill, table operations. |
 | `station_device` | A single station terminal. Station-scoped fulfillment board only. |
 
 The authorization model and the station-device identity decision are
@@ -67,55 +67,59 @@ Render-mode column values:
 | P-04 | `/tenants/new` | policy `Platform:Write` (`owner`, `admin`) | interactive | Create tenant |
 | P-05 | `/tenants/{id}` | policy `Platform:Read` | interactive | Tenant detail, status, regional settings, jobs |
 | P-06 | `/jobs` | policy `Platform:Read` | interactive | Provisioning jobs |
-| P-07 | `/audit` | policy `Platform:Write` | interactive | Platform audit log |
+| P-07 | `/audit` | policy `Platform:Read` | interactive | Platform audit log |
+| P-09 | `/settings` | policy `Platform:Self` | interactive | Platform user preferences and password controls |
 | P-08 | `/change-password` | policy `Platform:Self` (any authenticated platform user) | static | Password change |
 
 ### Tenant Host — Public
 
 | ID | Route | Roles | Render mode | Purpose |
 | --- | --- | --- | --- | --- |
-| T-01 | `/` | anonymous | static | Welcome and QR prompt |
-| T-02 | `/menu` | customer session | static | Customer menu, cart, order submission |
-| T-03 | `/g/{token}` | anonymous | static | QR token verification, table-session bootstrap, access-cookie issue |
+| T-01 | `/` | anonymous | static | Welcome / route shell |
+| T-02 | `/menu` | customer session | interactive today; target static | Customer menu and add-to-cart flow |
+| T-03 | `/g/{token}` | anonymous | target static | QR token verification, table-session bootstrap, access-cookie issue; not yet implemented as a route |
+| T-17 | `/cart` | customer session | interactive today; target static | Customer cart and checkout submission |
+| T-18 | `/scan-qr` | customer session | interactive today; target static | Camera-assisted customer session open flow |
+| T-19 | `/order-complete/{orderId}` | customer session | static | Customer order completion confirmation |
 
 ### Tenant Host — Authentication
 
 | ID | Route | Roles | Render mode | Purpose |
 | --- | --- | --- | --- | --- |
 | T-04 | `/login` | anonymous | static | Tenant identity sign-in |
+| T-04a | `/login-2fa` | anonymous | static | Tenant two-factor challenge |
+| T-04b | `/activate` | anonymous | static | Tenant admin activation |
 | T-05 | `/change-password` | any tenant user | static | Password change |
 
 ### Tenant Host — Console
 
 | ID | Route | Roles | Render mode | Purpose |
 | --- | --- | --- | --- | --- |
-| T-06 | `/console` | `owner`, `manager` | interactive | Overview, metrics, attention queue |
-| T-07 | `/console/catalog` | `owner`, `manager` | interactive | Catalog management |
-| T-08 | `/console/stations` | `owner`, `manager` | interactive | Station management |
-| T-09 | `/console/tables` | `owner`, `manager` | interactive | Floor layout and table management |
-| T-10 | `/console/users` | `owner`, `manager` | interactive | Tenant user and role management, gated by `Console:ManageUsersBelowOwner` so managers cannot edit owner rows |
-| T-11 | `/console/firmware` | `owner`, `manager` | interactive | ESP32 firmware defaults |
-| T-12 | `/console/audit` | `owner`, `manager` | interactive | Tenant audit log |
+| T-06 | `/settings` | policy `Tenant:Self` | interactive | Tenant user preferences and password controls |
+| T-07 | `/tables` | policy `Tenant:Read` (`owner`, `manager`) | interactive | Floor layout and table setup/configuration |
 
 ### Tenant Host — Operations
 
 | ID | Route | Roles | Render mode | Purpose |
 | --- | --- | --- | --- | --- |
-| T-13 | `/service` | `cashier`, `manager`, `owner` | interactive | Floor and cash workspace |
-| T-14 | `/pda` | `cashier`, `manager`, `owner` | interactive | Mobile waiter workspace |
+| T-08 | `/service` | policy `Tenant:Read` (`manager`, `cashier`) | interactive target | Live floor and cash workspace |
+| T-09 | `/table/{tableNumber}` | policy `Tenant:Read` (`manager`, `cashier`) | interactive | Per-table service workspace |
+| T-13 | `/order/{orderId}` | policy `Tenant:Read` | interactive today | Staff order detail view |
 
 ### Tenant Host — Station
 
 | ID | Route | Roles | Render mode | Purpose |
 | --- | --- | --- | --- | --- |
-| T-15 | `/stations` | `station_device` | interactive | Station selection |
-| T-16 | `/stations/{stationCode}` | `station_device` | interactive | Station fulfillment board |
+| T-15 | `/kitchen` | policy `Tenant:Read` (`owner`, `manager`) | interactive | All-station kitchen overview |
+| T-16 | `/stations/{stationCode}` | policy `Tenant:Read` (`manager`, `station_device`) | interactive target | Station-scoped fulfillment queue |
 
 ### Tenant Host — Device Endpoint
 
 | ID | Route | Auth | Purpose |
 | --- | --- | --- | --- |
 | D-01 | `wss://<tenant-domain>/ws/tables/{tableNumber}?deviceKey={deviceKey}` | Device key | ESP32 token push and rotation |
+
+<a id="tenant-host--http-endpoints"></a>
 
 ### Tenant Host — HTTP Endpoints
 
@@ -124,27 +128,29 @@ The tenant host carries two tiers of HTTP endpoint: customer-tier
 table device) and staff-tier (authenticated, called from the
 Interactive Server staff surfaces). The two tiers are separated by
 authorisation (controller-level `[AllowAnonymous]` vs
-`[Authorize(Policy = "Tenant:Read|Write")]`) per TD-0015 step 2; the
-prefix-level separation (`/api/public/*` for customer-tier) is a
-follow-up tracked under TD-0021.
+`[Authorize(Policy = "Tenant:Read|Write")]`) per TD-0015 step 2. The
+canonical customer tier is mounted under `/api/public/*`; the legacy
+`/api/menu`, `/api/cart`, and customer slice of `/api/sessions/*` remain
+only for the temporary compatibility window tracked by
+[TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021).
 
 | Group | Routes | Tier | Purpose |
 | --- | --- | --- | --- |
 | Health | `GET /health`, `GET /health/live`, `GET /health/ready` | n/a | Probes (anonymous, AC-101). |
-| Customer order submission | `POST /api/public/orders` | customer | The only endpoint that ships under the prefix today. Submission gate per AC-030..AC-036; routed by `PublicOrdersController` per TD-0015 step 3 and PR #6. |
-| Customer menu read | `GET /api/menu`, `GET /api/menu/category/{categoryId}` | customer | Catalog reads. Controller-level `[AllowAnonymous]` per TD-0015. Migration to `/api/public/catalog` tracked under TD-0021. |
-| Customer cart mutation | `POST /api/cart`, `GET /api/cart/session/{sessionId}` | customer | Cart manipulation against an open access ticket. Controller-level `[AllowAnonymous]` per TD-0015. Migration to `/api/public/cart` tracked under TD-0021. |
-| Customer session lifecycle | `POST /api/sessions/open`, `GET /api/sessions/{ticketId}` | customer | QR-token consumption + access-cookie issue, and ticket state read. Action-level `[AllowAnonymous]` per TD-0015 (controller default is `Tenant:Read` to avoid the ASP0026 trap). Migration to `/api/public/session` tracked under TD-0021. |
+| Customer order submission | `POST /api/public/orders` | customer | Submission gate per AC-030..AC-036; routed by `PublicOrdersController`. |
+| Customer menu read | `GET /api/public/catalog`, `GET /api/public/catalog/category/{categoryId}` | customer | Catalog reads via `PublicCatalogController`. Legacy `/api/menu*` remains temporarily under [TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021). |
+| Customer cart mutation | `POST /api/public/cart`, `DELETE /api/public/cart/{id}`, `PUT /api/public/cart/{id}/quantity`, `GET /api/public/cart/session/{sessionId}` | customer | Cart manipulation against an open access ticket via `PublicCartController`. Legacy `/api/cart*` remains temporarily under [TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021). |
+| Customer session lifecycle | `POST /api/public/session/open`, `GET /api/public/session/{ticketId}` | customer | QR-token consumption + access-cookie issue, and ticket state read via `PublicSessionController`. Legacy customer actions on `/api/sessions/*` remain temporarily under [TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021). |
 | Staff session close | `POST /api/sessions/{sessionId}/close` | staff | Closes a customer session. `[Authorize(Policy = "Tenant:Write")]`. AC-044. |
 | Staff orders read | `GET /api/orders/{id}`, `GET /api/orders/session/{sessionId}` | staff | Read-only views for the floor and cash workspace. `[Authorize(Policy = "Tenant:Read")]`. |
-| Staff kitchen board | `GET /api/kitchen/orders`, `POST /api/kitchen/items/{id}/status` | staff | Station-board reads and item-state transitions. The mutation action carries `[Authorize(Policy = "Tenant:Write")]` per AC-052. |
-| Staff tables read | `GET /api/tables`, `GET /api/tables/{id}` | staff | Floor layout read for the workspace. `[Authorize(Policy = "Tenant:Read")]`. |
+| Staff kitchen board | `GET /api/kitchen/orders`, `PUT /api/kitchen/items/{id}/status` | staff | Station-board reads and item-state transitions. The mutation action carries `[Authorize(Policy = "Tenant:Write")]` per AC-052. |
+| Staff tables | `GET /api/tables`, `GET /api/tables/{id}`, `POST /api/tables`, `PUT /api/tables/{id}`, `DELETE /api/tables/{id}`, `GET /api/tables/{id}/workspace`, `POST /api/tables/{id}/checkout-proof` | staff | Floor layout read/write, workspace snapshot, and checkout proof issuance. Mutations carry `Tenant:Write`; reads inherit `Tenant:Read`. |
 
 The staff-tier HTTP endpoints above are deliberately exposed (rather
 than running through Blazor application services) because the staff
 Blazor pages call them via `HttpClient` rather than through DI; this
-is a transitional shape from the pre-TD-0015 era. They are still
-"administrative HTTP endpoints" in the sense of AD-0003 and are not
+is an internal implementation choice. They are still "administrative
+HTTP endpoints" in the sense of AD-0003 and are not
 considered part of the public contract surface. Administrative
 mutations served from Blazor components without an HTTP boundary
 remain the architectural target.
@@ -173,8 +179,8 @@ Operational anchors, consumed on every staff surface:
 - device or QR health
 - timing or elapsed time
 
-Ticket-card anchors on T-13 (floor and cash) and T-15 / T-16 (station
-board):
+Ticket-card anchors on T-08 / T-09 (floor and cash) and T-15 / T-16
+(station board):
 
 - table number
 - order id
@@ -197,12 +203,12 @@ subscribe and re-render without polling. See
 
 | Event | Published by | Consumed by |
 | --- | --- | --- |
-| `order.submitted` | Customer order submit, waiter order submit | T-13 floor and cash, T-16 station board |
-| `order.status_changed` | Station board status transitions, waiter actions | T-13, T-16, relevant PDA views |
-| `bill.opened` | Order submission opens a new bill on a table | T-13 |
-| `bill.closed`, `bill.moved`, `bill.merged`, `bill.split` | Cashier bill operations | T-13 |
-| `table.opened`, `table.closed` | QR join flow, cashier actions | T-13 |
-| `device.connected`, `device.disconnected` | ESP32 WebSocket lifecycle | T-06 dashboard, T-13 table cards |
+| `order.submitted` | Customer order submit, waiter order submit | T-08 / T-09 floor and cash, T-16 station board |
+| `order.status_changed` | Station board status transitions, waiter actions | T-08 / T-09, T-16, relevant PDA views |
+| `bill.opened` | Order submission opens a new bill on a table | T-08 / T-09 |
+| `bill.closed` | Cashier close-bill operation | T-08 / T-09 |
+| `table.opened`, `table.closed` | QR join flow, cashier actions | T-08 / T-09 |
+| `device.connected`, `device.disconnected` | ESP32 WebSocket lifecycle | T-06 dashboard, T-08 / T-09 table cards |
 
 Event types stay a closed enumeration. New events are added through a
 small commit that covers the event record, publication point, and
@@ -260,14 +266,22 @@ Station management expectations:
 - product routing is item-level; category-level routing may act as a
   default helper
 
-### Floor And Cash Workspace (T-13)
+### Floor And Cash Workspace (T-08 and T-09)
 
 Purpose:
 
-- Table state
-- Open check handling
-- Manual payment flow
-- Move, merge, split, and close actions
+- Live table service
+- Checkout-proof issuance
+- Close-bill flow
+- Ready-order awareness
+
+`/tables` is not the live service workspace. It is the table
+setup/configuration surface for tenant owner and manager work. The live
+service route is `/service`, with `/table/{tableNumber}` as the
+per-table workspace.
+
+v1.0.0 exposes close bill as the only bill lifecycle action. Move,
+merge, and split are outside the first-release UI contract.
 
 Baseline views:
 
@@ -296,16 +310,13 @@ Primary actions from a selected table:
 
 - mark payment received
 - close check
-- move table or check
-- merge tables or checks
-- split check
 - inspect live order detail
 
 Interaction principles:
 
 - normal mode is operational
 - layout editing is explicit and separate
-- move, merge, split, close actions are quick but still deliberate
+- close-bill actions are quick but still deliberate
 - closing a check requires a stronger confirmation than normal table
   selection
 
@@ -314,8 +325,17 @@ Interaction principles:
 Purpose:
 
 - Station-scoped fulfillment
+- All-station manager overview
 - Fast ticket progression
 - Urgency visibility
+- Order progress source of truth
+
+Station operators land on `/stations/{stationCode}` and see only the
+queue they can act on. `/kitchen` is the all-station overview for
+managers and cross-station operators.
+
+Station status transitions drive customer-visible order progress:
+`submitted`, `preparing`, `ready`, `served`, and `cancelled`.
 
 Variants include kitchen, barista, bar, hookah, fastfood, and dispatch
 stations. The ticket-card anchors and urgency bands live in
@@ -341,7 +361,7 @@ Visual direction:
 - large timers and action buttons
 - readable from distance and under pressure
 
-### Waiter / Mobile PDA (T-14)
+### Waiter / Mobile PDA
 
 Purpose:
 
@@ -356,7 +376,7 @@ Direction:
 - protected actions run under the waiter's authenticated tenant
   identity, not through a customer QR session
 
-### Customer Menu (T-01, T-02, T-03)
+### Customer Ordering (T-01, T-02, T-03, T-17, T-18, T-19)
 
 Purpose:
 
@@ -364,6 +384,7 @@ Purpose:
 - Customer browsing
 - Open-check visibility
 - Order composition
+- Order progress after submission
 
 Security direction:
 
@@ -407,8 +428,8 @@ per layout.
 
 ## Station-Device Access
 
-Station operators access only T-15 `/stations` and T-16
-`/stations/{stationCode}`.
+Station operators access T-16 `/stations/{stationCode}`. T-15
+`/kitchen` is the all-station manager overview.
 
 The authentication pattern for the `station_device` role is still open
 and depends on the station hardware decision. The identity

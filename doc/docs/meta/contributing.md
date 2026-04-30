@@ -67,6 +67,14 @@ authoritative tables it cites:
   [`../reference/architecture/slos.md`](../reference/architecture/slos.md)
 - the capability matrix in
   [`../reference/architecture/capability-matrix.md`](../reference/architecture/capability-matrix.md)
+- the strongest nearby example for the same contract, structure, or
+  document type
+
+Before merging, confirm:
+
+- the strongest nearby example was checked; there is no avoidable
+  divergence in structure, naming, or contract shape
+- the document shape is conventional for its audience and problem type
 
 Every architectural change MUST land in the relevant reference or
 explanation document **before or alongside** any implementation change

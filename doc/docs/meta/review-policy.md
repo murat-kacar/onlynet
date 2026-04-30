@@ -17,6 +17,20 @@ approved only when all applicable items pass.
 - Existing tests still pass; new tests cover new invariants.
 - Edge cases relevant to the changed surface are exercised.
 
+### Method Fit
+
+- The chosen approach is not only functional; it is also appropriately
+  conventional for the problem.
+- A simpler, clearer, or better-proven pattern is not being skipped
+  without reason.
+- The change aligns with current framework guidance, repository
+  direction, and nearby surface conventions.
+- The implementation or document does not introduce avoidable
+  duplication, indirection, coupling, speculative abstraction, or
+  private structure.
+- The local optimisation does not damage the global shape of the
+  product.
+
 ### Constitution Conformance
 
 - **Reversibility.** If the change is one-way (per
@@ -43,6 +57,11 @@ approved only when all applicable items pass.
 - New abstractions, dependencies, and indirections are justified.
 - The change respects the platform/tenant boundary (AD-0001) and the
   one-host-process-per-side rule (AD-0003).
+- The solution follows the best-fit shape already established by
+  accepted ADRs, authoritative reference documents, framework
+  conventions, and the strongest nearby examples. A deviation is
+  reviewed as a design decision, not hidden as an implementation
+  detail.
 
 ### Self-Consistency
 
@@ -50,6 +69,10 @@ References the same authoritative tables that
 [`./contributing.md`](./contributing.md) names: surface IDs, ADR list,
 acceptance criteria, SLI list, capability matrix. Cross-document drift
 is a review failure.
+- The change is consistent not only with the repository's written
+  contracts, but also with the repository's established structural
+  direction. A correct-but-directionally-wrong change is a review
+  failure.
 
 ## Security Review
 
@@ -84,9 +107,9 @@ permitted for security-sensitive changes.
 When `main` is broken (build red, smoke red, release-gate red, or a
 production incident is open), the constitution authorises a contributor
 to ship a build-fix PR with a single approving reviewer or, if no other
-maintainer is available, a self-merge. The PR body MUST state
+maintainer is available, a self-merge. The change description MUST state
 "stop-the-line" and link the broken signal. A retroactive review is
-opened in a follow-up PR within one working day.
+opened as a follow-up within one working day.
 
 ## Branching
 
@@ -112,6 +135,8 @@ longer is escalated by the author in the team channel.
 - "LGTM" without checks against the items above.
 - Approving a PR for a domain the reviewer does not understand instead
   of requesting a domain reviewer.
+- Approving a change because it works, while ignoring that a more
+  conventional and lower-complexity approach was available.
 - Approving a PR that adds a "TODO" without an owner or a tech-debt
   ledger entry.
 - Approving a PR that ships a feature without an updated capability
@@ -119,6 +144,10 @@ longer is escalated by the author in the team channel.
 - Approving a security-sensitive PR without a `security: reviewed`
   note.
 - Approving a PR whose declared working mode does not match its output.
+- Approving unnecessary novelty in naming, structure, workflow, or
+  abstraction where a standard pattern would be clearer.
+- Approving a locally clean change that makes the overall product
+  shape less coherent.
 
 ## Related
 

@@ -175,4 +175,27 @@ public sealed class AuthEnforcementTests : IClassFixture<TenantWebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
             "the application gate (missing device cookie) returns 403 per TD-0017");
     }
+
+    [Fact]
+    public async Task PublicCart_AddItem_NoCookie_Returns403()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        var dummyRequest = new
+        {
+            SessionId = Guid.NewGuid(),
+            MenuItemId = Guid.NewGuid(),
+            Quantity = 1,
+            Note = (string?)null,
+        };
+        var response = await client.PostAsJsonAsync(
+            new Uri("/api/public/cart", UriKind.Relative),
+            dummyRequest);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "customer cart mutation requires the access-ticket cookie but not ASP.NET Identity");
+    }
 }

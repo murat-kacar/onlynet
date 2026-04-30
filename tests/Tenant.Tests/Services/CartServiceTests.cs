@@ -9,8 +9,8 @@ namespace Tenant.Tests.Services;
 
 /// <summary>
 /// Integration-tier tests for <see cref="CartService"/>.
-/// Uses the transactional fixture introduced under TD-0010 step 5
-/// (PR #33): every <c>[Fact]</c> opens a database transaction in
+/// Uses the transactional fixture from TD-0010: every <c>[Fact]</c>
+/// opens a database transaction in
 /// <see cref="TenantTransactionalTestBase.InitializeAsync"/> and the
 /// transaction is rolled back in <see cref="TenantTransactionalTestBase.DisposeAsync"/>,
 /// so tests stay hermetic without an `EnsureDeletedAsync` per case.
@@ -32,12 +32,15 @@ public sealed class CartServiceTests : TenantTransactionalTestBase
 
         var session = CustomerSession.Open(Guid.NewGuid());
         Db.CustomerSessions.Add(session);
+        var deviceCookie = $"cookie-{Guid.NewGuid():N}";
+        var ticket = session.IssueTicket(deviceCookie);
+        Db.CustomerAccessTickets.Add(ticket);
         await Db.SaveChangesAsync();
 
         var service = new CartService(Db);
         var request = new AddCartItemRequest(session.Id, menuItem.Id, 2, "No onions");
 
-        var result = await service.AddItemAsync(request);
+        var result = await service.AddItemAsync(request, deviceCookie);
 
         result.MenuItemId.Should().Be(menuItem.Id);
         result.MenuItemName.Should().Be("Test Item");
@@ -55,15 +58,41 @@ public sealed class CartServiceTests : TenantTransactionalTestBase
     {
         var session = CustomerSession.Open(Guid.NewGuid());
         Db.CustomerSessions.Add(session);
+        var deviceCookie = $"cookie-{Guid.NewGuid():N}";
+        var ticket = session.IssueTicket(deviceCookie);
+        Db.CustomerAccessTickets.Add(ticket);
 
         var cartItem = CartItem.Create(session.Id, Guid.NewGuid(), 1, null);
         Db.CartItems.Add(cartItem);
         await Db.SaveChangesAsync();
 
         var service = new CartService(Db);
-        await service.RemoveItemAsync(cartItem.Id);
+        await service.RemoveItemAsync(cartItem.Id, deviceCookie);
 
         var item = await Db.CartItems.FindAsync(cartItem.Id);
         item.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddItemAsync_MismatchedDeviceCookie_Throws()
+    {
+        var category = Category.Create("Test Category", 1);
+        Db.Categories.Add(category);
+
+        var menuItem = MenuItem.Create(category.Id, "Test Item", 10.99m);
+        Db.MenuItems.Add(menuItem);
+
+        var session = CustomerSession.Open(Guid.NewGuid());
+        Db.CustomerSessions.Add(session);
+        var ticket = session.IssueTicket($"cookie-{Guid.NewGuid():N}");
+        Db.CustomerAccessTickets.Add(ticket);
+        await Db.SaveChangesAsync();
+
+        var service = new CartService(Db);
+        var request = new AddCartItemRequest(session.Id, menuItem.Id, 2, "No onions");
+
+        var act = () => service.AddItemAsync(request, "wrong-cookie");
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("*Device cookie mismatch*");
     }
 }

@@ -232,8 +232,10 @@ Owns:
 - Bills (`id`, `table_id`, `opened_at`, `closed_at`, `total_amount`,
   `payment_method`)
 
-Bill mutation actions (`close`, `move`, `merge`, `split`) are authoritative
-over bill state. Each action is auditable.
+The v1.0.0 bill mutation action is `close`. Move, merge, and split are
+future bill-lifecycle capabilities; when introduced, they must preserve
+the one-open-bill-per-table invariant and write auditable bill mutation
+events.
 
 ### Station And Kitchen
 
@@ -277,7 +279,7 @@ Both `platform_audit_log` and `tenant_audit_log` share a common shape:
 - `user.create`, `user.update`, `user.role.change`, `user.deactivate`
 - `tenant.create`, `tenant.status.change`, `tenant.regional.update`
   (platform log only)
-- `bill.close`, `bill.move`, `bill.merge`, `bill.split`
+- `bill.close`
 - `catalog.category.*`, `catalog.item.*`
 - `station.create`, `station.update`, `station.delete`,
   `station.device.pair`, `station.device.revoke`

@@ -7,8 +7,9 @@ This tree's shape, audience, and lifecycle are defined by
 
 ## Personas
 
-Each persona has its own subfolder. Content is written in the language of
-the persona, not engineering language.
+Each persona will have its own subfolder when that persona's first stable
+walkthrough ships. Content is written in the language of the persona, not
+engineering language.
 
 | Persona | Folder | Status |
 | --- | --- | --- |
@@ -34,6 +35,7 @@ the persona, not engineering language.
 
 ## Status Today
 
-This tree is a stub. The product is in active development; user-facing
-help materialises as features stabilise. The first walkthrough lands when
-the first persona has a stable surface to document.
+TabFlow v1.0.0 has no end-user walkthrough set yet. This tree
+intentionally contains only the persona structure and activation rules;
+each persona folder is added when that persona's stable workflow is
+ready to document.

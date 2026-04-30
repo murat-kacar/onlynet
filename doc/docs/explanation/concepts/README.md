@@ -16,3 +16,5 @@ Current concept set:
 - [`./data-protection.md`](./data-protection.md)
 - [`./test-taxonomy.md`](./test-taxonomy.md)
 - [`./implementation-patterns.md`](./implementation-patterns.md)
+- [`./ui-stakeholder-surface-analysis.md`](./ui-stakeholder-surface-analysis.md)
+- [`./frontend-ui-alignment-review.md`](./frontend-ui-alignment-review.md)

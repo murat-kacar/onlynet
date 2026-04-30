@@ -31,6 +31,22 @@ Defined terms used below (`spike`, `tracer bullet`, `one-way door`,
 4. **An irreversible change MUST be justified explicitly in its ADR.**
    The ADR states why the operation cannot be reversed in one operator
    step and what mitigations are in place.
+5. **Default to proven, conventional, and current practice.** When
+   choosing a method, pattern, structure, workflow, or wording,
+   contributors start from approaches that are broadly proven, current,
+   and conventionally accepted for the problem space. Local preference,
+   novelty, or cleverness needs an explicit reason. The burden of proof
+   is on the deviation, not on the convention.
+6. **Check the strongest nearby examples before committing.** A
+   decision is not justified only because it works locally.
+   Contributors compare against framework guidance, repository
+   contracts, and nearby product surfaces, and prefer the simpler,
+   clearer, more coherent, or better-proven shape unless there is a
+   documented reason not to.
+7. **Global fit matters, not just local success.** A change that works
+   in isolation but damages product coherence, contract clarity,
+   operational consistency, or long-term maintainability is the wrong
+   change.
 
 ## II. Progress
 
@@ -73,7 +89,7 @@ This section states the rules that apply across **all** trees.
    duplicate it.
 4. **Stable contracts have a deprecation path.** Breaking a stable
    reference (API route, DB column, config key, public guide) requires
-   a deprecation window stated in the same PR that introduces the
+   a deprecation window stated in the same change that introduces the
    replacement.
 5. **Decision rationale is not historical narrative.** "Why we chose X"
    is a current contract and stays in `docs/`. "We used to do Y" is
@@ -82,6 +98,14 @@ This section states the rules that apply across **all** trees.
 6. **The charter governs tree boundaries.** Adding, removing, or
    redefining a tree is a charter amendment. See
    [`./meta/documentation-charter.md`](./meta/documentation-charter.md#amendment).
+7. **Documentation prefers the clearest proven form for its audience.**
+   Documentation does not optimise for novelty, personality, or private
+   structure. It optimises for conventional form, current best
+   practice, cross-document consistency, recognisable sectioning, and
+   fast comprehension by the intended reader.
+8. **A correct document with the wrong shape is still low quality.**
+   If a simpler, more standard, more recognisable structure would serve
+   the audience better, that structure wins.
 
 ## IV. Quality
 
@@ -89,9 +113,13 @@ This section states the rules that apply across **all** trees.
    automated test, it is not an invariant — it is a wish.
 2. **Every capability is observable in production.** Without a metric, a
    log, or a trace, you cannot tell whether the capability is working.
-3. **Code style follows the framework.** ASP.NET Core, EF Core, and
-   Blazor have idiomatic patterns; we use them. Custom abstractions
-   need a justification an ADR can carry.
+3. **Implementation follows proven framework and engineering practice.**
+   ASP.NET Core, EF Core, Blazor, PostgreSQL, and adjacent tooling have
+   idiomatic patterns; we use them. Contributors prefer solutions that
+   are clean, cohesive, well-factored, proportionate to the problem,
+   and aligned with stronger nearby examples. Unnecessary duplication,
+   indirection, hidden coupling, speculative abstraction, and avoidable
+   complexity are quality failures even when the code works.
 4. **Browser-side custom logic is TypeScript-first.** When TabFlow
    needs custom browser code beyond framework-provided scripts,
    contributors write it in TypeScript by default. Node-based frontend
@@ -99,6 +127,10 @@ This section states the rules that apply across **all** trees.
    package manager by default. Small, trivial snippets may remain
    JavaScript, but new non-trivial browser logic does not start as ad
    hoc plain JS.
+5. **Local correctness is insufficient without system fit.** A change
+   is not complete just because it works. It must also agree with the
+   surrounding contracts, naming, runtime surfaces, architecture
+   decisions, and operational model.
 
 ## V. Review
 
@@ -116,6 +148,10 @@ This section states the rules that apply across **all** trees.
    The reviewer notes "security: reviewed" in the PR.
 5. **Review policy details (what reviewers check, escalation paths)
    live in** [`./meta/review-policy.md`](./meta/review-policy.md).
+6. **Review checks method quality, not only outcome correctness.**
+   Review asks whether the chosen approach is proven, current,
+   conventional, maintainable, and globally well-matched — not merely
+   whether it can be made to pass today.
 
 ## VI. Operations
 
@@ -163,17 +199,24 @@ This section states the rules that apply across **all** trees.
    when the same work item intentionally crosses modes. A work item can change
    modes, but the handoff is explicit in the issue, PR, ADR, or tech-debt
    ledger entry.
-2. **Documentation mode starts with the charter's decision test.** The
-   contributor identifies the audience, tree-of-record, and lifecycle before
-   writing. If no audience needs the information, it is not documentation.
-3. **Implementation mode starts from the governing contract.** The contributor
-   checks the relevant ADR, reference document, acceptance criterion,
-   capability-matrix row, and tech-debt entry before changing code. If no
-   governing contract exists, the contributor classifies the decision under
-   Section I before implementing.
-4. **Review mode starts with risk.** The reviewer leads with correctness,
-   security, contract drift, missing tests, missing observability, missing
-   documentation, and untracked technical debt before style or preference.
+2. **Documentation mode starts with the charter's decision test and the
+   conventional-fit test.** The contributor identifies the audience,
+   tree-of-record, lifecycle, and the clearest proven form for that
+   document before writing. If a simpler, more standard, more
+   recognisable structure would communicate better, that structure
+   wins.
+3. **Implementation mode starts from the governing contract and the
+   best-fit implementation shape.** The contributor checks the relevant
+   ADR, reference document, acceptance criterion, capability-matrix
+   row, tech-debt entry, framework guidance, and nearby repository
+   examples before changing code. If a simpler or more conventional
+   shape exists, it is preferred unless the deviation is justified
+   explicitly.
+4. **Review mode starts with risk and method fit.** The reviewer leads
+   with correctness, security, contract drift, missing tests, missing
+   observability, missing documentation, untracked technical debt,
+   unnecessary novelty, avoidable complexity, and mismatch with proven
+   or conventional practice before style or preference.
 5. **Mode output is reviewable.** Documentation mode produces a source-of-truth
    document or a documented deletion. Implementation mode produces code plus
    the tests, observability, and documentation required by `Done`. Review mode

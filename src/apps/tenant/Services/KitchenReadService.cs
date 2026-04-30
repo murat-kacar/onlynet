@@ -6,9 +6,8 @@ namespace TabFlow.Tenant.Services;
 
 /// <summary>
 /// EF Core implementation of <see cref="IKitchenReadService"/>.
-/// Owns every direct <see cref="TenantDbContext"/> access that the
-/// kitchen routes used to perform inline. Introduced in PR #29 under
-/// TD-0022 step 1.
+/// Owns the <see cref="TenantDbContext"/> access behind the kitchen
+/// routes so the controller stays a transport adapter.
 /// </summary>
 public sealed class KitchenReadService : IKitchenReadService
 {

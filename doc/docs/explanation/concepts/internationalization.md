@@ -61,7 +61,7 @@ Partial coverage is a worse experience than English fallback.
 Each tenant carries a `LanguageCode` on its registration:
 
 - Stored on `TenantRegistration.LanguageCode`
-  (`@/opt/onlynet/src/packages/shared-dotnet/Domain/Entities/Platform/TenantRegistration.cs`).
+  (`/src/packages/shared-dotnet/Domain/Entities/Platform/TenantRegistration.cs`).
 - Set at provisioning time from the `tenant.create` job payload; if
   omitted, defaults to `en-GB`.
 - Validated against the supported language list above; an unsupported

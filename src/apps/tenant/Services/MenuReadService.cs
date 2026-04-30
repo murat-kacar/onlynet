@@ -6,9 +6,8 @@ namespace TabFlow.Tenant.Services;
 
 /// <summary>
 /// EF Core implementation of <see cref="IMenuReadService"/>. Owns
-/// the <see cref="TenantDbContext"/> reads that
-/// `MenuController` used to perform inline. Introduced in PR #29
-/// under TD-0022 step 1.
+/// the <see cref="TenantDbContext"/> reads behind
+/// <c>MenuController</c> and <c>PublicCatalogController</c>.
 /// </summary>
 public sealed class MenuReadService : IMenuReadService
 {

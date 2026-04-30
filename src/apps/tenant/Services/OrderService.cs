@@ -136,6 +136,7 @@ public class OrderService : IOrderService
         // above on the next call.
         checkoutToken.Consume();
         session.Close();
+        await InvalidateTicketsAsync(session.Id, ct);
         await _context.SaveChangesAsync(ct);
 
         return new SubmitOrderResult(order.Id, totalAmount);
@@ -181,5 +182,17 @@ public class OrderService : IOrderService
             .OrderByDescending(o => o.SubmittedAt)
             .Select(o => new OrderSummaryDto(o.Id, o.TotalAmount, o.SubmittedAt))
             .ToListAsync(ct);
+    }
+
+    private async Task InvalidateTicketsAsync(Guid sessionId, CancellationToken ct)
+    {
+        var tickets = await _context.CustomerAccessTickets
+            .Where(ticket => ticket.SessionId == sessionId && ticket.IsValid)
+            .ToListAsync(ct);
+
+        foreach (var ticket in tickets)
+        {
+            ticket.Invalidate();
+        }
     }
 }

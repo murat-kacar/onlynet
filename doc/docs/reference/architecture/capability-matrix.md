@@ -1,63 +1,62 @@
 # Capability Matrix
 
-This matrix is the current implementation status for the repository against
-the baseline architecture described in
+This matrix is the current implementation status for the repository
+against the baseline architecture described in
 [`./system-overview.md`](./system-overview.md),
 [`./runtime-surfaces.md`](./runtime-surfaces.md), and
 [`./decisions.md`](./decisions.md).
 
 Status values:
 
-- `Target` — the capability is part of the baseline and is pending
+- `Target` - the capability is part of the baseline and is pending
   implementation.
-- `In progress` — implementation has started.
-- `Implemented` — the capability is *done* in the constitution sense
-  ([`../../constitution.md`](../../constitution.md), II.4): tested
-  (automated coverage), observable (production metric/log/trace), and
-  documented (reference document is current). All three. None is
-  optional.
-- `Deferred` — the capability is intentionally not part of the current
-  baseline and will land later.
+- `In progress` - implementation has started.
+- `Implemented` - the capability is done in the constitution sense
+  ([`../../constitution.md`](../../constitution.md), II.4): tested,
+  observable, and documented.
+- `Deferred` - the capability is intentionally outside the current
+  baseline.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Platform host unified Blazor project | In progress | Host boots, serves dashboard skeleton; admin console surfaces incomplete. |
-| Tenant host unified Blazor project | In progress | Host boots, serves customer/menu/order/tables/kitchen pages; admin console surfaces incomplete. |
-| Platform Identity store | In progress | Identity tables present in `tabflow_platform` (PR #8 platform `InitialCreate` scaffold per TD-0001); bootstrap admin command landed (PR #9, TD-0002 step 1) with must-change-password enforcement (PR #16, TD-0002 step 3). Operator-action half (drop+apply+verify, run command) pending. See [`../../how-to/bootstrap-platform.md`](../../how-to/bootstrap-platform.md). |
-| Tenant Identity store | In progress | Identity tables present in tenant DB; tenant role seeding pending. |
-| Tenant role matrix (owner, manager, cashier, station_device) | Target | Schema present; seeded on tenant bootstrap. |
-| Platform admin console surfaces | Target | `/`, `/tenants`, `/tenants/new`, `/tenants/{id}`, `/jobs`, `/audit`, `/login`, `/change-password`. |
+| Platform host unified Blazor project | In progress | Host boots and serves the platform console skeleton; admin workflows remain incomplete. |
+| Tenant host unified Blazor project | In progress | Host boots and serves customer, order, table, kitchen, and settings surfaces; tenant admin console depth remains incomplete. |
+| Platform Identity store | In progress | Identity tables, bootstrap-admin command, audit event, and must-change-password enforcement exist. First-deployment operator verification remains open under [TD-0002](/doc/buildlog/tech-debt-ledger.md#td-0002). |
+| Tenant Identity store | In progress | Identity schema exists; tenant role seeding remains part of tenant bootstrap work. |
+| Tenant role matrix (`owner`, `manager`, `cashier`, `station_device`) | Target | Schema and policy names exist; complete seed and enforcement coverage remain pending. |
+| Platform admin console surfaces | Target | `/`, `/tenants`, `/tenants/new`, `/tenants/{id}`, `/jobs`, `/audit`, `/login`, `/change-password`, `/settings`. |
 | Tenant admin console surfaces | Target | `/console`, `/console/catalog`, `/console/stations`, `/console/tables`, `/console/users`, `/console/firmware`, `/console/audit`. |
-| Tenant customer surfaces (Static SSR) | In progress | `/menu` and `/order/{id}` implemented; `/g/{token}` join flow pending. The four customer pages (`Cart.razor`, `Menu.razor`, `Order.razor`, `ScanQr.razor`) currently run as `@rendermode InteractiveServer` after PR #25's Blazor Web App migration so existing `@onclick`/`IJSRuntime` behaviour does not regress; the conversion to AD-0004's Static SSR shape is tracked under TD-0028. |
-| Mixed render modes per surface family (AD-0004) | In progress | Hosts migrated from standalone Blazor Server to Blazor Web App in PR #25 (TD-0027 closed). 9 staff pages (`Dashboard.razor`, `Tenants.razor`, `TenantsNew.razor`, `TenantsDetail.razor`, `Jobs.razor`, `Audit.razor` on the platform host; `Kitchen.razor`, `Tables.razor`, `TableView.razor` on the tenant host) now carry `@rendermode InteractiveServer` (TD-0016 step 1). Customer pages still interactive pending TD-0028. Release-gate smoke check (TD-0016 step 2) blocked on TD-0010 step 6 Playwright bootstrap. Spec: [`/doc/docs/reference/architecture/render-modes.md`](/doc/docs/reference/architecture/render-modes.md). |
+| Tenant customer surfaces (Static SSR) | In progress | Customer flows exist, but `Cart.razor`, `Menu.razor`, `Order.razor`, and `ScanQr.razor` still require Interactive Server. Static SSR conversion is tracked under [TD-0028](/doc/buildlog/tech-debt-ledger.md#td-0028). |
+| Mixed render modes per surface family (AD-0004) | In progress | Hosts use the Blazor Web App model; staff pages opt into Interactive Server. Customer pages and release-gate smoke coverage remain open under [TD-0028](/doc/buildlog/tech-debt-ledger.md#td-0028) and [TD-0016](/doc/buildlog/tech-debt-ledger.md#td-0016). |
 | Tenant floor and cash workspace | Target | `/service` on Interactive Server with server push. |
 | Tenant waiter PDA | Target | `/pda` on Interactive Server. |
-| Tenant station board | In progress | `/kitchen` exists; multi-station `/stations/{stationCode}` routing pending. |
-| Platform tenant registry | Target | Create, list, get, status update, regional settings, runtime visibility, jobs. |
-| Platform provisioning worker | Target | Polls `tenant.create` jobs, writes runtime artifacts, coordinates host and runtime activation. |
-| Tenant schema via EF Core migrations | In progress | Migrations project exists; design-time factories landed at `src/infra/postgres/DesignTime/`; tenant `InitialCreate` scaffolded (PR #10, TD-0003 steps 1–2: 586 lines, 64 `CreateTable` calls). Operator-action half (worker `MigrateAsync()`) pending — see [`/doc/docs/how-to/setup-migrations.md`](/doc/docs/how-to/setup-migrations.md). |
-| Bootstrap platform admin via CLI | In progress | Single-shot `bootstrap-admin` command landed (PR #9, TD-0002 step 1): refuses on populated `AspNetUsers`, generates a CSPRNG password, calls `UserManager.CreateAsync`, assigns `owner` role, stamps the `tabflow:must_change_password` claim (PR #16, TD-0002 step 3), writes an `auth.bootstrap` audit row, prints the password once. Operator-action half (run on a fresh deployment) pending — see [`../../how-to/bootstrap-platform.md`](../../how-to/bootstrap-platform.md). |
-| Customer session with server-side cart | In progress | `customer_sessions`, `customer_access_tickets`, `customer_session_cart_items`, `qr_tokens` schema present; join QR opens a customer session, issues a device-bound ticket, and consumes the join token; submit-order path implemented; **device-binding cookie** persisted on `CustomerAccessTicket.DeviceCookieValue` and verified at submit (PR #11, TD-0017 steps 1–4); **idempotency key** persisted on `Order` with unique index over `(SessionId, IdempotencyKey)` and duplicate submit fast-path (PR #12, TD-0018 steps 1–3). |
-| Fresh-QR checkout proof on submit | In progress | `OrderService.SubmitAsync` enforces (PR #7, TD-0015 step 4): rejects already-consumed tokens (`IsConsumed == false`), tokens from other tables (`TableId == request.TableId`), and explicitly calls `checkoutToken.Consume()` in the same `SaveChangesAsync` transaction as the order insert. Customer-tier route mounted at `/api/public/orders` via `PublicOrdersController` (PR #6, TD-0015 step 3). Anonymous-401/403 integration test pending — see TD-0015 step 6. |
-| In-process event bus for real-time surfaces | In progress | Channel-backed dispatcher implemented for `order.*`, `bill.*`, `table.*`, `device.*`; SignalR fan-out wired for tenant host. |
-| Tenant audit log | In progress | `tenant_audit_log` table present; write path on hot actions pending. |
-| Health check endpoints (`/health`, `/health/live`, `/health/ready`) | Implemented | Three endpoints wired on both platform and tenant hosts; `platform-db:ping` / `tenant-db:ping` probes registered via `AddDbContextCheck<T>`; IETF `application/health+json` body produced by `TabFlow.Shared.Infrastructure.Diagnostics.HealthJsonWriter`; contract-tested by 8 unit tests in `Shared.Tests`. Advanced probes shipped in PR #31 (TD-0013 steps 2 + 4 + 5): generic `MigrationHeadHealthCheck<TContext>` registered as `platform-db:migrations` and `tenant-db:migrations`; `EventBusCapacityHealthCheck` registered on the tenant host as `event-bus:capacity` (warn at 80% per-subscriber depth, fail at 95%); `TenantContextHealthCheck` registered on the tenant host as `tenant-context` (verifies `TABFLOW_TENANT_CODE` env var). The `worker-heartbeat` probe (TD-0013 step 3) is blocked on the `worker_heartbeats` schema; the release-gate smoke check (TD-0013 step 6) is blocked on TD-0010 step 6. Spec: [`/doc/docs/reference/architecture/health-checks.md`](/doc/docs/reference/architecture/health-checks.md). |
-| Structured logging via Serilog | In progress | Console + file sinks wired in platform and tenant hosts. All 19 hot-path `ILogger.LogX(...)` call sites in `/src/apps/{tenant,platform-worker}/**/*.cs` now use `[LoggerMessage]` source-generated extensions for AOT-friendly, allocation-free logging (PR #15, TD-0014 step 3); EventIds 1–5 (provisioning), 101–109 (event subscription), 201–208 (table WebSocket). Operational verification (sink reaches a deployed file) pending under TD-0012. |
-| OpenTelemetry tracing | In progress | ASP.NET Core + HttpClient instrumentation enabled in both hosts; exporter pending. |
-| Process supervision via systemd | In progress | Reference unit set in [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md). All three host projects reference `Microsoft.Extensions.Hosting.Systemd` and call the systemd lifetime hook (PR #23, TD-0026 steps 1–2 + 4): `builder.Host.UseSystemd()` on the platform and tenant `WebApplication`s, `builder.Services.AddSystemd()` on the platform worker's `HostApplicationBuilder`. Composition-root regression test (TD-0026 step 3) pending TD-0010 step 5 fixture. Operator-side enablement (`systemctl enable --now ...`) is not in scope. |
-| Device WebSocket token push | In progress | `/ws/tables/{tableNumber}` endpoint exists in tenant host; firmware-side contract pending validation. |
+| Tenant station board | In progress | `/kitchen` exists; multi-station `/stations/{stationCode}` routing remains pending. |
+| Platform tenant registry | Target | Create, list, get, status update, regional settings, runtime visibility, and jobs. |
+| Platform provisioning worker | Target | Polls `tenant.create` jobs, writes runtime artifacts, coordinates host activation, and applies tenant migrations. |
+| Tenant schema via EF Core migrations | In progress | Migrations project and design-time factories exist. Provisioning-time migration application remains open under [TD-0003](/doc/buildlog/tech-debt-ledger.md#td-0003). |
+| Bootstrap platform admin via CLI | In progress | Single-shot bootstrap command exists and refuses to run when users already exist. First-deployment execution evidence remains open under [TD-0002](/doc/buildlog/tech-debt-ledger.md#td-0002). |
+| Customer session with server-side cart | In progress | Server-side sessions, tickets, cart items, QR tokens, device-cookie binding, and idempotent order submit exist. Wrong-device integration coverage remains open under [TD-0017](/doc/buildlog/tech-debt-ledger.md#td-0017). |
+| Fresh-QR checkout proof on submit | In progress | Order submit consumes the checkout token in the order transaction and rejects stale or wrong-table tokens. Anonymous/cross-role integration coverage remains open under [TD-0015](/doc/buildlog/tech-debt-ledger.md#td-0015). |
+| In-process event bus for real-time surfaces | In progress | Channel-backed dispatcher exists for `order.*`, `bill.*`, `table.*`, and `device.*`; SignalR fan-out is wired for tenant host surfaces. |
+| Tenant audit log | In progress | `tenant_audit_log` table exists; hot-action write coverage remains pending. |
+| Health check endpoints (`/health`, `/health/live`, `/health/ready`) | Implemented | Platform and tenant hosts expose the three endpoints, DB ping/migration probes, tenant-context checks, event-bus capacity checks, and IETF `application/health+json` responses. Worker heartbeat readiness remains open under [TD-0013](/doc/buildlog/tech-debt-ledger.md#td-0013). |
+| Structured logging via Serilog | In progress | Console and file sinks are configured; hot-path logging uses source-generated logger methods. Deployed sink verification remains open under [TD-0012](/doc/buildlog/tech-debt-ledger.md#td-0012). |
+| OpenTelemetry tracing | In progress | ASP.NET Core and HttpClient instrumentation are enabled in both hosts; exporter wiring remains pending. |
+| Process supervision via systemd | Implemented | Platform, tenant, and platform-worker hosts register the systemd lifetime hook; operator enablement follows [`/doc/docs/how-to/supervise-processes.md`](/doc/docs/how-to/supervise-processes.md). |
+| Device WebSocket token push | In progress | `/ws/tables/{tableNumber}` exists in the tenant host; firmware-side validation remains pending. |
 | Firmware generation per table | Target | Produces flash-ready single-file sketches with tenant-specific defines. |
-| Test taxonomy (Unit / Integration / E2E / Smoke) via xUnit Traits | In progress | xUnit `[Trait("Category", T)]` convention adopted as tier discriminator (PR #13, TD-0010 steps 1–3); `tests/E2E.Tests/` added to `TabFlow.sln` and builds both host projects before browser tests run; PR workflow splits Unit fast-path (no DB) from Integration step (PostgreSQL service container). Static-analysis rule for the `Unit` tier ships as Roslyn analyser `TF0002` (PR #26, TD-0010 step 4): flags any identifier inside a `[Trait("Category", "Unit")]` class that resolves to `Npgsql.*`, `System.Net.Sockets.*`, `HttpClient`, `System.IO.File`/`Directory`/`FileStream`, or `DateTime.Now` / `DateTimeOffset.Now`; backed by 7 regression tests. E2E workflow bootstrap now builds `tests/E2E.Tests`, installs Chromium through Playwright, and runs the `E2E` trait filter. Hermetic transactional fixture for the `Integration` tier remains open under TD-0010 step 5. |
-| Station device authentication mechanism | Deferred | Depends on station hardware choice; placeholder `StationDevice` policy is in place so the rest of the stack is not blocked. |
+| Test taxonomy (Unit / Integration / E2E / Smoke) via xUnit Traits | In progress | Trait categories and unit-tier analyzer rules exist. Hermetic integration fixture and smoke tier bootstrap remain open under [TD-0010](/doc/buildlog/tech-debt-ledger.md#td-0010). |
+| Station device authentication mechanism | Deferred | Depends on station hardware choice; placeholder `StationDevice` policy keeps the rest of the stack unblocked. |
 | Advanced payment lifecycle | Deferred | Richer payment metadata and reconciliation flows remain future work. |
-| Native mobile or third-party external API | Deferred | AD-0003 accepts that a second host project is added when a concrete need appears. |
-| Encrypted backup with off-site copy | Target | Spec lives in [`/doc/docs/how-to/backup-and-restore.md`](/doc/docs/how-to/backup-and-restore.md); production wiring pending. |
-| Quarterly disaster-recovery drill | Target | Procedure documented; first drill not yet run. Required by release gate within 90 days of first production deploy. |
-| Personal-data classification on schema | In progress | `[DataClass]` attribute, `DataClassification` enum, and the `ApplyDataClassComments()` ModelBuilder extension shipped in PR #32 (TD-0007 steps 1–2); both DbContexts call the extension and audit-log + access-ticket properties carry the attribute. Full annotation sweep across the remaining entities (TD-0007 step 3) and the release-gate `Sensitive`/`Restricted`-must-have-comment check (TD-0007 step 4) remain open. Spec: [`/doc/docs/explanation/concepts/data-protection.md`](/doc/docs/explanation/concepts/data-protection.md). |
-| Retention sweep jobs | Target | Sweep job types listed in [`data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#retention-schedule); platform-worker job handlers pending. |
-| i18n via `IStringLocalizer<T>` and `*.resx` | In progress | Strategy in [`/doc/docs/explanation/concepts/internationalization.md`](/doc/docs/explanation/concepts/internationalization.md); platform console now ships English and Turkish resources with account-backed operator preferences. Tenant staff and customer surfaces still need the same DB-backed preference model. |
-| English-first lint enforcement | Implemented | First-party Roslyn analyser `TabFlow.Analyzers.EnglishFirstIdentifierAnalyzer` (rule `TF0001`) ships from `/tools/analyzers/TabFlow.Analyzers/` (PR #14, TD-0009 steps 1–3); flags any non-ASCII character in declared identifiers (`NamedType`, `Method`, `Property`, `Field`, `Event`, `Parameter`); compiler-generated names (`<` / `$` prefix) and property/event accessor synthesised methods skipped. `TreatWarningsAsErrors=true` promotes to a build break. xUnit regression suite at `tests/Analyzers.Tests/` ships 7 Unit-tier cases (PR #24, TD-0009 step 4); `AnalyzerReleases.{Shipped,Unshipped}.md` files wired via `<AdditionalFiles>` per RS2008 (PR #24, TD-0009 step 5). All three Done-criteria (tested + observable + documented) hold. |
-| GitHub Actions CI workflows | In progress | Workflow files committed in `.github/workflows/`; PR workflow now splits Unit and Integration test steps with trait filters (PR #13, TD-0010 step 3). First run on a real PR pending under TD-0005. |
-| Branch protection on `main` | Target | Spec lives in [`/doc/docs/how-to/configure-branch-protection.md`](/doc/docs/how-to/configure-branch-protection.md); GitHub configuration not yet applied. |
+| Native mobile or third-party external API | Deferred | AD-0003 accepts adding another host project only when a concrete need appears. |
+| Encrypted backup with off-site copy | Target | Spec lives in [`/doc/docs/how-to/backup-and-restore.md`](/doc/docs/how-to/backup-and-restore.md); production wiring remains open under [TD-0004](/doc/buildlog/tech-debt-ledger.md#td-0004). |
+| Quarterly disaster-recovery drill | Target | Procedure is documented; first drill is required within 90 days of first production deployment. |
+| Personal-data classification on schema | In progress | Classification primitives exist; full annotation sweep and release-gate checks remain open under [TD-0007](/doc/buildlog/tech-debt-ledger.md#td-0007). |
+| Retention sweep jobs | Target | Sweep types are documented in [`data-protection.md`](/doc/docs/explanation/concepts/data-protection.md#retention-schedule); worker handlers remain open under [TD-0008](/doc/buildlog/tech-debt-ledger.md#td-0008). |
+| i18n via `IStringLocalizer<T>` and `*.resx` | In progress | Platform console ships English and Turkish resources with account-backed operator preferences. Tenant staff and customer localization remain open under [TD-0011](/doc/buildlog/tech-debt-ledger.md#td-0011). |
+| English-first lint enforcement | Implemented | `TabFlow.Analyzers.EnglishFirstIdentifierAnalyzer` enforces ASCII identifiers as `TF0001`; analyzer metadata and regression tests are part of the baseline. |
+| GitHub Actions CI workflows | In progress | Workflow files exist and split fast-path/unit work from heavier tiers. Hosted PR/tag validation remains open under [TD-0005](/doc/buildlog/tech-debt-ledger.md#td-0005). |
+| Branch protection on `main` | Target | Spec lives in [`/doc/docs/how-to/configure-branch-protection.md`](/doc/docs/how-to/configure-branch-protection.md); repository-host configuration remains open under [TD-0006](/doc/buildlog/tech-debt-ledger.md#td-0006). |
 
-Rows move to `In progress` and then `Implemented` as each capability lands.
+Rows move to `In progress` and then `Implemented` as each capability
+meets the constitution's tested, observable, and documented bar.

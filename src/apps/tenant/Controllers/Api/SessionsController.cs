@@ -62,7 +62,13 @@ public class SessionsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<CustomerSessionState?>> GetSessionState(Guid ticketId, CancellationToken ct)
     {
-        var state = await _sessionService.GetSessionStateAsync(ticketId, ct);
+        var deviceCookie = Request.Cookies[CustomerSessionCookie.Name];
+        if (string.IsNullOrEmpty(deviceCookie))
+        {
+            return Forbid();
+        }
+
+        var state = await _sessionService.GetSessionStateAsync(ticketId, deviceCookie, ct);
         if (state == null)
         {
             return NotFound();

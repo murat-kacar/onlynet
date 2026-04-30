@@ -50,8 +50,8 @@ not a person, per VI.3.
 
 ## Status Today
 
-TabFlow has no incidents to postmortem. This file is a stub README
-that activates the moment the first incident closes.
+TabFlow v1.0.0 starts with no incidents to postmortem. This README
+defines the format for the first incident record.
 
 ## Cross-References
 

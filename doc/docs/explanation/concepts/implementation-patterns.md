@@ -185,11 +185,8 @@ Controller actions stay thin: parameter binding, `await`, return.
 Application services own the data access. The example below uses
 `ITenantRegistryService` rather than `PlatformDbContext` directly per
 the AD-0003 trade-off ("the internal layer boundary [host →
-application service → domain] must remain explicit in code"). The
-direct-`DbContext` shape that ships in some controllers today is the
-subject of
-[TD-0022](/doc/buildlog/tech-debt-ledger.md#td-0022);
-new controllers SHOULD follow the service-layer shape.
+application service → domain] must remain explicit in code"). New
+controllers follow the service-layer shape.
 
 ```csharp
 [ApiController]

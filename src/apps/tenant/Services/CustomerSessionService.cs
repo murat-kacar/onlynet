@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using TabFlow.Shared.Application.Services;
 using TabFlow.Shared.Domain.Entities.Tenant;
 using TabFlow.Shared.Infrastructure.Data;
@@ -54,8 +56,16 @@ public class CustomerSessionService : ICustomerSessionService
         return new OpenSessionResult(session.Id, ticket.Id, session.TableId, tableLabel, deviceCookieValue);
     }
 
-    public async Task<CustomerSessionState?> GetSessionStateAsync(Guid ticketId, CancellationToken ct = default)
+    public async Task<CustomerSessionState?> GetSessionStateAsync(
+        Guid ticketId,
+        string deviceCookieValue,
+        CancellationToken ct = default)
     {
+        if (string.IsNullOrEmpty(deviceCookieValue))
+        {
+            return null;
+        }
+
         var ticket = await _context.CustomerAccessTickets
             .FirstOrDefaultAsync(t => t.Id == ticketId, ct);
 
@@ -64,8 +74,15 @@ public class CustomerSessionService : ICustomerSessionService
             return null;
         }
 
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(ticket.DeviceCookieValue),
+                Encoding.UTF8.GetBytes(deviceCookieValue)))
+        {
+            return null;
+        }
+
         var session = await _context.CustomerSessions.FindAsync(new object[] { ticket.SessionId }, ct);
-        if (session == null)
+        if (session == null || !session.IsOpen)
         {
             return null;
         }
@@ -91,6 +108,7 @@ public class CustomerSessionService : ICustomerSessionService
         }
 
         session.Close();
+        await InvalidateTicketsAsync(session.Id, ct);
         _context.CustomerSessions.Update(session);
         await _context.SaveChangesAsync(ct);
     }
@@ -113,5 +131,17 @@ public class CustomerSessionService : ICustomerSessionService
         await _context.SaveChangesAsync(ct);
 
         return new CheckoutProofDto(token.Value, tableId, token.ExpiresAt);
+    }
+
+    private async Task InvalidateTicketsAsync(Guid sessionId, CancellationToken ct)
+    {
+        var tickets = await _context.CustomerAccessTickets
+            .Where(ticket => ticket.SessionId == sessionId && ticket.IsValid)
+            .ToListAsync(ct);
+
+        foreach (var ticket in tickets)
+        {
+            ticket.Invalidate();
+        }
     }
 }

@@ -228,8 +228,9 @@ public class ProvisioningWorker : BackgroundService
     private static string GeneratePassword()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        return new string(Enumerable.Repeat(chars, 32)
-            .Select(s => s[new Random().Next(s.Length)]).ToArray());
+        return new string(Enumerable.Range(0, 32)
+            .Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)])
+            .ToArray());
     }
 
     private string BuildTenantAdminConnectionString(string dbName)

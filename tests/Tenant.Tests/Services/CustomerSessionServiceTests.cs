@@ -80,4 +80,38 @@ public sealed class CustomerSessionServiceTests : TenantTransactionalTestBase
         updated.Should().NotBeNull();
         updated!.IsOpen.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task GetSessionStateAsync_MismatchedDeviceCookie_ReturnsNull()
+    {
+        var station = Station.Create("Table 1", $"T1-{Guid.NewGuid():N}", "#FF0000", "Table", 1);
+        Db.Stations.Add(station);
+
+        var session = CustomerSession.Open(station.Id);
+        Db.CustomerSessions.Add(session);
+        var ticket = session.IssueTicket($"cookie-{Guid.NewGuid():N}");
+        Db.CustomerAccessTickets.Add(ticket);
+        await Db.SaveChangesAsync();
+
+        var service = new CustomerSessionService(Db);
+        var state = await service.GetSessionStateAsync(ticket.Id, "wrong-cookie");
+
+        state.Should().BeNull("session-state reads require the browser's access-ticket cookie");
+    }
+
+    [Fact]
+    public async Task CloseSessionAsync_InvalidatesAccessTickets()
+    {
+        var session = CustomerSession.Open(Guid.NewGuid());
+        Db.CustomerSessions.Add(session);
+        var ticket = session.IssueTicket($"cookie-{Guid.NewGuid():N}");
+        Db.CustomerAccessTickets.Add(ticket);
+        await Db.SaveChangesAsync();
+
+        var service = new CustomerSessionService(Db);
+        await service.CloseSessionAsync(session.Id);
+
+        var updatedTicket = await Db.CustomerAccessTickets.FindAsync(ticket.Id);
+        updatedTicket!.IsValid.Should().BeFalse("closing a table session invalidates every access ticket");
+    }
 }

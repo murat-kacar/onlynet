@@ -60,8 +60,8 @@ builder.Services.AddDbContextFactory<PlatformDbContext>(options =>
 
 builder.Services.AddScoped<IPlatformAuditService, PlatformAuditService>();
 builder.Services.AddScoped<IPlatformAuditReadService, PlatformAuditReadService>();
-// TD-0022 step 1: read-path services that own the PlatformDbContext
-// reads which used to live inline in the API controllers.
+// Read-path services own PlatformDbContext access so API controllers
+// stay thin transport adapters.
 builder.Services.AddScoped<ITenantRegistryService, TenantRegistryService>();
 builder.Services.AddScoped<IProvisioningJobReadService, ProvisioningJobReadService>();
 builder.Services.AddSingleton<PlatformUserIdentityService>();
@@ -184,7 +184,7 @@ builder.Services.AddHealthChecks()
         name: "platform-db:migrations",
         tags: readyTag);
 
-// AD-0004 + TD-0027: Blazor Web App composition. AddRazorComponents
+// AD-0004: Blazor Web App composition. AddRazorComponents
 // registers the new component model (root component +
 // MapRazorComponents<App>()); AddInteractiveServerComponents adds
 // the SignalR-backed interactive server render mode that staff
@@ -311,7 +311,7 @@ app.MapGet("/logout", async (HttpContext context) =>
 
 app.MapRazorPages();
 
-// AD-0004 + TD-0027: Blazor Web App route mapping. MapRazorComponents
+// AD-0004: Blazor Web App route mapping. MapRazorComponents
 // hosts the App root component (the HTML document) and serves every
 // `@page` Razor component under it. AddInteractiveServerRenderMode
 // wires the SignalR endpoint that components annotated with

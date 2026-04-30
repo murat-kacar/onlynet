@@ -51,6 +51,8 @@ spike closes.
 
 ## Tree Definitions
 
+<a id="docs--engineering-reference"></a>
+
 ### `docs/` — Engineering Reference
 
 **Audience.** Software engineers, SREs, platform operators, security
@@ -69,13 +71,15 @@ behaves, why it was designed this way, and how to operate it.
 - `constitution.md` — project-wide process and culture
 
 **Stability.** Stable. A breaking change to a `reference/` document
-requires an ADR and a deprecation window in the same PR.
+requires an ADR and a deprecation window in the same change.
 
 **What goes here.** Decision rationale, contracts, invariants,
 operational procedures, architectural concepts.
 
 **What does NOT go here.** End-user click-through guides, exploratory
 drafts, postmortems, marketing copy.
+
+<a id="userdocs--end-user-help"></a>
 
 ### `userdocs/` — End-User Help
 
@@ -102,6 +106,8 @@ item?", "Why is my QR code not working?".
 **What does NOT go here.** Database schema, API specs, deployment
 procedures.
 
+<a id="apidocs--external-integration-reference"></a>
+
 ### `apidocs/` — External Integration Reference
 
 **Audience.** External developers integrating with TabFlow's public
@@ -126,8 +132,11 @@ auth flows, rate-limit semantics, webhook signing.
 **What does NOT go here.** Internal endpoints, control-plane APIs,
 implementation notes.
 
-**Status today.** TabFlow has no public API. This tree starts as a
-stub and activates the moment a public endpoint exists.
+**Status today.** TabFlow v1.0.0 has no public API. This tree contains
+the activation rules and gains concrete reference pages when a public
+endpoint exists.
+
+<a id="buildlog--lessons-learned"></a>
 
 ### `buildlog/` — Lessons Learned
 
@@ -189,6 +198,23 @@ Concrete examples:
 When a fact appears to need duplication, the right move is almost always
 to refactor: extract the fact to its tree-of-record and link from the
 others.
+
+## Form: Prefer Recognisable, Proven Shapes
+
+A document is easier to trust, review, compare, and maintain when its
+form is recognisable.
+
+Contributors therefore prefer section shapes, naming, wording
+patterns, and document structures that are:
+
+- conventional for the document type
+- current for the ecosystem and audience
+- already proven inside this repository or in surrounding practice
+- easy to compare with stronger nearby examples
+
+Novel structure is not a virtue by itself. A document that is
+technically correct but unusually shaped, harder to scan, or
+inconsistent with stronger examples is a lower-quality document.
 
 ## Lifecycle Per Tree
 
@@ -257,6 +283,8 @@ For any piece of writing, ask in order:
 10. **Is it a record of what happened or what we learned?** → `buildlog/`
 11. **None of the above?** → it probably should not be written. Re-ask
     what audience needs it.
+12. **Is this written in the clearest conventional form for this
+    audience and document type?** If not, rewrite it before merging.
 
 ## What Does NOT Belong Anywhere
 

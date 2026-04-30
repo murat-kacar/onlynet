@@ -14,7 +14,7 @@ Run the gate in two passes:
 ## Documentation
 
 - [ ] [`reference/architecture/decisions.md`](../reference/architecture/decisions.md)
-  reflects every architecture decision that landed in this release.
+  reflects every architecture decision included in this release.
 - [ ] No ADR ships with `Status: Proposed`. Every accepted change
   has its ADR in `Status: Accepted`; rejected proposals are recorded
   as `Status: Rejected`.
@@ -39,6 +39,9 @@ Run the gate in two passes:
   [`./documentation-charter.md`](./documentation-charter.md) are
   either unchanged or amended via a PR that follows their amendment
   rule.
+- [ ] New or changed documentation follows the repository's most
+  conventional and recognisable structure for that document type; no
+  avoidable novelty or private format has been introduced.
 
 ## Checks
 
@@ -57,6 +60,9 @@ Run the gate in two passes:
   docs resolves to an entry in
   [`/doc/buildlog/tech-debt-ledger.md`](/doc/buildlog/tech-debt-ledger.md).
 - [ ] SAST and dependency audit pipelines are green.
+- [ ] The shipped change does not introduce avoidable divergence from
+  accepted ADRs, authoritative references, framework conventions, or
+  stronger nearby examples without an explicit rationale.
 
 ## Acceptance
 
@@ -81,7 +87,7 @@ a ticket link.
   2.2 AA checks against the customer menu, the floor and cash
   workspace, one station board, and the platform admin console
   report zero violations; any remaining finding has a tracked
-  remediation PR on the roadmap.
+  remediation item on the roadmap.
 - [ ] Internationalization items (AC-117 to AC-121) verified.
 - [ ] Data-protection items (AC-122 to AC-126) verified.
 - [ ] Recovery items (AC-127 to AC-130) verified.
@@ -173,6 +179,9 @@ Per [`../explanation/concepts/test-taxonomy.md`](../explanation/concepts/test-ta
 - [ ] No `[Skip]` attribute is added during this release.
 - [ ] Flaky-test rate over the release window is `< 1%` (a flake is a
   test that re-passed on the same commit without a code change).
+- [ ] Any non-conventional implementation or document shape introduced
+  in this release carries an explicit justification in the PR or ADR
+  and has been reviewed as a deliberate deviation.
 
 ## DORA Metrics Review
 

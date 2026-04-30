@@ -126,7 +126,7 @@ validate, authenticate, or authorise.
 | **T** Cross-tenant write via direct DB connection | Each tenant DB has its own role with grants only on that DB; the platform role has no grants on any tenant DB |
 | **R** Repudiation of DB writes | `platform_audit_log` and `tenant_audit_log` are append-only and capture actor email + IP + UA |
 | **I** Backup / dump leakage | Backups encrypted at rest; access via deploy-time secret manager only. Implementation deferred under the capability-matrix "Encrypted backup with off-site copy" row (`Target`); the wiring lands when the first backup ships per [`/doc/docs/how-to/backup-and-restore.md`](/doc/docs/how-to/backup-and-restore.md). |
-| **D** Unbounded query | Every read endpoint paginates. The analyzer that would flag `IQueryable.ToList()` without `Take()` is not yet shipped (see [TD-0009](/doc/buildlog/tech-debt-ledger.md#td-0009) for the analyzer baseline; the unbounded-query rule is a future addition to `TabFlow.Analyzers`). Today the rule is enforced in code review. |
+| **D** Unbounded query | Every read endpoint paginates. The analyzer that would flag `IQueryable.ToList()` without `Take()` is not present yet; [TD-0009](/doc/buildlog/tech-debt-ledger.md#td-0009) tracks analyzer coverage expansion. Today the rule is enforced in code review. |
 | **E** Database role escalation | Roles created `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION`; verified at bootstrap and provisioning |
 
 ## Out-Of-Scope For This Baseline

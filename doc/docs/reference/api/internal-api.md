@@ -44,8 +44,7 @@ specified there.
   `application/problem+json`.
 - **Internal vs public.** None of the routes below ship under the
   `/api/public/*` prefix; that prefix is reserved for the
-  customer-tier surface in `tenant-api.md` (PR #6, TD-0015 step 3
-  for the orders shim; TD-0021 plans the rest of the migration).
+  customer-tier surface in `tenant-api.md`.
 
 ## Platform Host (`platform.cafetech.uk`)
 
@@ -56,9 +55,8 @@ Two controllers, both under
 
 Source:
 [`/src/apps/platform/Controllers/Api/TenantsController.cs`](/src/apps/platform/Controllers/Api/TenantsController.cs).
-Tracked under TD-0022 step 1 for the move to a service-layer
-caller that owns the EF Core context; the route table below is
-stable across that refactor.
+The controller delegates to `ITenantRegistryService`; the route table
+below is the current staff-tier contract.
 
 #### `GET /api/tenants`
 
@@ -203,19 +201,21 @@ record JobStepDto(
 
 Five staff-tier controllers under
 `src/apps/tenant/Controllers/Api/`. Customer-tier
-(`PublicOrdersController`, customer-anonymous actions on
-`SessionsController` and `CartController`, anonymous reads on
-`MenuController`) is documented in
-[`./tenant-api.md`](./tenant-api.md) and is **not** repeated here.
+(`PublicOrdersController`, `PublicCatalogController`,
+`PublicCartController`, and `PublicSessionController`) is documented in
+[`./tenant-api.md`](./tenant-api.md) and is **not** repeated here. Legacy
+customer routes on `MenuController`, `CartController`, and the customer
+slice of `SessionsController` remain only for the temporary
+compatibility window tracked by
+[TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021).
 
 ### Orders — `[Route("api/[controller]")]`, default `[Authorize(Policy = "Tenant:Read")]`
 
 Source:
 [`/src/apps/tenant/Controllers/Api/OrdersController.cs`](/src/apps/tenant/Controllers/Api/OrdersController.cs).
 The customer-facing submit action is **not** here; it lives at
-`POST /api/public/orders` on `PublicOrdersController` (PR #6,
-TD-0015 step 3). This controller carries the staff read paths
-only.
+`POST /api/public/orders` on `PublicOrdersController`. This controller
+carries the staff read paths only.
 
 #### `GET /api/orders/{id:guid}`
 
@@ -274,8 +274,8 @@ record UpdateItemStatusRequest(string Status);
 
 Source:
 [`/src/apps/tenant/Controllers/Api/TablesController.cs`](/src/apps/tenant/Controllers/Api/TablesController.cs).
-Read-only; table writes (rename, status flip, remove) ship later
-as part of the staff console catalog work.
+Table reads inherit `Tenant:Read`; table mutations and checkout-proof
+issuance escalate to `Tenant:Write`.
 
 #### `GET /api/tables`
 
@@ -292,15 +292,55 @@ Reads a single table.
 - **Responses.** `200 OK` with `TableDetailDto`, or `404` if
   no table has the supplied id.
 
+#### `POST /api/tables`
+
+Creates a table.
+
+- **Policy.** `Tenant:Write`.
+- **Request.** `CreateTableRequest`.
+- **Responses.** `201 Created` with `TableDetailDto`, or `400` on
+  validation failure.
+
+#### `PUT /api/tables/{id:guid}`
+
+Updates an existing table.
+
+- **Policy.** `Tenant:Write`.
+- **Request.** `UpdateTableRequest`.
+- **Responses.** `200 OK` with `TableDetailDto`, `404` if the table is
+  missing, or `400` on validation failure.
+
+#### `DELETE /api/tables/{id:guid}`
+
+Deletes a table when no invariant prevents removal.
+
+- **Policy.** `Tenant:Write`.
+- **Responses.** `204 No Content`, or `400` when the table cannot be
+  removed.
+
+#### `GET /api/tables/{id:guid}/workspace`
+
+Reads the floor-and-cash workspace snapshot for a table.
+
+- **Policy.** `Tenant:Read`.
+- **Responses.** `200 OK` with `TableWorkspaceDto`, or `404` if the
+  table is missing.
+
+#### `POST /api/tables/{id:guid}/checkout-proof`
+
+Issues a fresh checkout-proof QR token for staff-driven checkout flows.
+
+- **Policy.** `Tenant:Write`.
+- **Response.** `200 OK`, body `CheckoutProofDto`.
+
 ### Sessions — staff-tier slice
 
 Source:
 [`/src/apps/tenant/Controllers/Api/SessionsController.cs`](/src/apps/tenant/Controllers/Api/SessionsController.cs).
 This controller hosts both customer-tier and staff-tier actions on
 the same route. The customer-tier actions are documented in
-[`./tenant-api.md`](./tenant-api.md) (and are slated to move to a
-`/api/public/*` shim under TD-0021 step 2). The staff-tier slice
-is the close action below.
+[`./tenant-api.md`](./tenant-api.md) and have `/api/public/session/*`
+shims. The staff-tier slice is the close action below.
 
 #### `POST /api/sessions/{sessionId:guid}/close`
 
@@ -320,24 +360,15 @@ ASP0026 surfaces and the build breaks.
 
 ## Migration Notes
 
-- **TD-0021 (open).** Four customer-tier surfaces still ship from
-  staff-tier controllers under `/api/menu`, `/api/cart`,
-  `/api/sessions/open`, and `/api/sessions/{ticketId}`. Per
-  AD-0003, the public surface belongs under `/api/public/*`. The
-  payoff plan in
-  [TD-0021](/doc/buildlog/tech-debt-ledger.md#td-0021) introduces shim
-  controllers at `/api/public/*` that delegate into the existing
-  service layer; once the shims ship, this document and
-  `tenant-api.md` are the only references that change.
-- **TD-0022 (open).** Six controllers
-  (`TenantsController`, `JobsController`, `KitchenController`,
-  `OrdersController`, `TablesController`, `SessionsController`)
-  still hold an EF Core `DbContext` directly. The payoff plan
-  introduces a thin service per controller that owns the
-  context; the route table here is stable across that refactor.
-- **TD-0015 step 6 (open).** The class-level vs action-level
-  policy ordering on `SessionsController` and (post-TD-0021) on
-  the customer-tier shims is the point that an integration test
-  must exercise: `401` on a missing cookie, `403` on a present
-  cookie that lacks the policy. The fixture for that test depends
-  on TD-0010 step 5.
+- **TD-0021.** Customer-tier shim controllers use `/api/public/*`. The
+  remaining work is closing the compatibility window: return HTTP 410
+  from the legacy `/api/menu`, `/api/cart`, and customer actions on
+  `/api/sessions/*`, then remove those legacy actions.
+- Controllers delegate to application services instead of holding EF
+  Core contexts directly; service-level integration coverage remains
+  part of [TD-0010](/doc/buildlog/tech-debt-ledger.md#td-0010).
+- **TD-0015.** The class-level vs action-level
+  policy ordering on `SessionsController` is the point that an
+  integration test must exercise: `401` on a missing cookie, `403` on a
+  present cookie that lacks the policy. The fixture for that test depends
+  on [TD-0010](/doc/buildlog/tech-debt-ledger.md#td-0010).

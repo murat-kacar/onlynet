@@ -8,9 +8,9 @@ namespace TabFlow.Platform.Services;
 
 /// <summary>
 /// EF Core implementation of <see cref="ITenantRegistryService"/>.
-/// Owns the <see cref="PlatformDbContext"/> reads and writes that
-/// `TenantsController` used to perform inline. Introduced in PR #29
-/// under TD-0022 step 1.
+/// Owns the <see cref="PlatformDbContext"/> reads and writes behind
+/// <c>TenantsController</c> so the controller stays a transport
+/// adapter.
 /// </summary>
 public sealed class TenantRegistryService : ITenantRegistryService
 {

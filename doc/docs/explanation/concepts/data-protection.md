@@ -37,14 +37,14 @@ comment classifying it. The comment is generated from `[DataClass]`
 attributes on the entity properties; CI fails the build if a
 `Sensitive` or `Restricted` column has no comment in the schema dump.
 
-> **Implementation status (TD-0007, PR #32).** The `[DataClass]`
-> attribute and the schema-comment generator shipped in PR #32:
+> **Implementation status (TD-0007).** The `[DataClass]`
+> attribute and the schema-comment generator are present:
 > [`DataClassification`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassification.cs)
 > enum, [`DataClassAttribute`](/src/packages/shared-dotnet/Domain/DataProtection/DataClassAttribute.cs)
 > on `AttributeTargets.Property`, and the
 > [`ApplyDataClassComments()`](/src/packages/shared-dotnet/Infrastructure/Data/ModelBuilderExtensions.cs)
 > ModelBuilder extension wired into both DbContexts. Sample
-> annotations land on the audit-log entities and on
+> annotations exist on the audit-log entities and on
 > `CustomerAccessTicket.DeviceCookieValue`. The corresponding
 > acceptance criterion is **AC-122**. The full annotation sweep
 > across every personal-data property (TD-0007 step 3) and the
@@ -119,13 +119,13 @@ honoured under both.
 | Right not to be subject to automated decision-making | n/a | 22 | TabFlow performs no automated individual decision-making in the current major |
 
 The procedures referenced above live as **how-to guides** in
-[`/doc/docs/how-to/`](/doc/docs/how-to/). The four DSR procedures
-(access, erasure, restriction, portability) ship as separate how-to
-guides under PR #28. Each procedure writes its request evidence to the
-operator's access-controlled DSR case system or audit log, not to the
-repository. Public documentation may carry only redacted request ids and
-procedure lessons; real subject identifiers, tenant-specific payloads,
-or delivered exports never belong in any documentation tree.
+[`/doc/docs/how-to/`](/doc/docs/how-to/). Access, erasure,
+restriction, and portability each have a separate operator procedure.
+Each procedure writes its request evidence to the operator's
+access-controlled DSR case system or audit log, not to the repository.
+Public documentation may carry only redacted request ids and procedure
+lessons; real subject identifiers, tenant-specific payloads, or
+delivered exports never belong in any documentation tree.
 
 ## Data Locality And Transfer
 

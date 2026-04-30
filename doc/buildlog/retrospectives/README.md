@@ -84,6 +84,6 @@ deployment frequency, lead time, change failure rate, MTTR.
 
 ## Status Today
 
-No retrospectives have closed yet. This file is a stub README that
-activates the moment the first retrospective lands — typically
-following the first release tag.
+TabFlow v1.0.0 starts with no retrospectives recorded. This README
+defines the format for the first retrospective, typically following the
+first release tag.

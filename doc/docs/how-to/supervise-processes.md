@@ -204,9 +204,9 @@ builder.Host.UseSystemd();
 `UseSystemd()` is a no-op when not run under systemd, so it is safe in
 local development.
 
-> **Implementation status (TD-0026).** As of PR #23, all three host
-> projects reference `Microsoft.Extensions.Hosting.Systemd` (10.0.7)
-> and call the systemd lifetime hook in `Program.cs`:
+> **Implementation status.** All three host projects reference
+> `Microsoft.Extensions.Hosting.Systemd` (10.0.7) and call the systemd
+> lifetime hook in `Program.cs`:
 >   - `src/apps/platform/Program.cs` calls
 >     `builder.Host.UseSystemd()` immediately after `UseSerilog()`.
 >   - `src/apps/tenant/Program.cs` calls
@@ -215,9 +215,10 @@ local development.
 >     `builder.Services.AddSystemd()` (the `HostApplicationBuilder`
 >     equivalent) immediately after the builder is created.
 >
-> The composition-root regression test (TD-0026 step 3) lands with
-> the integration test fixture in TD-0010 step 5. Until that
-> regression test ships, the contract is enforced by code review.
+> Composition-root regression coverage belongs with the integration
+> fixture work in [TD-0010](/doc/buildlog/tech-debt-ledger.md#td-0010).
+> Until that regression test exists, the contract is enforced by code
+> review.
 
 ## File Layout
 

@@ -62,8 +62,8 @@ What was tried, in chronological order, briefly.
 What we learned. Numbers, code snippets, citations.
 
 ## Outcome
-- ADR opened? Link.
-- Tracer bullet opened? Link to branch / PR.
+- ADR created? Link.
+- Tracer bullet created? Link to branch or change.
 - Documented "no"? State it explicitly.
 
 ## Open Questions
@@ -89,5 +89,5 @@ What we did not answer. Useful for the next spike on the same topic.
 
 ## Status Today
 
-No spikes have closed yet. This file is a stub README that activates
-the moment the first spike outcome lands.
+TabFlow v1.0.0 starts with no completed spikes recorded. This README
+defines the format for the first spike outcome.

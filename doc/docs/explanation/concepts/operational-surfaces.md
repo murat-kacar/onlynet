@@ -84,7 +84,7 @@ Role:
 - physical table state visibility
 - open check handling
 - manual payment flow
-- move, merge, split, and close actions
+- close-bill action
 
 The floor and cash workspace is operated by the `cashier` role (and
 by `manager` or `owner` when they step in). It is explicitly not the
@@ -109,7 +109,7 @@ Primary mental model:
   and a separate cash-only screen to understand the live state of a
   table
 - normal mode is operational; layout editing is explicit and separate
-- move, merge, split, and close actions are quick but still deliberate
+- close-bill actions are quick but still deliberate
 - closing a check requires a stronger confirmation than normal table
   selection
 

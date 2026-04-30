@@ -2,10 +2,10 @@ namespace TabFlow.Shared.Application.Services;
 
 public interface ICartService
 {
-    Task<CartItemDto> AddItemAsync(AddCartItemRequest request, CancellationToken ct = default);
-    Task RemoveItemAsync(Guid cartItemId, CancellationToken ct = default);
-    Task UpdateItemQuantityAsync(Guid cartItemId, int quantity, CancellationToken ct = default);
-    Task<IReadOnlyList<CartItemDto>> GetCartItemsAsync(Guid sessionId, CancellationToken ct = default);
+    Task<CartItemDto> AddItemAsync(AddCartItemRequest request, string deviceCookieValue, CancellationToken ct = default);
+    Task RemoveItemAsync(Guid cartItemId, string deviceCookieValue, CancellationToken ct = default);
+    Task UpdateItemQuantityAsync(Guid cartItemId, int quantity, string deviceCookieValue, CancellationToken ct = default);
+    Task<IReadOnlyList<CartItemDto>> GetCartItemsAsync(Guid sessionId, string deviceCookieValue, CancellationToken ct = default);
 }
 
 public sealed record AddCartItemRequest(Guid SessionId, Guid MenuItemId, int Quantity, string? Note = null);

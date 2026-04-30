@@ -1,18 +1,23 @@
 # Health Check Endpoints
 
-Both hosts expose two health endpoints, addressable only on the loopback
+Both hosts expose three health endpoints, addressable only on the loopback
 interface. They are the contract between TabFlow processes and any
 supervisor (systemd, Kubernetes, runit, etc.) plus the release gate.
 
 ## Endpoints
 
-Both the platform host and every tenant host expose the same two
+Both the platform host and every tenant host expose the same three
 endpoints:
 
 | Endpoint | Purpose | Probe Set |
 | --- | --- | --- |
+| `GET /health` | Liveness alias for callers that use the bare path | none |
 | `GET /health/live`  | Process liveness — answers if the process can serve any HTTP at all | none |
 | `GET /health/ready` | Readiness — answers if the process can serve real traffic | tagged probes |
+
+`/health` and `/health/live` use the same liveness options. `/health`
+exists for compatibility with simple probes; `/health/live` is the
+preferred explicit liveness path.
 
 `/health/live` exists so a container or systemd `WatchdogSec` can
 distinguish a dead process from a degraded one without taking
@@ -23,7 +28,7 @@ whether to route traffic.
 
 ## Response Shape
 
-Both endpoints return `application/health+json` per the
+All three endpoints return `application/health+json` per the
 [IETF draft `health-check-response-format`](https://datatracker.ietf.org/doc/draft-inadarei-api-health-check/)
 shape:
 
@@ -34,7 +39,7 @@ shape:
   "releaseId": "<git-sha>",
   "checks": {
     "platform-db:ping": [
-      { "componentType": "datastore", "status": "pass", "time": "2026-04-25T15:00:00Z", "observedValue": 4, "observedUnit": "ms" }
+      { "componentType": "datastore", "status": "pass", "time": "2026-04-30T15:00:00Z", "observedValue": 4, "observedUnit": "ms" }
     ]
   }
 }
@@ -56,8 +61,8 @@ diagnostic detail.
 | Probe ID | Component | Failure Means |
 | --- | --- | --- |
 | `platform-db:ping` | `PlatformDbContext.Database.CanConnectAsync()` | Cannot read the platform DB; reject traffic |
-| `platform-db:migrations` | `__EFMigrationsHistory` matches the assembly's expected head | Pending migration; reject traffic. Implemented in PR #31 (TD-0013 step 2) via the generic `MigrationHeadHealthCheck<PlatformDbContext>` shipping from `TabFlow.Shared.Infrastructure.Diagnostics`. |
-| `worker-heartbeat` | A row exists in `worker_heartbeats` newer than `30s` | Worker is dead; degrade (`warn`) — admin UI still works. **Not yet wired** (TD-0013 step 3). The `worker_heartbeats` schema does not exist yet; the probe will land alongside the worker-instrumentation work that introduces the table. |
+| `platform-db:migrations` | `__EFMigrationsHistory` matches the assembly's expected head | Pending migration; reject traffic. Uses the generic `MigrationHeadHealthCheck<PlatformDbContext>` from `TabFlow.Shared.Infrastructure.Diagnostics`. |
+| `worker-heartbeat` | A row exists in `worker_heartbeats` newer than `30s` | Worker is dead; degrade (`warn`) so the admin UI can still work. This probe is open under [TD-0013](/doc/buildlog/tech-debt-ledger.md#td-0013) and waits on the `worker_heartbeats` schema. |
 
 `/health/live` returns `pass` unless the process is shutting down.
 
@@ -68,9 +73,9 @@ diagnostic detail.
 | Probe ID | Component | Failure Means |
 | --- | --- | --- |
 | `tenant-db:ping` | `TenantDbContext.Database.CanConnectAsync()` | Cannot read the tenant DB; reject traffic |
-| `tenant-db:migrations` | Tenant DB migration head matches assembly | Pending migration; reject traffic. Implemented in PR #31 (TD-0013 step 2) via the generic `MigrationHeadHealthCheck<TenantDbContext>`. |
-| `event-bus:capacity` | The in-process event bus has free capacity per [AD-0006](./decisions.md#ad-0006-in-process-event-bus-for-real-time-surfaces) | Bus saturated; degrade (`warn`) at 80% per-subscriber depth, reject (`fail`) at 95%. Implemented in PR #31 (TD-0013 step 4) via `EventBusCapacityHealthCheck` over the new `IEventBus.GetCapacityStats()` snapshot. |
-| `tenant-context` | The `TABFLOW_TENANT_CODE` env var is set | Tenant host launched outside its provisioning contract; reject. Implemented in PR #31 (TD-0013 step 5) via `TenantContextHealthCheck`. The richer "TABFLOW_TENANT_CODE resolves to an active row in the platform's tenant_registry" lift waits on the platform→tenant connection contract. |
+| `tenant-db:migrations` | Tenant DB migration head matches assembly | Pending migration; reject traffic. Uses the generic `MigrationHeadHealthCheck<TenantDbContext>`. |
+| `event-bus:capacity` | The in-process event bus has free capacity per [AD-0006](./decisions.md#ad-0006-in-process-event-bus-for-real-time-surfaces) | Bus saturated; degrade (`warn`) at 80% per-subscriber depth, reject (`fail`) at 95%. Uses `EventBusCapacityHealthCheck` over `IEventBus.GetCapacityStats()`. |
+| `tenant-context` | The `TABFLOW_TENANT_CODE` env var is set | Tenant host launched outside its provisioning contract; reject. Uses `TenantContextHealthCheck`. The richer "TABFLOW_TENANT_CODE resolves to an active row in the platform's tenant_registry" lift waits on the platform-to-tenant connection contract. |
 
 `/health/live` returns `pass` unless the process is shutting down.
 
@@ -106,13 +111,19 @@ builder.Services.AddHealthChecks()
     .AddCheck<MigrationHeadHealthCheck<PlatformDbContext>>(
         name: "platform-db:migrations",
         tags: new[] { "ready" })
-    // The worker-heartbeat probe is TD-0013 step 3; it blocks on
-    // the worker_heartbeats table schema and is not yet wired.
+    // The worker-heartbeat probe is tracked by TD-0013 and waits on
+    // the worker_heartbeats table schema.
     ;
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false,  // no probes, just liveness
+    ResponseWriter = HealthJsonWriter.Write
+});
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => false,  // liveness alias
     ResponseWriter = HealthJsonWriter.Write
 });
 
@@ -138,10 +149,11 @@ curl -fsS http://127.0.0.1:5001/health/live   # tenant liveness
 curl -fsS http://127.0.0.1:5001/health/ready  # tenant readiness
 ```
 
-All four MUST return `200` with `status: "pass"`. A `warn` is
-acceptable for `worker-heartbeat` (once that probe ships under
-TD-0013 step 3) immediately after worker restart but MUST recover
-within `60s`. A `warn` from `event-bus:capacity` (`>=80%`
+All four explicit live/ready checks MUST return `200` with
+`status: "pass"`; `/health` should match `/health/live` on each host. A
+future `warn` from `worker-heartbeat` is acceptable immediately after
+worker restart but MUST recover within `60s`. A `warn` from
+`event-bus:capacity` (`>=80%`
 saturation) is a signal the staff push surface is dropping events;
 investigate before serving production traffic.
 
